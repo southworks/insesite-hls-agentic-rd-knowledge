@@ -125,6 +125,12 @@ The cross-format manifest is `00_raw/agent_document_manifest.json`.
 See [AGENT_INPUTS.md](AGENT_INPUTS.md) and
 [FORMAT_DECISIONS.md](FORMAT_DECISIONS.md).
 
+## Test Cases
+
+The five decision ground-truth cases live in `09_decision_ground_truth/`.
+Use [TEST_CASES.md](TEST_CASES.md) to understand each case's expected result
+and trace its `source_entities` back to concrete files under `00_raw/`.
+
 ## Generation Script
 
 ```bash
