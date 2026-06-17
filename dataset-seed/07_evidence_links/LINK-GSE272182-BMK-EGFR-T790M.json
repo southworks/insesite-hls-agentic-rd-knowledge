@@ -1,0 +1,15 @@
+{
+  "document_type": "evidence_link",
+  "evidence_strength": "curated_baseline",
+  "link_id": "LINK-GSE272182-BMK-EGFR-T790M",
+  "provenance": "curated_from_raw_layer_evidence",
+  "rationale": "Dataset was selected for cell-line or assay-level evidence in the osimertinib/EGFR baseline.",
+  "raw_sources": [
+    "00_raw/json/datasets/geo/GSE272182/geo_esummary.json",
+    "00_raw/txt/datasets/geo/GSE272182/series_soft.txt",
+    "00_raw/json/datasets/geo/GSE272182/source_record.json"
+  ],
+  "relation_type": "provides_experimental_evidence",
+  "source_entity_id": "DATASET-GSE272182",
+  "target_entity_id": "BMK-EGFR-T790M"
+}

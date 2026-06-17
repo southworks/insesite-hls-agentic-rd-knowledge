@@ -1,0 +1,25 @@
+CUR-PMC13129538
+===============
+Curation and compliance decision card
+
+Document ID: CUR-PMC13129538
+Category: curation_decisions
+Source entity: 08_curation_decisions/CUR-PMC13129538.json
+
+Curation Decision
+-----------------
+Decision ID: CUR-PMC13129538
+Source ID: PMC13129538
+Source type: pmc_open_access_article
+Decision: approve
+Reason: PMC OA license matched expected reuse posture and article is not a case-report source.
+Required human review: False
+Policy refs: HLS-LIC-200; HLS-DATA-100
+Curator: Marisol Vega, Research Data Steward (fictional)
+Decision date: 2026-06-17
+
+Provenance
+----------
+Provenance: curated_from_raw_layer_evidence
+Privacy posture: 
+Raw source trace: 00_raw/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml

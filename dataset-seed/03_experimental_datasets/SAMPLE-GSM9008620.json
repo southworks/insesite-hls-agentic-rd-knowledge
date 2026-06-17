@@ -1,0 +1,14 @@
+{
+  "condition": "not_specified",
+  "dataset_id": "GSE298111",
+  "document_type": "assay_sample",
+  "model": "PC9OR",
+  "privacy_posture": "sample title reviewed for cell-line context",
+  "provenance": "derived_from_raw_layer",
+  "raw_sources": [
+    "00_raw/json/datasets/geo/GSE298111/geo_esummary.json"
+  ],
+  "sample_id": "GSM9008620",
+  "sample_title": "PC9OR NC repeat3",
+  "source_system": "ncbi_geo"
+}

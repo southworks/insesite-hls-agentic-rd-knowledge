@@ -1,0 +1,14 @@
+{
+  "condition": "osimertinib",
+  "dataset_id": "GSE300311",
+  "document_type": "assay_sample",
+  "model": "PC9",
+  "privacy_posture": "sample title reviewed for cell-line context",
+  "provenance": "derived_from_raw_layer",
+  "raw_sources": [
+    "00_raw/json/datasets/geo/GSE300311/geo_esummary.json"
+  ],
+  "sample_id": "GSM9058174",
+  "sample_title": "PC9 cells-sgPKM2#1-Osimertinib",
+  "source_system": "ncbi_geo"
+}

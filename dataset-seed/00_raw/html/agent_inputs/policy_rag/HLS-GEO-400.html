@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Cell-line dataset preference</title>
+  <style>body{font-family:Arial,sans-serif;max-width:920px;margin:36px auto;color:#1f2937}table{border-collapse:collapse;width:100%;margin-bottom:24px}th,td{border:1px solid #d1d5db;padding:8px;vertical-align:top}th{background:#e5edf7;text-align:left}.meta{color:#64748b}</style>
+</head>
+<body>
+<h1>Cell-line dataset preference</h1>
+<p class="meta">Policy RAG evidence card</p>
+<ul>
+<li><strong>Document ID:</strong> HLS-GEO-400</li>
+<li><strong>Category:</strong> policy_rag</li>
+<li><strong>Source entity:</strong> 06_policy_rag/HLS-GEO-400.json</li>
+</ul>
+<h2>Policy Rule</h2>
+<table><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>
+<tr><td>Policy ID</td><td>HLS-GEO-400</td></tr>
+<tr><td>Policy ref</td><td>HLS-GEO-400</td></tr>
+<tr><td>Title</td><td>Cell-line dataset preference</td></tr>
+<tr><td>Rule</td><td>Use GEO records whose samples are cell-line or assay-level records for the first dataset iteration.</td></tr>
+<tr><td>Threshold</td><td>Reject records whose sample titles reference patient FFPE, before/after treatment patient specimens, or similar patient-derived labels.</td></tr>
+<tr><td>Action</td><td>allow_cell_line_dataset_reject_patient_sample_dataset</td></tr>
+<tr><td>Source refs</td><td>NCBI GEO; source_catalog_exclusions</td></tr>
+</tbody></table>
+<h2>Provenance</h2>
+<table><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>
+<tr><td>Provenance</td><td>curated_from_raw_layer_policy_sources</td></tr>
+<tr><td>Privacy posture</td><td></td></tr>
+<tr><td>Raw source trace</td><td>00_raw/raw_manifest.json; _source/source_catalog.json</td></tr>
+</tbody></table>
+</body>
+</html>

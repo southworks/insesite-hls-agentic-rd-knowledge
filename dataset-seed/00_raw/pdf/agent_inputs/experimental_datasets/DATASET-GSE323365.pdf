@@ -1,0 +1,123 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 2542 >>
+stream
+BT
+/F1 9 Tf
+11 TL
+48 760 Td
+(Genome-wide profiling identifies the genetic dependencies of cell death following EGFR) Tj
+T*
+(inhibition) Tj
+T*
+(================================================================================) Tj
+T*
+(Experimental dataset evidence card) Tj
+T*
+() Tj
+T*
+(Document ID: DATASET-GSE323365) Tj
+T*
+(Category: experimental_datasets) Tj
+T*
+(Source entity: 03_experimental_datasets/DATASET-GSE323365.json) Tj
+T*
+() Tj
+T*
+(Dataset Identity) Tj
+T*
+(----------------) Tj
+T*
+(Dataset ID: GSE323365) Tj
+T*
+(Title: Genome-wide profiling identifies the genetic dependencies of cell death following EGFR) Tj
+T*
+(inhibition) Tj
+T*
+(Taxon: Homo sapiens) Tj
+T*
+(Sample count: 8) Tj
+T*
+(Selected reason: PC9-Cas9 dependency screen with untreated, erlotinib, and osimertinib arms) Tj
+T*
+() Tj
+T*
+(Experimental Context) Tj
+T*
+(--------------------) Tj
+T*
+(Assay context: EGFR inhibition) Tj
+T*
+(Sample accessions: GSM9564400; GSM9564403; GSM9564406; GSM9564401; GSM9564407; GSM9564404;) Tj
+T*
+(GSM9564402; GSM9564405) Tj
+T*
+(Summary: EGFR is a proto-oncogene that is mutationally activated in a variety of cancers.) Tj
+T*
+(Small molecule inhibitors targeting EGFR can effectively slow the progression of disease, and) Tj
+T*
+(in some settings, these drugs even cause dramatic tumor regression. However, responses to EGFR) Tj
+T*
+(inhibitors are rarely durable, and the mechanisms contributing to response variation remain) Tj
+T*
+(unclear. In particular, several distinct mechanisms have been proposed to explain how EGFR) Tj
+T*
+(inhibition activates cell death, and a consensus has yet to emerge. In this study, we use) Tj
+T*
+(functional genomics with specialized analyses to infer how genetic perturbations affect the) Tj
+T*
+(drug-induced death rate. Our data clarify that inhibition of PI3K signaling drives the) Tj
+T*
+(lethality of EGFR inhibition. Inhibition of other pathways downstream of EGFR, including the) Tj
+T*
+(RAS-MAPK pathway, promotes growth suppression but not the lethal effects of EGFR inhibitors.) Tj
+T*
+(Taken together, our study provides a ?reference map? for the genome-wide genetic dependencies) Tj
+T*
+(of lethality in response to EGFR inhibitors.) Tj
+T*
+() Tj
+T*
+(Provenance) Tj
+T*
+(----------) Tj
+T*
+(Provenance: derived_from_raw_layer) Tj
+T*
+(Privacy posture: cell-line or assay-level source selected) Tj
+T*
+(Raw source trace: 00_raw/json/datasets/geo/GSE323365/geo_esummary.json;) Tj
+T*
+(00_raw/txt/datasets/geo/GSE323365/series_soft.txt;) Tj
+T*
+(00_raw/json/datasets/geo/GSE323365/source_record.json) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000189 00000 n 
+0000002783 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R /Info << /Title (Genome-wide profiling identifies the genetic dependencies of cell death following EGFR inhibition) >> >>
+startxref
+2909
+%%EOF

@@ -1,0 +1,131 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 2932 >>
+stream
+BT
+/F1 9 Tf
+11 TL
+48 760 Td
+(PKM2-deficiency induced fatty acid biosynthesis activation limits the response of non-small) Tj
+T*
+(cell lung cancer to Osimertinib) Tj
+T*
+(================================================================================) Tj
+T*
+(Experimental dataset evidence card) Tj
+T*
+() Tj
+T*
+(Document ID: DATASET-GSE300311) Tj
+T*
+(Category: experimental_datasets) Tj
+T*
+(Source entity: 03_experimental_datasets/DATASET-GSE300311.json) Tj
+T*
+() Tj
+T*
+(Dataset Identity) Tj
+T*
+(----------------) Tj
+T*
+(Dataset ID: GSE300311) Tj
+T*
+(Title: PKM2-deficiency induced fatty acid biosynthesis activation limits the response of non-) Tj
+T*
+(small cell lung cancer to Osimertinib) Tj
+T*
+(Taxon: Homo sapiens) Tj
+T*
+(Sample count: 16) Tj
+T*
+(Selected reason: PC9 PKM2-deficient/control samples with vehicle/osimertinib and chromatin) Tj
+T*
+(marks) Tj
+T*
+() Tj
+T*
+(Experimental Context) Tj
+T*
+(--------------------) Tj
+T*
+(Assay context: resistance model; EGFR inhibition; osimertinib response) Tj
+T*
+(Sample accessions: GSM9058183; GSM9058175; GSM9058172; GSM9058178; GSM9058184; GSM9058181;) Tj
+T*
+(GSM9058170; GSM9058176; GSM9058173; GSM9058179; GSM9058174; GSM9058171; GSM9058185;) Tj
+T*
+(GSM9058177; GSM9058182; GSM9058180) Tj
+T*
+(Summary: Non-small cell lung cancer \(NSCLC\) - the most common form of lung cancer - is an) Tj
+T*
+(aggressive malignancy with limited effective therapeutic options1. Osimertinib, a third-) Tj
+T*
+(generation epidermal growth factor receptor tyrosine kinase inhibitor \(EGFR-TKI\), has) Tj
+T*
+(revolutionized treatment for EGFR-mutant NSCLC, yet resistance significantly limits its) Tj
+T*
+(clinical benefit to patients2. Here, using a genome-wide genetic screen, we discover that) Tj
+T*
+(pyruvate kinase M2 \(PKM2\) is a novel regulator of Osimertinib resistance. Loss of PKM2) Tj
+T*
+(triggers fatty acid biosynthesis activation in a glycolysis-independent manner. We have shown) Tj
+T*
+(that PKM2 interacts with KDM1A in cytosol and nuclear translocation of KDM1A is increased in) Tj
+T*
+(both PKM2-KO and Osimertinib-persister cells. Mechanistically, KDM1A demethylates H3K9me3 in) Tj
+T*
+(the promoter region of the key lipid synthesis enzyme, fatty acid synthase \(FASN\), and) Tj
+T*
+(cooperates with transcription factor AP-2 to activate FASN transcription, thereby conferring) Tj
+T*
+(Osimertinib resistance. Pharmacological inhibition of FASN by Orlistat induces synthetic) Tj
+T*
+(lethality with Osimertinib in vitro and vivo Osimertinib-resistant models. Treatment of 9) Tj
+T*
+(NSCLC patients who were unresponsive t...) Tj
+T*
+() Tj
+T*
+(Provenance) Tj
+T*
+(----------) Tj
+T*
+(Provenance: derived_from_raw_layer) Tj
+T*
+(Privacy posture: cell-line or assay-level source selected) Tj
+T*
+(Raw source trace: 00_raw/json/datasets/geo/GSE300311/geo_esummary.json;) Tj
+T*
+(00_raw/txt/datasets/geo/GSE300311/series_soft.txt;) Tj
+T*
+(00_raw/json/datasets/geo/GSE300311/source_record.json) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000189 00000 n 
+0000003173 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R /Info << /Title (PKM2-deficiency induced fatty acid biosynthesis activation limits the response of non-small cell lung cancer to Osimertinib) >> >>
+startxref
+3299
+%%EOF

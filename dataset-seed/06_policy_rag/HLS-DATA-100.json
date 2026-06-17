@@ -1,0 +1,19 @@
+{
+  "action": "deny_source_for_raw_layer",
+  "document_type": "policy_rag_rule",
+  "policy_id": "HLS-DATA-100",
+  "policy_ref": "HLS-DATA-100",
+  "provenance": "curated_from_raw_layer_policy_sources",
+  "raw_sources": [
+    "00_raw/json/policies/FDA_CLINICAL_TRIALS_HUMAN_SUBJECT_PROTECTION/source_record.json",
+    "00_raw/json/policies/EU_CLINICAL_TRIALS_REGULATION_536_2014/source_record.json"
+  ],
+  "rule": "Do not ingest patient-level records, case report narratives, or real patient trajectories into this dataset seed.",
+  "source_refs": [
+    "FDA_CLINICAL_TRIALS_HUMAN_SUBJECT_PROTECTION",
+    "EU_CLINICAL_TRIALS_REGULATION_536_2014"
+  ],
+  "source_system": "dataset_policy",
+  "threshold": "Any source that contains real patient identifiers or patient specimen labels is excluded.",
+  "title": "Patient-level data exclusion"
+}

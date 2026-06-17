@@ -1,0 +1,131 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 2778 >>
+stream
+BT
+/F1 9 Tf
+11 TL
+48 760 Td
+(Non-small cell lung cancer after EGFR-TKI resistance: from drug resistance mechanisms to) Tj
+T*
+(precision interventions.) Tj
+T*
+(================================================================================) Tj
+T*
+(Research article evidence card) Tj
+T*
+() Tj
+T*
+(Document ID: RDOC-PMC13143971) Tj
+T*
+(Category: research_documents) Tj
+T*
+(Source entity: 01_research_documents/RDOC-PMC13143971.json) Tj
+T*
+() Tj
+T*
+(Article Identity) Tj
+T*
+(----------------) Tj
+T*
+(Document ID: RDOC-PMC13143971) Tj
+T*
+(PMCID: PMC13143971) Tj
+T*
+(PMID: 42100320) Tj
+T*
+(Title: Non-small cell lung cancer after EGFR-TKI resistance: from drug resistance mechanisms) Tj
+T*
+(to precision interventions.) Tj
+T*
+(Journal: Front Pharmacol) Tj
+T*
+(Publication date: 2026-04-22) Tj
+T*
+(License: CC BY) Tj
+T*
+() Tj
+T*
+(Extractable Content) Tj
+T*
+(-------------------) Tj
+T*
+(Primary entities: osimertinib; EGFR; NSCLC) Tj
+T*
+(Keywords: EGFR-TKIs; novel therapies; NSCLC; precision interventions; resistance mechanisms;) Tj
+T*
+(therapeutic strategy) Tj
+T*
+(Abstract: The emergence of epithelial growth factor receptor tyrosine kinase inhibitors \(EGFR-) Tj
+T*
+(TKIs\) propelled EGFR-mutated patients of non-small cell lung cancer \(NSCLC\) into the era of) Tj
+T*
+(precision medicine. Third-generation targeted therapies, such as osimertinib, can specifically) Tj
+T*
+(target the T790M mutation and effectively overcome resistance to previous treatments,) Tj
+T*
+(significantly prolonging progression-free survival in patients. Despite its remarkable) Tj
+T*
+(clinical efficacy and manageable safety profile, it is still not immune to the development of) Tj
+T*
+(resistance. Therefore, overcoming resistance and providing new treatment strategies for) Tj
+T*
+(advanced NSCLC patients harboring EGFR mutations after osimertinib resistance are priorities) Tj
+T*
+(that need to be considered. New-generation EGFR-TKIs or combination therapeutic strategies) Tj
+T*
+(hold promise to address resistance. In addition, with the development of genomics and) Tj
+T*
+(molecular diagnostic technologies, several drugs with novel mechanisms of action, such as) Tj
+T*
+(antibody-drug conjugates and bispecific antibodies, have shown promising clinical response) Tj
+T*
+(rates and favorable safety profiles in several clinical and experimental studies. This review) Tj
+T*
+(aims to more systematicall...) Tj
+T*
+() Tj
+T*
+(Provenance) Tj
+T*
+(----------) Tj
+T*
+(Provenance: derived_from_raw_layer) Tj
+T*
+(Privacy posture: no patient-level source selected for normalized entity) Tj
+T*
+(Raw source trace: 00_raw/xml/articles/pmc_oa/PMC13143971/article.xml;) Tj
+T*
+(00_raw/json/articles/pmc_oa/PMC13143971/europe_pmc_metadata.json;) Tj
+T*
+(00_raw/xml/articles/pmc_oa/PMC13143971/pmc_oa_license.xml) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000189 00000 n 
+0000003019 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R /Info << /Title (Non-small cell lung cancer after EGFR-TKI resistance: from drug resistance mechanisms to precision interventions.) >> >>
+startxref
+3145
+%%EOF

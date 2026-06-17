@@ -1,0 +1,89 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 1059 >>
+stream
+BT
+/F1 9 Tf
+11 TL
+48 760 Td
+(Aggregate trial record use) Tj
+T*
+(==========================) Tj
+T*
+(Policy RAG evidence card) Tj
+T*
+() Tj
+T*
+(Document ID: HLS-TRIAL-300) Tj
+T*
+(Category: policy_rag) Tj
+T*
+(Source entity: 06_policy_rag/HLS-TRIAL-300.json) Tj
+T*
+() Tj
+T*
+(Policy Rule) Tj
+T*
+(-----------) Tj
+T*
+(Policy ID: HLS-TRIAL-300) Tj
+T*
+(Policy ref: HLS-TRIAL-300) Tj
+T*
+(Title: Aggregate trial record use) Tj
+T*
+(Rule: ClinicalTrials.gov records may be used only as aggregate public registry/results) Tj
+T*
+(documents.) Tj
+T*
+(Threshold: Use protocol, SAP, eligibility, arms, outcomes, and aggregate results; do not) Tj
+T*
+(generate patient-level rows.) Tj
+T*
+(Action: allow_aggregate_trial_documents) Tj
+T*
+(Source refs: CLINICALTRIALS_GOV_DATA_API; AACT_HOME) Tj
+T*
+() Tj
+T*
+(Provenance) Tj
+T*
+(----------) Tj
+T*
+(Provenance: curated_from_raw_layer_policy_sources) Tj
+T*
+(Privacy posture:) Tj
+T*
+(Raw source trace: 00_raw/json/policies/CLINICALTRIALS_GOV_DATA_API/source_record.json;) Tj
+T*
+(00_raw/json/policies/AACT_HOME/source_record.json) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000189 00000 n 
+0000001300 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R /Info << /Title (Aggregate trial record use) >> >>
+startxref
+1426
+%%EOF

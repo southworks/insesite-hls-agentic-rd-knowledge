@@ -1,0 +1,121 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 2061 >>
+stream
+BT
+/F1 9 Tf
+11 TL
+48 760 Td
+(A Study of Osimertinib With or Without Chemotherapy as 1st Line Treatment in Patients With) Tj
+T*
+(Mutated Epidermal Growth Factor Receptor Non-Small Cell Lung Cancer \(FLAURA2\)) Tj
+T*
+(================================================================================) Tj
+T*
+(Clinical trial evidence card) Tj
+T*
+() Tj
+T*
+(Document ID: TRIAL-NCT04035486) Tj
+T*
+(Category: clinical_trials) Tj
+T*
+(Source entity: 02_clinical_trials/TRIAL-NCT04035486.json) Tj
+T*
+() Tj
+T*
+(Trial Identity) Tj
+T*
+(--------------) Tj
+T*
+(Trial ID: NCT04035486) Tj
+T*
+(Acronym: FLAURA2) Tj
+T*
+(Brief title: A Study of Osimertinib With or Without Chemotherapy as 1st Line Treatment in) Tj
+T*
+(Patients With Mutated Epidermal Growth Factor Receptor Non-Small Cell Lung Cancer \(FLAURA2\)) Tj
+T*
+(Overall status: ACTIVE_NOT_RECRUITING) Tj
+T*
+(Lead sponsor: AstraZeneca) Tj
+T*
+(Collaborators:) Tj
+T*
+() Tj
+T*
+(Design And Outcomes) Tj
+T*
+(-------------------) Tj
+T*
+(Phases: PHASE3) Tj
+T*
+(Enrollment: {"count": 587, "type": "ACTUAL"}) Tj
+T*
+(Conditions: Non-Small Cell Lung Cancer) Tj
+T*
+(Interventions: Osimertinib; Pemetrexed/Carboplatin; Pemetrexed/Cisplatin) Tj
+T*
+(Primary outcomes: Adverse Events Graded by Common Terminology Criteria for Adverse Event v5) Tj
+T*
+(\(Safety Run-In Treatment Arms Only\); Progression-free Survival \(PFS\) \(Randomized Component\);) Tj
+T*
+(Sensitivity Analysis for Progression-free Survival \(PFS\) by Blinded Independent Central Review) Tj
+T*
+(\(BICR\) Assessment \(Randomized Component\)) Tj
+T*
+(Has results: True) Tj
+T*
+() Tj
+T*
+(Public Documents) Tj
+T*
+(----------------) Tj
+T*
+(Documents: Prot_000.pdf; SAP_002.pdf) Tj
+T*
+() Tj
+T*
+(Provenance) Tj
+T*
+(----------) Tj
+T*
+(Provenance: derived_from_raw_layer) Tj
+T*
+(Privacy posture: aggregate clinical trial registration/results only) Tj
+T*
+(Raw source trace: 00_raw/json/trials/clinicaltrials_gov/NCT04035486/study.json;) Tj
+T*
+(00_raw/pdf/trials/clinicaltrials_gov/NCT04035486/Prot_000.pdf;) Tj
+T*
+(00_raw/pdf/trials/clinicaltrials_gov/NCT04035486/SAP_002.pdf) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000189 00000 n 
+0000002302 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R /Info << /Title (A Study of Osimertinib With or Without Chemotherapy as 1st Line Treatment in Patients With Mutated Epidermal Growth Factor Receptor Non-Small Cell Lung Cancer \(FLAURA2\)) >> >>
+startxref
+2428
+%%EOF

@@ -1,0 +1,111 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 2004 >>
+stream
+BT
+/F1 9 Tf
+11 TL
+48 760 Td
+(GLMP promotes EGFR-TKI resistance by activating autophagy and RhoA pathway in non-small cell) Tj
+T*
+(lung cancer) Tj
+T*
+(================================================================================) Tj
+T*
+(Experimental dataset evidence card) Tj
+T*
+() Tj
+T*
+(Document ID: DATASET-GSE298111) Tj
+T*
+(Category: experimental_datasets) Tj
+T*
+(Source entity: 03_experimental_datasets/DATASET-GSE298111.json) Tj
+T*
+() Tj
+T*
+(Dataset Identity) Tj
+T*
+(----------------) Tj
+T*
+(Dataset ID: GSE298111) Tj
+T*
+(Title: GLMP promotes EGFR-TKI resistance by activating autophagy and RhoA pathway in non-small) Tj
+T*
+(cell lung cancer) Tj
+T*
+(Taxon: Homo sapiens) Tj
+T*
+(Sample count: 6) Tj
+T*
+(Selected reason: PC9OR control versus si-GLMP replicates) Tj
+T*
+() Tj
+T*
+(Experimental Context) Tj
+T*
+(--------------------) Tj
+T*
+(Assay context: resistance model; EGFR inhibition; osimertinib response) Tj
+T*
+(Sample accessions: GSM9008618; GSM9008621; GSM9008619; GSM9008622; GSM9008620; GSM9008623) Tj
+T*
+(Summary: Here, we report that the EGFR-TKI resistance mechanism is mediated by lysosome-) Tj
+T*
+(related regulation. We established an osimertinib-resistant cell line, designated PC9OR,) Tj
+T*
+(derived from the parental PC9 cells. The overexpression of glycosylated lysosomal membrane) Tj
+T*
+(protein \(GLMP\) in PC9OR promotes resistance to Osimertinib. Mechanistically, GLMP could) Tj
+T*
+(regulate the ubiquitination of RhoA and promote resistance by activating the epithelial-) Tj
+T*
+(mesenchymal transition \(EMT\). Our findings provide a potential therapeutic strategy to) Tj
+T*
+(overcome resistance to EGFR-TKIs.) Tj
+T*
+() Tj
+T*
+(Provenance) Tj
+T*
+(----------) Tj
+T*
+(Provenance: derived_from_raw_layer) Tj
+T*
+(Privacy posture: cell-line or assay-level source selected) Tj
+T*
+(Raw source trace: 00_raw/json/datasets/geo/GSE298111/geo_esummary.json;) Tj
+T*
+(00_raw/txt/datasets/geo/GSE298111/series_soft.txt;) Tj
+T*
+(00_raw/json/datasets/geo/GSE298111/source_record.json) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000189 00000 n 
+0000002245 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R /Info << /Title (GLMP promotes EGFR-TKI resistance by activating autophagy and RhoA pathway in non-small cell lung cancer) >> >>
+startxref
+2371
+%%EOF

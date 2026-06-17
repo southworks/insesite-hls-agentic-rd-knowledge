@@ -1,0 +1,14 @@
+{
+  "document_type": "evidence_link",
+  "evidence_strength": "curated_baseline",
+  "link_id": "LINK-PMC13070087-TGT-CHEMBL203",
+  "provenance": "curated_from_raw_layer_evidence",
+  "rationale": "Research document belongs to the EGFR-mutated NSCLC/osimertinib source baseline.",
+  "raw_sources": [
+    "00_raw/xml/articles/pmc_oa/PMC13070087/article.xml",
+    "00_raw/json/articles/pmc_oa/PMC13070087/europe_pmc_metadata.json"
+  ],
+  "relation_type": "discusses_target_or_pathway",
+  "source_entity_id": "RDOC-PMC13070087",
+  "target_entity_id": "TGT-CHEMBL203"
+}

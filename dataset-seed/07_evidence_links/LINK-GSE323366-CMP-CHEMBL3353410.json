@@ -1,0 +1,15 @@
+{
+  "document_type": "evidence_link",
+  "evidence_strength": "curated_baseline",
+  "link_id": "LINK-GSE323366-CMP-CHEMBL3353410",
+  "provenance": "curated_from_raw_layer_evidence",
+  "rationale": "Dataset was selected for cell-line or assay-level evidence in the osimertinib/EGFR baseline.",
+  "raw_sources": [
+    "00_raw/json/datasets/geo/GSE323366/geo_esummary.json",
+    "00_raw/txt/datasets/geo/GSE323366/series_soft.txt",
+    "00_raw/json/datasets/geo/GSE323366/source_record.json"
+  ],
+  "relation_type": "provides_experimental_evidence",
+  "source_entity_id": "DATASET-GSE323366",
+  "target_entity_id": "CMP-CHEMBL3353410"
+}

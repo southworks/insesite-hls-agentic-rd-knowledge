@@ -1,0 +1,18 @@
+{
+  "assay": "RNA-seq",
+  "condition": "resistant",
+  "document_type": "synthetic_lims_sample",
+  "intended_signal": "osimertinib-resistant model",
+  "model": "PC9",
+  "privacy_posture": "fictional/synthetic operational record; no patient data",
+  "provenance": "synthetic_from_public_structure",
+  "raw_sources": [
+    "00_raw/csv/synthetic_eln_lims/lims_sample_manifest.csv"
+  ],
+  "replicate": 1,
+  "sample_id": "SYN-LIMS-008",
+  "source_geo_sample": "GSM8395373",
+  "source_geo_series": "GSE272182",
+  "source_system": "synthetic_lims",
+  "timepoint": "endpoint"
+}

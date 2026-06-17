@@ -1,0 +1,20 @@
+{
+  "category": "resistance_mutation",
+  "disease_context": "EGFR-mutated NSCLC",
+  "document_type": "biomarker",
+  "entity_id": "BMK-EGFR-T790M",
+  "evidence_source_types": [
+    "clinical_trials",
+    "research_documents",
+    "experimental_datasets"
+  ],
+  "linked_compound_ids": [
+    "CMP-CHEMBL3353410"
+  ],
+  "linked_target_id": "TGT-CHEMBL203",
+  "name": "EGFR T790M",
+  "provenance": "curated_from_raw_layer_evidence",
+  "raw_sources": [
+    "00_raw/raw_manifest.json"
+  ]
+}

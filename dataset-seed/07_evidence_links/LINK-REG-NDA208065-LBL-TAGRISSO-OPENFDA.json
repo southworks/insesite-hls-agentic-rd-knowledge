@@ -1,0 +1,13 @@
+{
+  "document_type": "evidence_link",
+  "evidence_strength": "curated_baseline",
+  "link_id": "LINK-REG-NDA208065-LBL-TAGRISSO-OPENFDA",
+  "provenance": "curated_from_raw_layer_evidence",
+  "rationale": "openFDA application and label records share NDA208065/Tagrisso identifiers.",
+  "raw_sources": [
+    "00_raw/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/OPENFDA_DRUGSFDA_NDA208065.json"
+  ],
+  "relation_type": "has_public_label",
+  "source_entity_id": "REG-NDA208065",
+  "target_entity_id": "LBL-TAGRISSO-OPENFDA"
+}

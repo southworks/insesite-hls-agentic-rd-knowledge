@@ -1,0 +1,21 @@
+{
+  "action": "allow_public_regulatory_documents",
+  "document_type": "policy_rag_rule",
+  "policy_id": "HLS-REG-500",
+  "policy_ref": "HLS-REG-500",
+  "provenance": "curated_from_raw_layer_policy_sources",
+  "raw_sources": [
+    "00_raw/json/regulatory/OPENFDA_LABEL_TAGRISSO/source_record.json",
+    "00_raw/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/source_record.json",
+    "00_raw/json/regulatory/EMA_TAGRISSO_EPAR/source_record.json"
+  ],
+  "rule": "Use only public regulatory labels, approval letters, reviews, and EPAR pages for regulatory entities.",
+  "source_refs": [
+    "OPENFDA_LABEL_TAGRISSO",
+    "OPENFDA_DRUGSFDA_NDA208065",
+    "EMA_TAGRISSO_EPAR"
+  ],
+  "source_system": "dataset_policy",
+  "threshold": "Source must be a public FDA/openFDA/Drugs@FDA/EMA document or API response.",
+  "title": "Public regulatory source use"
+}

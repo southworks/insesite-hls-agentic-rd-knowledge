@@ -1,0 +1,144 @@
+{
+  "acronym": "ADAURA",
+  "arms": [
+    {
+      "description": "AZD9291 (80 mg or 40 mg orally, once daily), in accordance with the randomization schedule.",
+      "interventions": [
+        "Drug: AZD9291 80 mg/40 mg",
+        "Drug: Open-label AZD9291 80 mg/40 mg"
+      ],
+      "label": "AZD9291",
+      "type": "EXPERIMENTAL"
+    },
+    {
+      "description": "Matching placebo for AZD9291 (80 mg or 40 mg orally, once daily), in accordance with the randomization schedule.",
+      "interventions": [
+        "Drug: Placebo AZD9291 80 mg/40 mg"
+      ],
+      "label": "Placebo AZD9291",
+      "type": "PLACEBO_COMPARATOR"
+    }
+  ],
+  "brief_title": "AZD9291 Versus Placebo in Patients With Stage IB-IIIA Non-small Cell Lung Carcinoma, Following Complete Tumour Resection With or Without Adjuvant Chemotherapy.",
+  "collaborators": [],
+  "completion_date": "2029-01-31",
+  "conditions": [
+    "Stage IB-IIIA Non-small Cell Lung Carcinoma"
+  ],
+  "document_type": "clinical_trial",
+  "eligibility_summary": {
+    "healthy_volunteers": false,
+    "maximum_age": "130 Years",
+    "minimum_age": "18 Years",
+    "sex": "ALL"
+  },
+  "enrollment": {
+    "count": 682,
+    "type": "ACTUAL"
+  },
+  "has_results": true,
+  "interventions": [
+    {
+      "arm_group_labels": [
+        "AZD9291"
+      ],
+      "name": "AZD9291 80 mg/40 mg",
+      "other_names": [],
+      "type": "DRUG"
+    },
+    {
+      "arm_group_labels": [
+        "Placebo AZD9291"
+      ],
+      "name": "Placebo AZD9291 80 mg/40 mg",
+      "other_names": [],
+      "type": "DRUG"
+    },
+    {
+      "arm_group_labels": [
+        "AZD9291"
+      ],
+      "name": "Open-label AZD9291 80 mg/40 mg",
+      "other_names": [],
+      "type": "DRUG"
+    }
+  ],
+  "keywords": [
+    "Stage IB-IIA-IIIA Non-Small Cell Lung Cancer; EGFRm+; Ex19Del; L858R; AZD9291; Phase III, adjuvant chemotherapy; complete tumour resection; EGFR-TKI"
+  ],
+  "last_update_posted": "2026-03-30",
+  "lead_sponsor": "AstraZeneca",
+  "official_title": "A Phase III, Double-blind, Randomized, Placebo-controlled Multi-centre, Study to Assess the Efficacy and Safety of AZD9291 Versus Placebo, in Patients With Epidermal Growth Factor Receptor Mutation Positive Stage IB-IIIA Non-small Cell Lung Carcinoma, Following Complete Tumour Resection With or Without Adjuvant Chemotherapy (ADAURA).",
+  "organization": "AstraZeneca",
+  "overall_status": "ACTIVE_NOT_RECRUITING",
+  "phases": [
+    "PHASE3"
+  ],
+  "primary_completion_date": "2022-04-11",
+  "primary_outcomes": [
+    {
+      "description": "Defined as the time from the date of randomization until the date of disease recurrence or death (by any cause in the absence of recurrence).",
+      "measure": "Assess the Efficacy of AZD9291 Compared to Placebo as Measured by Disease Free Survival (DFS).",
+      "time_frame": "Up to approximately 5 years after the first patient is randomized (maximum follow up of 70 months)"
+    }
+  ],
+  "privacy_posture": "aggregate clinical trial registration/results only",
+  "provenance": "derived_from_raw_layer",
+  "public_documents": [
+    {
+      "date": "2023-08-09",
+      "filename": "Prot_002.pdf",
+      "label": "Study Protocol",
+      "local_path": "00_raw/pdf/trials/clinicaltrials_gov/NCT02511106/Prot_002.pdf",
+      "size_from_api": 3564575,
+      "url": "https://cdn.clinicaltrials.gov/large-docs/06/NCT02511106/Prot_002.pdf"
+    },
+    {
+      "date": "2020-06-23",
+      "filename": "SAP_001.pdf",
+      "label": "Statistical Analysis Plan",
+      "local_path": "00_raw/pdf/trials/clinicaltrials_gov/NCT02511106/SAP_001.pdf",
+      "size_from_api": 3620937,
+      "url": "https://cdn.clinicaltrials.gov/large-docs/06/NCT02511106/SAP_001.pdf"
+    }
+  ],
+  "raw_sources": [
+    "00_raw/json/trials/clinicaltrials_gov/NCT02511106/study.json",
+    "00_raw/pdf/trials/clinicaltrials_gov/NCT02511106/Prot_002.pdf",
+    "00_raw/pdf/trials/clinicaltrials_gov/NCT02511106/SAP_001.pdf"
+  ],
+  "secondary_outcomes": [
+    {
+      "measure": "Disease Free Survival (DFS) Rate at 2, 3 and 5 Years",
+      "time_frame": "Up to approximately 5 years after the first patient is randomized (maximum follow up of 70 months). DFS rate at 2 years (%), 3 years (%) and 5 years (%) are presented."
+    },
+    {
+      "measure": "Overall Survival (OS)",
+      "time_frame": "Up to approximately 7 years after the first patient is randomized (maximum follow up of 86 months)"
+    },
+    {
+      "measure": "Overall Survival Rate at 2, 3 and 5 Years",
+      "time_frame": "Up to approximately 7 years after the first patient is randomized (maximum follow up of 86 months). OS rate at 2 years (%), 3 years (%) and 5 years (%) are presented."
+    },
+    {
+      "measure": "Patient Health-related Quality of Life and Symptoms (HRQoL) by SF-36v2 Health Survey.",
+      "time_frame": "Measured by SF-36 Questionnaire at baseline, 12 week, 24 week and then every 24 weeks until study complete, disease recurrence or other discontinuation criteria met, up to 3 years."
+    },
+    {
+      "measure": "Plasma Concentrations of AZD9291",
+      "time_frame": "Collected at pre-dose, 0.5-1.5hours and 2-4hours post-dose up to 96 weeks (approximately 24 months)"
+    },
+    {
+      "measure": "Plasma Concentrations of AZ5104 Metabolites",
+      "time_frame": "From date of dosing to week 96 (approximately 24 months)"
+    },
+    {
+      "measure": "Plasma Concentrations of AZ7550 Metabolites",
+      "time_frame": "From date of dosing to week 96 (approximately 24 months)"
+    }
+  ],
+  "source_system": "clinicaltrials_gov",
+  "start_date": "2015-10-21",
+  "study_type": "INTERVENTIONAL",
+  "trial_id": "NCT02511106"
+}

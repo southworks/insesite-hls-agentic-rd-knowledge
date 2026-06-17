@@ -4,7 +4,7 @@ Dataset and solution accelerator workspace for an HLS agentic R&D knowledge mini
 
 ## Scenario
 
-This repository will define a compliance-safe dataset for an agentic research knowledge hub. The future dataset will start from a raw layer of public or simulated R&D knowledge artifacts and produce simulated downstream entities that represent how agents ingest, normalize, link, retrieve, curate, and govern research content.
+This repository defines a compliance-safe dataset for an agentic research knowledge hub. The dataset starts from a raw layer of public or simulated R&D knowledge artifacts and produces downstream entities that represent how agents ingest, normalize, link, retrieve, curate, and govern research content.
 
 The scenario is aligned to:
 
@@ -18,16 +18,30 @@ The scenario is aligned to:
 
 The raw layer is expected to represent artifacts such as research articles, protocols, ELN/LIMS-style records, datasets, results, submissions, partner or vendor repositories, and regional policy references.
 
-The data source will be selected in a later step after reviewing public candidates that are suitable for healthcare and life sciences R&D knowledge mining, avoid patient-identifiable information, and do not introduce compliance concerns. If no public source fits the scenario cleanly, the raw layer may be generated synthetically using public material only as structural reference.
+The source baseline uses public healthcare and life sciences R&D sources that avoid patient-identifiable information and do not introduce compliance concerns. ELN/LIMS-style records are synthetic and derived from public source structure only.
+
+The selected public-source baseline is documented in [docs/source-baseline.md](docs/source-baseline.md).
 
 ## Repository Scope
 
-This initial commit intentionally includes only:
+The initial commit intentionally included only:
 
 - `README.md`
 - `.gitignore`
 
-No datasets, schemas, generated files, source documents, or simulated outputs have been created yet.
+Current dataset planning and raw-source materials include:
+
+- `docs/source-baseline.md`
+- `dataset-seed/_source/source_catalog.json`
+- `dataset-seed/generate_raw_layer.py`
+- `dataset-seed/generate_normalized_layers.py`
+- `dataset-seed/generate_agent_documents.py`
+- `dataset-seed/RAW_LAYER.md`
+- `dataset-seed/AGENT_INPUTS.md`
+- `dataset-seed/FORMAT_DECISIONS.md`
+- `dataset-seed/00_raw/{csv,html,json,md,pdf,txt,xml}/`
+- `dataset-seed/01_*` through `dataset-seed/09_*`
+- `dataset-seed/dataset-manifest.json`
 
 ## Alignment
 

@@ -1,0 +1,87 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 917 >>
+stream
+BT
+/F1 9 Tf
+11 TL
+48 760 Td
+(CUR-GSE323366) Tj
+T*
+(=============) Tj
+T*
+(Curation and compliance decision card) Tj
+T*
+() Tj
+T*
+(Document ID: CUR-GSE323366) Tj
+T*
+(Category: curation_decisions) Tj
+T*
+(Source entity: 08_curation_decisions/CUR-GSE323366.json) Tj
+T*
+() Tj
+T*
+(Curation Decision) Tj
+T*
+(-----------------) Tj
+T*
+(Decision ID: CUR-GSE323366) Tj
+T*
+(Source ID: GSE323366) Tj
+T*
+(Source type: geo_dataset) Tj
+T*
+(Decision: approve) Tj
+T*
+(Reason: Selected GEO record uses cell-line or assay-level source material.) Tj
+T*
+(Required human review: False) Tj
+T*
+(Policy refs: HLS-GEO-400; HLS-DATA-100) Tj
+T*
+(Curator: Marisol Vega, Research Data Steward \(fictional\)) Tj
+T*
+(Decision date: 2026-06-17) Tj
+T*
+() Tj
+T*
+(Provenance) Tj
+T*
+(----------) Tj
+T*
+(Provenance: curated_from_raw_layer_evidence) Tj
+T*
+(Privacy posture:) Tj
+T*
+(Raw source trace: 00_raw/txt/datasets/geo/GSE323366/series_soft.txt) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000189 00000 n 
+0000001157 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R /Info << /Title (CUR-GSE323366) >> >>
+startxref
+1283
+%%EOF

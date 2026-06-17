@@ -1,0 +1,182 @@
+{
+  "acronym": "FLAURA2",
+  "arms": [
+    {
+      "description": "Osimertinib (AZD9291) 80mg QD. All patients randomized into this will only receive Osimertinib 80mg. Dose may be reduced to allow for the management of IP related toxicity.",
+      "interventions": [
+        "Drug: Osimertinib"
+      ],
+      "label": "Osimertinib 80mg QD",
+      "type": "ACTIVE_COMPARATOR"
+    },
+    {
+      "description": "Osimertinib 80 mg in combination with pemetrexed (500 mg/m2) plus cisplatin (75 mg/m2) or carboplatin (AUC5) on Day 1 of 21day cycles (every 3 weeks) for 4 cycles, followed by Osimertinib daily with pemetrexed maintenance (500 mg/m2) every 3 weeks. Dose may be reduced to allow for the management of IP related toxicity.",
+      "interventions": [
+        "Drug: Pemetrexed/Carboplatin",
+        "Drug: Pemetrexed/Cisplatin"
+      ],
+      "label": "Osimertinib 80 mg QD and platinum-based chemotherapy",
+      "type": "EXPERIMENTAL"
+    }
+  ],
+  "brief_title": "A Study of Osimertinib With or Without Chemotherapy as 1st Line Treatment in Patients With Mutated Epidermal Growth Factor Receptor Non-Small Cell Lung Cancer (FLAURA2)",
+  "collaborators": [],
+  "completion_date": "2026-12-22",
+  "conditions": [
+    "Non-Small Cell Lung Cancer"
+  ],
+  "document_type": "clinical_trial",
+  "eligibility_summary": {
+    "healthy_volunteers": false,
+    "maximum_age": "110 Years",
+    "minimum_age": "18 Years",
+    "sex": "ALL"
+  },
+  "enrollment": {
+    "count": 587,
+    "type": "ACTUAL"
+  },
+  "has_results": true,
+  "interventions": [
+    {
+      "arm_group_labels": [
+        "Osimertinib 80mg QD"
+      ],
+      "name": "Osimertinib",
+      "other_names": [
+        "AZD9291"
+      ],
+      "type": "DRUG"
+    },
+    {
+      "arm_group_labels": [
+        "Osimertinib 80 mg QD and platinum-based chemotherapy"
+      ],
+      "name": "Pemetrexed/Carboplatin",
+      "other_names": [],
+      "type": "DRUG"
+    },
+    {
+      "arm_group_labels": [
+        "Osimertinib 80 mg QD and platinum-based chemotherapy"
+      ],
+      "name": "Pemetrexed/Cisplatin",
+      "other_names": [],
+      "type": "DRUG"
+    }
+  ],
+  "keywords": [
+    "Locally",
+    "Advanced",
+    "Metastatic",
+    "Carcinoma",
+    "Non-Small Cell Lung Cancer",
+    "Osimertinib",
+    "Tagrisso"
+  ],
+  "last_update_posted": "2025-10-10",
+  "lead_sponsor": "AstraZeneca",
+  "official_title": "A Phase III, Open-label, Randomized Study of Osimertinib With or Without Platinum Plus Pemetrexed Chemo, as First-line Treatment in Patients With Epidermal Growth Factor Receptor (EGFR) Mutation Positive, Locally Advanced or Metastatic Non-small Cell Lung Cancer (FLAURA2).",
+  "organization": "AstraZeneca",
+  "overall_status": "ACTIVE_NOT_RECRUITING",
+  "phases": [
+    "PHASE3"
+  ],
+  "primary_completion_date": "2023-04-03",
+  "primary_outcomes": [
+    {
+      "description": "Adverse events were summarized by maximum reported Common Terminology Criteria for Adverse Event (CTCAE) grade, version 5.0. Grade 1 (Mild): asymptomatic or mild symptoms; clinical or diagnostic observations only; intervention not indicated. Grade 2 (Moderate): minimal, local or noninvasive intervention indicated; limiting age-appropriate instrumental activities of daily living. Grade 3 (Severe or medically significant but not immediately life-threatening): hospitalization or prolongation of hospitalization indicated; disabling; limiting self-care activities of daily living. Grade 4 (Life-t...",
+      "measure": "Adverse Events Graded by Common Terminology Criteria for Adverse Event v5 (Safety Run-In Treatment Arms Only)",
+      "time_frame": "From first dose date to 28 days following last dose, up to 45 months"
+    },
+    {
+      "description": "Progression-free survival (PFS) using Investigator assessment as defined by RECIST 1.1. Median progression free survival (months) calculated using the Kaplan-Meier method. Progression-free survival (PFS) is defined as the time from randomization until the date of objective disease progression or death (by any cause in the absence of progression), regardless of whether the patient withdraws from randomized therapy or receives another anti-cancer therapy prior to progression. Patients who have not progressed or died at the time of analysis will be censored at the time of the latest date of as...",
+      "measure": "Progression-free Survival (PFS) (Randomized Component)",
+      "time_frame": "Up to approximately 33 months after the first patient is randomized (maximum follow up of 33.3 months)"
+    },
+    {
+      "description": "Sensitivity analysis for progression-free survival (PFS) by blinded independent central review (BICR) using Investigator assessment as defined by RECIST 1.1. Median progression free survival (months) calculated using the Kaplan-Meier method. Progression-free survival (PFS) is defined as the time from randomization until the date of objective disease progression or death (by any cause in the absence of progression), regardless of whether the patient withdraws from randomized therapy or receives another anti-cancer therapy prior to progression. Patients who have not progressed or died at the...",
+      "measure": "Sensitivity Analysis for Progression-free Survival (PFS) by Blinded Independent Central Review (BICR) Assessment (Randomized Component)",
+      "time_frame": "Up to approximately 33 months after the first patient is randomized (maximum follow up of 33.2 months)."
+    }
+  ],
+  "privacy_posture": "aggregate clinical trial registration/results only",
+  "provenance": "derived_from_raw_layer",
+  "public_documents": [
+    {
+      "date": "2021-08-26",
+      "filename": "Prot_000.pdf",
+      "label": "Study Protocol",
+      "local_path": "00_raw/pdf/trials/clinicaltrials_gov/NCT04035486/Prot_000.pdf",
+      "size_from_api": 1695323,
+      "url": "https://cdn.clinicaltrials.gov/large-docs/86/NCT04035486/Prot_000.pdf"
+    },
+    {
+      "date": "2023-01-09",
+      "filename": "SAP_002.pdf",
+      "label": "Statistical Analysis Plan",
+      "local_path": "00_raw/pdf/trials/clinicaltrials_gov/NCT04035486/SAP_002.pdf",
+      "size_from_api": 1191302,
+      "url": "https://cdn.clinicaltrials.gov/large-docs/86/NCT04035486/SAP_002.pdf"
+    }
+  ],
+  "raw_sources": [
+    "00_raw/json/trials/clinicaltrials_gov/NCT04035486/study.json",
+    "00_raw/pdf/trials/clinicaltrials_gov/NCT04035486/Prot_000.pdf",
+    "00_raw/pdf/trials/clinicaltrials_gov/NCT04035486/SAP_002.pdf"
+  ],
+  "secondary_outcomes": [
+    {
+      "measure": "Overall Survival (OS) (Safety Run-In Treatment Arms Only)",
+      "time_frame": "Up to 45 months (maximum follow up 44.6 months)"
+    },
+    {
+      "measure": "Duration of Response (DoR) (Safety Run-In Treatment Arms Only)",
+      "time_frame": "Up to 45 months"
+    },
+    {
+      "measure": "Objective Response Rate (ORR) (Safety Run-In Treatment Arms Only)",
+      "time_frame": "Up to 45 months"
+    },
+    {
+      "measure": "Depth of Response (Percent Change From Baseline in Tumor Diameter) (Safety Run-In Treatment Arms Only)",
+      "time_frame": "Up to 45 months"
+    },
+    {
+      "measure": "Disease Control Rate (DCR) by Investigator (Safety Run-In Treatment Arms Only)",
+      "time_frame": "Up to 45 months"
+    },
+    {
+      "measure": "Overall Survival (OS) (Randomized Component)",
+      "time_frame": "Up to approximately 33 months after the first patient is randomized (maximum follow up of 34.1 months)"
+    },
+    {
+      "measure": "Landmark Overall Survival (LOS) at 1, 2, and 3 Years (Randomized Component)",
+      "time_frame": "Up to approximately 33 months after the first patient is randomized (maximum follow up of 34.1 months)"
+    },
+    {
+      "measure": "Objective Response Rate (ORR) (Randomized Component)",
+      "time_frame": "Up to approximately 33 months after the first patient is randomized."
+    },
+    {
+      "measure": "Duration of Response (DoR) (Randomized Component)",
+      "time_frame": "Up to approximately 33 months after the first patient is randomized."
+    },
+    {
+      "measure": "Depth of Response (Percent Change From Baseline in Tumor Diameter) (Randomized Component)",
+      "time_frame": "Up to approximately 33 months after the first patient is randomized."
+    },
+    {
+      "measure": "Disease Control Rate (DCR) by Investigator (Randomized Component)",
+      "time_frame": "Up to approximately 33 months after the first patient is randomized."
+    },
+    {
+      "measure": "Progression Free Survival 2 (PFS2) (Randomized Component)",
+      "time_frame": "Up to approximately 33 months after the first patient is randomized."
+    }
+  ],
+  "source_system": "clinicaltrials_gov",
+  "start_date": "2019-07-02",
+  "study_type": "INTERVENTIONAL",
+  "trial_id": "NCT04035486"
+}

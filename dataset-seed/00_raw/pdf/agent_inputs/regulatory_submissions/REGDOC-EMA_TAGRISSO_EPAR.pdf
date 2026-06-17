@@ -1,0 +1,99 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 1077 >>
+stream
+BT
+/F1 9 Tf
+11 TL
+48 760 Td
+(REGDOC-EMA_TAGRISSO_EPAR) Tj
+T*
+(========================) Tj
+T*
+(Regulatory evidence card) Tj
+T*
+() Tj
+T*
+(Document ID: REGDOC-EMA_TAGRISSO_EPAR) Tj
+T*
+(Category: regulatory_submissions) Tj
+T*
+(Source entity: 05_regulatory_submissions/REGDOC-EMA_TAGRISSO_EPAR.json) Tj
+T*
+() Tj
+T*
+(Regulatory Identity) Tj
+T*
+(-------------------) Tj
+T*
+(Document ID: REGDOC-EMA_TAGRISSO_EPAR) Tj
+T*
+(Document type: regulatory_source_document) Tj
+T*
+(Source system: ema) Tj
+T*
+(Application number:) Tj
+T*
+(Brand name:) Tj
+T*
+(Generic name:) Tj
+T*
+(Sponsor/manufacturer:) Tj
+T*
+() Tj
+T*
+(Regulatory Extract) Tj
+T*
+(------------------) Tj
+T*
+(Products:) Tj
+T*
+(Submission count: 0) Tj
+T*
+(Priority submissions:) Tj
+T*
+(URL: https://www.ema.europa.eu/en/medicines/human/EPAR/tagrisso) Tj
+T*
+() Tj
+T*
+(Provenance) Tj
+T*
+(----------) Tj
+T*
+(Provenance: derived_from_raw_layer) Tj
+T*
+(Privacy posture:) Tj
+T*
+(Raw source trace: 00_raw/html/regulatory/EMA_TAGRISSO_EPAR/EMA_TAGRISSO_EPAR.html;) Tj
+T*
+(00_raw/json/regulatory/EMA_TAGRISSO_EPAR/source_record.json) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000189 00000 n 
+0000001318 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R /Info << /Title (REGDOC-EMA_TAGRISSO_EPAR) >> >>
+startxref
+1444
+%%EOF

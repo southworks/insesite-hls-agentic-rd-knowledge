@@ -1,0 +1,14 @@
+{
+  "application_number": "NDA208065",
+  "compound_id": "CMP-CHEMBL3353410",
+  "document_id": "REGDOC-DRUGSATFDA_NDA208065_SUMMARY_REVIEW",
+  "document_type": "regulatory_source_document",
+  "provenance": "derived_from_raw_layer",
+  "raw_sources": [
+    "00_raw/pdf/regulatory/DRUGSATFDA_NDA208065_SUMMARY_REVIEW/DRUGSATFDA_NDA208065_SUMMARY_REVIEW.pdf",
+    "00_raw/json/regulatory/DRUGSATFDA_NDA208065_SUMMARY_REVIEW/source_record.json"
+  ],
+  "source_id": "DRUGSATFDA_NDA208065_SUMMARY_REVIEW",
+  "source_system": "drugsatfda",
+  "url": "https://www.accessdata.fda.gov/drugsatfda_docs/nda/2015/208065Orig1s000SumR.pdf"
+}

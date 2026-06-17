@@ -1,0 +1,125 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 2550 >>
+stream
+BT
+/F1 9 Tf
+11 TL
+48 760 Td
+(Epidermal Growth Factor Receptor Cell Proliferation Signaling Pathways.) Tj
+T*
+(=======================================================================) Tj
+T*
+(Research article evidence card) Tj
+T*
+() Tj
+T*
+(Document ID: RDOC-PMC5447962) Tj
+T*
+(Category: research_documents) Tj
+T*
+(Source entity: 01_research_documents/RDOC-PMC5447962.json) Tj
+T*
+() Tj
+T*
+(Article Identity) Tj
+T*
+(----------------) Tj
+T*
+(Document ID: RDOC-PMC5447962) Tj
+T*
+(PMCID: PMC5447962) Tj
+T*
+(PMID: 28513565) Tj
+T*
+(Title: Epidermal Growth Factor Receptor Cell Proliferation Signaling Pathways.) Tj
+T*
+(Journal: Cancers \(Basel\)) Tj
+T*
+(Publication date: 2017-05-17) Tj
+T*
+(License: CC BY) Tj
+T*
+() Tj
+T*
+(Extractable Content) Tj
+T*
+(-------------------) Tj
+T*
+(Primary entities: osimertinib; EGFR; NSCLC) Tj
+T*
+(Keywords:) Tj
+T*
+(Abstract: AbstractThe epidermal growth factor receptor \(EGFR\) is a receptor tyrosine kinase) Tj
+T*
+(that is commonly upregulated in cancers such as in non-small-cell lung cancer, metastatic) Tj
+T*
+(colorectal cancer, glioblastoma, head and neck cancer, pancreatic cancer, and breast cancer.) Tj
+T*
+(Various mechanisms mediate the upregulation of EGFR activity, including common mutations and) Tj
+T*
+(truncations to its extracellular domain, such as in the EGFRvIII truncations, as well as to) Tj
+T*
+(its kinase domain, such as the L858R and T790M mutations, or the exon 19 truncation. These) Tj
+T*
+(EGFR aberrations over-activate downstream pro-oncogenic signaling pathways, including the RAS-) Tj
+T*
+(RAF-MEK-ERK MAPK and AKT-PI3K-mTOR pathways. These pathways then activate many biological) Tj
+T*
+(outputs that are beneficial to cancer cell proliferation, including their chronic initiation) Tj
+T*
+(and progression through the cell cycle. Here, we review the molecular mechanisms that regulate) Tj
+T*
+(EGFR signal transduction, including the EGFR structure and its mutations, ligand binding and) Tj
+T*
+(EGFR dimerization, as well as the signaling pathways that lead to G1 cell cycle progression.) Tj
+T*
+(We focus on the induction of CYCLIN D expression, CDK4/6 activation, and the repression of) Tj
+T*
+(cyclin-...) Tj
+T*
+() Tj
+T*
+(Provenance) Tj
+T*
+(----------) Tj
+T*
+(Provenance: derived_from_raw_layer) Tj
+T*
+(Privacy posture: no patient-level source selected for normalized entity) Tj
+T*
+(Raw source trace: 00_raw/xml/articles/pmc_oa/PMC5447962/article.xml;) Tj
+T*
+(00_raw/json/articles/pmc_oa/PMC5447962/europe_pmc_metadata.json;) Tj
+T*
+(00_raw/xml/articles/pmc_oa/PMC5447962/pmc_oa_license.xml) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000189 00000 n 
+0000002791 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R /Info << /Title (Epidermal Growth Factor Receptor Cell Proliferation Signaling Pathways.) >> >>
+startxref
+2917
+%%EOF

@@ -1,0 +1,31 @@
+{
+  "document_date": "2026-06-17",
+  "document_type": "decision_ground_truth",
+  "expected_agent": "metadata_linking_agent",
+  "expected_decision": "approve",
+  "expected_outputs": {
+    "required_links": [
+      "LINK-FLAURA-REG-NDA208065",
+      "LINK-REG-NDA208065-LBL-TAGRISSO-OPENFDA"
+    ]
+  },
+  "primary_reason": "trial_and_regulatory_entities_link_through_osimertinib_tagrisso_azd9291_identifiers",
+  "raw_sources": [
+    "00_raw/raw_manifest.json"
+  ],
+  "required_human_review": false,
+  "risk_flags": [],
+  "scenario_id": "GT-LINK-TRIAL-REGULATORY",
+  "source_entities": [
+    "TRIAL-NCT02296125",
+    "TRIAL-NCT02151981",
+    "REG-NDA208065",
+    "LBL-TAGRISSO-OPENFDA"
+  ],
+  "source_system": "hls_knowledge_mining_ground_truth",
+  "summary_explanation": "trial and regulatory entities link through osimertinib tagrisso azd9291 identifiers",
+  "top_policy_refs": [
+    "HLS-TRIAL-300",
+    "HLS-REG-500"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "condition": "erlotinib",
+  "dataset_id": "GSE323366",
+  "document_type": "assay_sample",
+  "model": "PC9",
+  "privacy_posture": "sample title reviewed for cell-line context",
+  "provenance": "derived_from_raw_layer",
+  "raw_sources": [
+    "00_raw/json/datasets/geo/GSE323366/geo_esummary.json"
+  ],
+  "sample_id": "GSM9564410",
+  "sample_title": "PC9 cells, Erlotinib, 36 hours, replicate 1",
+  "source_system": "ncbi_geo"
+}

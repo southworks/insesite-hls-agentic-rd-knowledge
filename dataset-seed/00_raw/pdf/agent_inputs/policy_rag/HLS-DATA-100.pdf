@@ -1,0 +1,93 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 1168 >>
+stream
+BT
+/F1 9 Tf
+11 TL
+48 760 Td
+(Patient-level data exclusion) Tj
+T*
+(============================) Tj
+T*
+(Policy RAG evidence card) Tj
+T*
+() Tj
+T*
+(Document ID: HLS-DATA-100) Tj
+T*
+(Category: policy_rag) Tj
+T*
+(Source entity: 06_policy_rag/HLS-DATA-100.json) Tj
+T*
+() Tj
+T*
+(Policy Rule) Tj
+T*
+(-----------) Tj
+T*
+(Policy ID: HLS-DATA-100) Tj
+T*
+(Policy ref: HLS-DATA-100) Tj
+T*
+(Title: Patient-level data exclusion) Tj
+T*
+(Rule: Do not ingest patient-level records, case report narratives, or real patient) Tj
+T*
+(trajectories into this dataset seed.) Tj
+T*
+(Threshold: Any source that contains real patient identifiers or patient specimen labels is) Tj
+T*
+(excluded.) Tj
+T*
+(Action: deny_source_for_raw_layer) Tj
+T*
+(Source refs: FDA_CLINICAL_TRIALS_HUMAN_SUBJECT_PROTECTION;) Tj
+T*
+(EU_CLINICAL_TRIALS_REGULATION_536_2014) Tj
+T*
+() Tj
+T*
+(Provenance) Tj
+T*
+(----------) Tj
+T*
+(Provenance: curated_from_raw_layer_policy_sources) Tj
+T*
+(Privacy posture:) Tj
+T*
+(Raw source trace:) Tj
+T*
+(00_raw/json/policies/FDA_CLINICAL_TRIALS_HUMAN_SUBJECT_PROTECTION/source_record.json;) Tj
+T*
+(00_raw/json/policies/EU_CLINICAL_TRIALS_REGULATION_536_2014/source_record.json) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000189 00000 n 
+0000001409 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R /Info << /Title (Patient-level data exclusion) >> >>
+startxref
+1535
+%%EOF

@@ -1,0 +1,20 @@
+{
+  "aliases": [
+    "ERBB1",
+    "Epidermal growth factor receptor"
+  ],
+  "chembl_id": "CHEMBL203",
+  "document_type": "molecular_target",
+  "entity_id": "TGT-CHEMBL203",
+  "gene_symbol": "EGFR",
+  "linked_compounds": [
+    "CMP-CHEMBL3353410"
+  ],
+  "organism": "Homo sapiens",
+  "preferred_name": "Epidermal growth factor receptor",
+  "provenance": "derived_from_raw_layer",
+  "raw_sources": [
+    "00_raw/json/registries/chembl/CHEMBL3353410/target_CHEMBL203.json"
+  ],
+  "target_type": "SINGLE PROTEIN"
+}
