@@ -6,7 +6,7 @@
   "privacy_posture": "sample title reviewed for cell-line context",
   "provenance": "derived_from_raw_layer",
   "raw_sources": [
-    "00_raw/json/datasets/geo/GSE323366/geo_esummary.json"
+    "00_raw/_corpus/json/datasets/geo/GSE323366/geo_esummary.json"
   ],
   "sample_id": "GSM9564410",
   "sample_title": "PC9 cells, Erlotinib, 36 hours, replicate 1",

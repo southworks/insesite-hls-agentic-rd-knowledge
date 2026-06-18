@@ -9,7 +9,7 @@
   },
   "primary_reason": "selected_geo_records_are_cell_line_or_assay_level",
   "raw_sources": [
-    "00_raw/raw_manifest.json"
+    "00_raw/_corpus/raw_manifest.json"
   ],
   "required_human_review": false,
   "risk_flags": [],

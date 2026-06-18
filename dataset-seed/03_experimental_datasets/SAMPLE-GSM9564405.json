@@ -6,7 +6,7 @@
   "privacy_posture": "sample title reviewed for cell-line context",
   "provenance": "derived_from_raw_layer",
   "raw_sources": [
-    "00_raw/json/datasets/geo/GSE323365/geo_esummary.json"
+    "00_raw/_corpus/json/datasets/geo/GSE323365/geo_esummary.json"
   ],
   "sample_id": "GSM9564405",
   "sample_title": "PC9-Cas9 cells, 0.1 µM osimertinib, replicate 2",

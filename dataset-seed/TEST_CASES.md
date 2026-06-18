@@ -20,9 +20,25 @@ Each case includes:
 - `expected_outputs`: measurable output expectations.
 
 The `raw_sources` field inside the `GT-*` files points to
-`00_raw/raw_manifest.json` because the ground-truth file itself is the
+`00_raw/_corpus/raw_manifest.json` because the ground-truth file itself is the
 evaluation case. To find the concrete Raw Layer inputs, follow
 `source_entities`.
+
+## Raw layer is organized by scenario
+
+Each case also has a **self-contained folder** so you can start a test flow by pointing an
+agent at one directory:
+
+```text
+00_raw/<SCENARIO-ID>/...
+```
+
+These folders **duplicate** the concrete raw files each case cites (49 copied files across the
+5 cases). Because HLS is entity-based, an entity used by two cases is duplicated into both
+folders. The canonical copies live under `00_raw/_corpus/` (the single source of truth that
+`raw_manifest.json` and every `raw_sources` reference); the `GT-*/` folders are rebuilt offline
+from those by `build_scenario_folders.py`. The cross-cutting multi-format `agent_inputs/`
+replicas stay in `_corpus/` only.
 
 ## How To Trace A Case To Raw Files
 
@@ -43,9 +59,9 @@ Example:
   -> source_entities: RDOC-PMC6889286
   -> 01_research_documents/RDOC-PMC6889286.json
   -> raw_sources:
-     - 00_raw/xml/articles/pmc_oa/PMC6889286/article.xml
-     - 00_raw/json/articles/pmc_oa/PMC6889286/europe_pmc_metadata.json
-     - 00_raw/xml/articles/pmc_oa/PMC6889286/pmc_oa_license.xml
+     - 00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/article.xml
+     - 00_raw/_corpus/json/articles/pmc_oa/PMC6889286/europe_pmc_metadata.json
+     - 00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/pmc_oa_license.xml
 ```
 
 ## Case Index
@@ -75,11 +91,11 @@ Source entities and Raw Layer files:
 
 | Source entity | Normalized entity | Raw Layer files |
 | --- | --- | --- |
-| `RDOC-PMC6889286` | `01_research_documents/RDOC-PMC6889286.json` | `00_raw/xml/articles/pmc_oa/PMC6889286/article.xml`; `00_raw/json/articles/pmc_oa/PMC6889286/europe_pmc_metadata.json`; `00_raw/xml/articles/pmc_oa/PMC6889286/pmc_oa_license.xml` |
-| `RDOC-PMC5447962` | `01_research_documents/RDOC-PMC5447962.json` | `00_raw/xml/articles/pmc_oa/PMC5447962/article.xml`; `00_raw/json/articles/pmc_oa/PMC5447962/europe_pmc_metadata.json`; `00_raw/xml/articles/pmc_oa/PMC5447962/pmc_oa_license.xml` |
-| `RDOC-PMC13070087` | `01_research_documents/RDOC-PMC13070087.json` | `00_raw/xml/articles/pmc_oa/PMC13070087/article.xml`; `00_raw/json/articles/pmc_oa/PMC13070087/europe_pmc_metadata.json`; `00_raw/xml/articles/pmc_oa/PMC13070087/pmc_oa_license.xml` |
-| `RDOC-PMC13129538` | `01_research_documents/RDOC-PMC13129538.json` | `00_raw/xml/articles/pmc_oa/PMC13129538/article.xml`; `00_raw/json/articles/pmc_oa/PMC13129538/europe_pmc_metadata.json`; `00_raw/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml` |
-| `RDOC-PMC13143971` | `01_research_documents/RDOC-PMC13143971.json` | `00_raw/xml/articles/pmc_oa/PMC13143971/article.xml`; `00_raw/json/articles/pmc_oa/PMC13143971/europe_pmc_metadata.json`; `00_raw/xml/articles/pmc_oa/PMC13143971/pmc_oa_license.xml` |
+| `RDOC-PMC6889286` | `01_research_documents/RDOC-PMC6889286.json` | `00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/article.xml`; `00_raw/_corpus/json/articles/pmc_oa/PMC6889286/europe_pmc_metadata.json`; `00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/pmc_oa_license.xml` |
+| `RDOC-PMC5447962` | `01_research_documents/RDOC-PMC5447962.json` | `00_raw/_corpus/xml/articles/pmc_oa/PMC5447962/article.xml`; `00_raw/_corpus/json/articles/pmc_oa/PMC5447962/europe_pmc_metadata.json`; `00_raw/_corpus/xml/articles/pmc_oa/PMC5447962/pmc_oa_license.xml` |
+| `RDOC-PMC13070087` | `01_research_documents/RDOC-PMC13070087.json` | `00_raw/_corpus/xml/articles/pmc_oa/PMC13070087/article.xml`; `00_raw/_corpus/json/articles/pmc_oa/PMC13070087/europe_pmc_metadata.json`; `00_raw/_corpus/xml/articles/pmc_oa/PMC13070087/pmc_oa_license.xml` |
+| `RDOC-PMC13129538` | `01_research_documents/RDOC-PMC13129538.json` | `00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/article.xml`; `00_raw/_corpus/json/articles/pmc_oa/PMC13129538/europe_pmc_metadata.json`; `00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml` |
+| `RDOC-PMC13143971` | `01_research_documents/RDOC-PMC13143971.json` | `00_raw/_corpus/xml/articles/pmc_oa/PMC13143971/article.xml`; `00_raw/_corpus/json/articles/pmc_oa/PMC13143971/europe_pmc_metadata.json`; `00_raw/_corpus/xml/articles/pmc_oa/PMC13143971/pmc_oa_license.xml` |
 
 The denied article is represented as a curation decision:
 
@@ -101,10 +117,10 @@ Source entities and Raw Layer files:
 
 | Source entity | Normalized entity | Raw Layer files |
 | --- | --- | --- |
-| `TRIAL-NCT02296125` | `02_clinical_trials/TRIAL-NCT02296125.json` | `00_raw/json/trials/clinicaltrials_gov/NCT02296125/study.json`; `00_raw/pdf/trials/clinicaltrials_gov/NCT02296125/Prot_000.pdf`; `00_raw/pdf/trials/clinicaltrials_gov/NCT02296125/SAP_001.pdf` |
-| `TRIAL-NCT02151981` | `02_clinical_trials/TRIAL-NCT02151981.json` | `00_raw/json/trials/clinicaltrials_gov/NCT02151981/study.json`; `00_raw/pdf/trials/clinicaltrials_gov/NCT02151981/Prot_000.pdf`; `00_raw/pdf/trials/clinicaltrials_gov/NCT02151981/SAP_001.pdf` |
-| `REG-NDA208065` | `05_regulatory_submissions/REG-NDA208065.json` | `00_raw/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/OPENFDA_DRUGSFDA_NDA208065.json` |
-| `LBL-TAGRISSO-OPENFDA` | `05_regulatory_submissions/LBL-TAGRISSO-OPENFDA.json` | `00_raw/json/regulatory/OPENFDA_LABEL_TAGRISSO/OPENFDA_LABEL_TAGRISSO.json` |
+| `TRIAL-NCT02296125` | `02_clinical_trials/TRIAL-NCT02296125.json` | `00_raw/_corpus/json/trials/clinicaltrials_gov/NCT02296125/study.json`; `00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/Prot_000.pdf`; `00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/SAP_001.pdf` |
+| `TRIAL-NCT02151981` | `02_clinical_trials/TRIAL-NCT02151981.json` | `00_raw/_corpus/json/trials/clinicaltrials_gov/NCT02151981/study.json`; `00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02151981/Prot_000.pdf`; `00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02151981/SAP_001.pdf` |
+| `REG-NDA208065` | `05_regulatory_submissions/REG-NDA208065.json` | `00_raw/_corpus/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/OPENFDA_DRUGSFDA_NDA208065.json` |
+| `LBL-TAGRISSO-OPENFDA` | `05_regulatory_submissions/LBL-TAGRISSO-OPENFDA.json` | `00_raw/_corpus/json/regulatory/OPENFDA_LABEL_TAGRISSO/OPENFDA_LABEL_TAGRISSO.json` |
 
 ### GT-USE-CELL-LINE-DATASETS
 
@@ -121,11 +137,11 @@ Source entities and Raw Layer files:
 
 | Source entity | Normalized entity | Raw Layer files |
 | --- | --- | --- |
-| `DATASET-GSE323366` | `03_experimental_datasets/DATASET-GSE323366.json` | `00_raw/json/datasets/geo/GSE323366/geo_esummary.json`; `00_raw/txt/datasets/geo/GSE323366/series_soft.txt`; `00_raw/json/datasets/geo/GSE323366/source_record.json` |
-| `DATASET-GSE323365` | `03_experimental_datasets/DATASET-GSE323365.json` | `00_raw/json/datasets/geo/GSE323365/geo_esummary.json`; `00_raw/txt/datasets/geo/GSE323365/series_soft.txt`; `00_raw/json/datasets/geo/GSE323365/source_record.json` |
-| `DATASET-GSE272182` | `03_experimental_datasets/DATASET-GSE272182.json` | `00_raw/json/datasets/geo/GSE272182/geo_esummary.json`; `00_raw/txt/datasets/geo/GSE272182/series_soft.txt`; `00_raw/json/datasets/geo/GSE272182/source_record.json` |
-| `DATASET-GSE300311` | `03_experimental_datasets/DATASET-GSE300311.json` | `00_raw/json/datasets/geo/GSE300311/geo_esummary.json`; `00_raw/txt/datasets/geo/GSE300311/series_soft.txt`; `00_raw/json/datasets/geo/GSE300311/source_record.json` |
-| `DATASET-GSE298111` | `03_experimental_datasets/DATASET-GSE298111.json` | `00_raw/json/datasets/geo/GSE298111/geo_esummary.json`; `00_raw/txt/datasets/geo/GSE298111/series_soft.txt`; `00_raw/json/datasets/geo/GSE298111/source_record.json` |
+| `DATASET-GSE323366` | `03_experimental_datasets/DATASET-GSE323366.json` | `00_raw/_corpus/json/datasets/geo/GSE323366/geo_esummary.json`; `00_raw/_corpus/txt/datasets/geo/GSE323366/series_soft.txt`; `00_raw/_corpus/json/datasets/geo/GSE323366/source_record.json` |
+| `DATASET-GSE323365` | `03_experimental_datasets/DATASET-GSE323365.json` | `00_raw/_corpus/json/datasets/geo/GSE323365/geo_esummary.json`; `00_raw/_corpus/txt/datasets/geo/GSE323365/series_soft.txt`; `00_raw/_corpus/json/datasets/geo/GSE323365/source_record.json` |
+| `DATASET-GSE272182` | `03_experimental_datasets/DATASET-GSE272182.json` | `00_raw/_corpus/json/datasets/geo/GSE272182/geo_esummary.json`; `00_raw/_corpus/txt/datasets/geo/GSE272182/series_soft.txt`; `00_raw/_corpus/json/datasets/geo/GSE272182/source_record.json` |
+| `DATASET-GSE300311` | `03_experimental_datasets/DATASET-GSE300311.json` | `00_raw/_corpus/json/datasets/geo/GSE300311/geo_esummary.json`; `00_raw/_corpus/txt/datasets/geo/GSE300311/series_soft.txt`; `00_raw/_corpus/json/datasets/geo/GSE300311/source_record.json` |
+| `DATASET-GSE298111` | `03_experimental_datasets/DATASET-GSE298111.json` | `00_raw/_corpus/json/datasets/geo/GSE298111/geo_esummary.json`; `00_raw/_corpus/txt/datasets/geo/GSE298111/series_soft.txt`; `00_raw/_corpus/json/datasets/geo/GSE298111/source_record.json` |
 
 The excluded GEO candidates are represented as curation decisions:
 
@@ -146,13 +162,13 @@ Source entities and Raw Layer files:
 
 | Source entity | Normalized entity | Raw Layer files |
 | --- | --- | --- |
-| `SYN-LIMS-001` | `03_experimental_datasets/SYN-LIMS-001.json` | `00_raw/csv/synthetic_eln_lims/lims_sample_manifest.csv` |
-| `SYN-LIMS-010` | `03_experimental_datasets/SYN-LIMS-010.json` | `00_raw/csv/synthetic_eln_lims/lims_sample_manifest.csv` |
+| `SYN-LIMS-001` | `03_experimental_datasets/SYN-LIMS-001.json` | `00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv` |
+| `SYN-LIMS-010` | `03_experimental_datasets/SYN-LIMS-010.json` | `00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv` |
 
 Supporting synthetic operational raw files:
 
-- `00_raw/txt/synthetic_eln_lims/eln_experiment_notebook.txt`
-- `00_raw/txt/synthetic_eln_lims/lims_quality_control_report.txt`
+- `00_raw/_corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt`
+- `00_raw/_corpus/txt/synthetic_eln_lims/lims_quality_control_report.txt`
 
 ### GT-ANSWER-GROUNDED-QUERY
 
@@ -169,10 +185,10 @@ Source entities and Raw Layer files:
 
 | Source entity | Normalized entity | Raw Layer files |
 | --- | --- | --- |
-| `RDOC-PMC6889286` | `01_research_documents/RDOC-PMC6889286.json` | `00_raw/xml/articles/pmc_oa/PMC6889286/article.xml`; `00_raw/json/articles/pmc_oa/PMC6889286/europe_pmc_metadata.json`; `00_raw/xml/articles/pmc_oa/PMC6889286/pmc_oa_license.xml` |
-| `TRIAL-NCT02296125` | `02_clinical_trials/TRIAL-NCT02296125.json` | `00_raw/json/trials/clinicaltrials_gov/NCT02296125/study.json`; `00_raw/pdf/trials/clinicaltrials_gov/NCT02296125/Prot_000.pdf`; `00_raw/pdf/trials/clinicaltrials_gov/NCT02296125/SAP_001.pdf` |
-| `DATASET-GSE323366` | `03_experimental_datasets/DATASET-GSE323366.json` | `00_raw/json/datasets/geo/GSE323366/geo_esummary.json`; `00_raw/txt/datasets/geo/GSE323366/series_soft.txt`; `00_raw/json/datasets/geo/GSE323366/source_record.json` |
-| `LBL-TAGRISSO-OPENFDA` | `05_regulatory_submissions/LBL-TAGRISSO-OPENFDA.json` | `00_raw/json/regulatory/OPENFDA_LABEL_TAGRISSO/OPENFDA_LABEL_TAGRISSO.json` |
+| `RDOC-PMC6889286` | `01_research_documents/RDOC-PMC6889286.json` | `00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/article.xml`; `00_raw/_corpus/json/articles/pmc_oa/PMC6889286/europe_pmc_metadata.json`; `00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/pmc_oa_license.xml` |
+| `TRIAL-NCT02296125` | `02_clinical_trials/TRIAL-NCT02296125.json` | `00_raw/_corpus/json/trials/clinicaltrials_gov/NCT02296125/study.json`; `00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/Prot_000.pdf`; `00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/SAP_001.pdf` |
+| `DATASET-GSE323366` | `03_experimental_datasets/DATASET-GSE323366.json` | `00_raw/_corpus/json/datasets/geo/GSE323366/geo_esummary.json`; `00_raw/_corpus/txt/datasets/geo/GSE323366/series_soft.txt`; `00_raw/_corpus/json/datasets/geo/GSE323366/source_record.json` |
+| `LBL-TAGRISSO-OPENFDA` | `05_regulatory_submissions/LBL-TAGRISSO-OPENFDA.json` | `00_raw/_corpus/json/regulatory/OPENFDA_LABEL_TAGRISSO/OPENFDA_LABEL_TAGRISSO.json` |
 
 ## Multi-format Agent Inputs
 
@@ -180,16 +196,16 @@ The Raw Layer also includes format replicas for extraction consistency tests.
 Use:
 
 ```text
-00_raw/agent_document_manifest.json
+00_raw/_corpus/agent_document_manifest.json
 ```
 
 This manifest maps each `document_id` to equivalent files in:
 
 ```text
-00_raw/txt/agent_inputs/<category>/<document_id>.txt
-00_raw/md/agent_inputs/<category>/<document_id>.md
-00_raw/html/agent_inputs/<category>/<document_id>.html
-00_raw/pdf/agent_inputs/<category>/<document_id>.pdf
+00_raw/_corpus/txt/agent_inputs/<category>/<document_id>.txt
+00_raw/_corpus/md/agent_inputs/<category>/<document_id>.md
+00_raw/_corpus/html/agent_inputs/<category>/<document_id>.html
+00_raw/_corpus/pdf/agent_inputs/<category>/<document_id>.pdf
 ```
 
 These replicas are useful when validating that different input formats produce

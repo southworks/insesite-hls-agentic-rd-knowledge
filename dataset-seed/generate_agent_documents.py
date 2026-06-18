@@ -9,10 +9,11 @@ evidence cards for representative source-level entities, preserving the same
 canonical facts across TXT, Markdown, HTML, and PDF.
 
 Output:
-  dataset-seed/00_raw/{txt,md,html,pdf}/agent_inputs/...
+  dataset-seed/00_raw/_corpus/{txt,md,html,pdf}/agent_inputs/...
 
 These replicas are for extraction-consistency tests. They are not new source
-truth; every card includes raw source traces back to 00_raw/.
+truth; every card includes raw source traces back to 00_raw/_corpus/. They live in
+the canonical corpus (cross-cutting consistency assets), not the per-scenario GT-* folders.
 """
 
 from __future__ import annotations
@@ -29,7 +30,7 @@ from typing import Any
 
 
 BASE = Path(__file__).resolve().parent
-RAW = BASE / "00_raw"
+RAW = BASE / "00_raw" / "_corpus"  # canonical corpus (see generate_raw_layer.py)
 LEGACY_OUT = RAW / "format_replicas"
 MANIFEST = RAW / "agent_document_manifest.json"
 FORMAT_ORDER = ["txt", "md", "html", "pdf"]
@@ -293,8 +294,8 @@ def doc_from_eln_lims_digest(paths: list[Path]) -> AgentDoc:
         "provenance": "synthetic_from_public_structure",
         "privacy_posture": "fictional/synthetic operational record; no patient data",
         "raw_sources": [
-            "00_raw/csv/synthetic_eln_lims/lims_sample_manifest.csv",
-            "00_raw/txt/synthetic_eln_lims/eln_experiment_notebook.txt",
+            "00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv",
+            "00_raw/_corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt",
         ],
     }
     sections = [

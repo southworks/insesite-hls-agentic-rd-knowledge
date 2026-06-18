@@ -131,7 +131,7 @@
       "date": "2018-03-07",
       "filename": "Prot_000.pdf",
       "label": "Study Protocol",
-      "local_path": "00_raw/pdf/trials/clinicaltrials_gov/NCT02296125/Prot_000.pdf",
+      "local_path": "00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/Prot_000.pdf",
       "size_from_api": 3422547,
       "url": "https://cdn.clinicaltrials.gov/large-docs/25/NCT02296125/Prot_000.pdf"
     },
@@ -139,15 +139,15 @@
       "date": "2017-02-28",
       "filename": "SAP_001.pdf",
       "label": "Statistical Analysis Plan",
-      "local_path": "00_raw/pdf/trials/clinicaltrials_gov/NCT02296125/SAP_001.pdf",
+      "local_path": "00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/SAP_001.pdf",
       "size_from_api": 1373130,
       "url": "https://cdn.clinicaltrials.gov/large-docs/25/NCT02296125/SAP_001.pdf"
     }
   ],
   "raw_sources": [
-    "00_raw/json/trials/clinicaltrials_gov/NCT02296125/study.json",
-    "00_raw/pdf/trials/clinicaltrials_gov/NCT02296125/Prot_000.pdf",
-    "00_raw/pdf/trials/clinicaltrials_gov/NCT02296125/SAP_001.pdf"
+    "00_raw/_corpus/json/trials/clinicaltrials_gov/NCT02296125/study.json",
+    "00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/Prot_000.pdf",
+    "00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/SAP_001.pdf"
   ],
   "secondary_outcomes": [
     {

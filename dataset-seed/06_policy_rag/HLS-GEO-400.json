@@ -5,7 +5,7 @@
   "policy_ref": "HLS-GEO-400",
   "provenance": "curated_from_raw_layer_policy_sources",
   "raw_sources": [
-    "00_raw/raw_manifest.json",
+    "00_raw/_corpus/raw_manifest.json",
     "_source/source_catalog.json"
   ],
   "rule": "Use GEO records whose samples are cell-line or assay-level records for the first dataset iteration.",

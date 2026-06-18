@@ -15,9 +15,9 @@
   "provenance": "derived_from_raw_layer",
   "publication_date": "2026-04-27",
   "raw_sources": [
-    "00_raw/xml/articles/pmc_oa/PMC13129538/article.xml",
-    "00_raw/json/articles/pmc_oa/PMC13129538/europe_pmc_metadata.json",
-    "00_raw/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml"
+    "00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/article.xml",
+    "00_raw/_corpus/json/articles/pmc_oa/PMC13129538/europe_pmc_metadata.json",
+    "00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml"
   ],
   "source_identifiers": {
     "doi": "10.37349/etat.2026.1002370",

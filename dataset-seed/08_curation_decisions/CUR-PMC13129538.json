@@ -10,7 +10,7 @@
   ],
   "provenance": "curated_from_raw_layer_evidence",
   "raw_sources": [
-    "00_raw/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml"
+    "00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml"
   ],
   "reason": "PMC OA license matched expected reuse posture and article is not a case-report source.",
   "required_human_review": false,

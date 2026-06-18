@@ -63,17 +63,17 @@ python3 generate_agent_documents.py
 
 ## How To Use In Tests
 
-Use `00_raw/agent_document_manifest.json` to compare each `document_id` across
+Use `00_raw/_corpus/agent_document_manifest.json` to compare each `document_id` across
 formats.
 
 For a consistency check, an extraction pipeline should recover the same core
 fields from:
 
 ```text
-00_raw/txt/agent_inputs/<category>/<document_id>.txt
-00_raw/md/agent_inputs/<category>/<document_id>.md
-00_raw/html/agent_inputs/<category>/<document_id>.html
-00_raw/pdf/agent_inputs/<category>/<document_id>.pdf
+00_raw/_corpus/txt/agent_inputs/<category>/<document_id>.txt
+00_raw/_corpus/md/agent_inputs/<category>/<document_id>.md
+00_raw/_corpus/html/agent_inputs/<category>/<document_id>.html
+00_raw/_corpus/pdf/agent_inputs/<category>/<document_id>.pdf
 ```
 
 Expected stable fields include:

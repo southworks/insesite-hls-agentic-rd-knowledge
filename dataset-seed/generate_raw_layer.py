@@ -34,7 +34,10 @@ from urllib.request import Request, urlopen
 
 BASE = Path(__file__).resolve().parent
 CATALOG_PATH = BASE / "_source" / "source_catalog.json"
-RAW = BASE / "00_raw"
+# Canonical corpus. The Raw layer is organized by scenario / test case: this holds the
+# single source of truth (all fetched/synthesized files + raw_manifest.json), and the
+# per-scenario folders 00_raw/GT-*/ are duplicate views built by build_scenario_folders.py.
+RAW = BASE / "00_raw" / "_corpus"
 
 USER_AGENT = (
     "hls-agentic-rd-knowledge-mining/0.1 "

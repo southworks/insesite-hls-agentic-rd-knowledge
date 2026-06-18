@@ -5,8 +5,8 @@
   "policy_ref": "HLS-DATA-110",
   "provenance": "curated_from_raw_layer_policy_sources",
   "raw_sources": [
-    "00_raw/json/policies/AACT_HOME/source_record.json",
-    "00_raw/json/policies/CLINICALTRIALS_GOV_DATA_API/source_record.json"
+    "00_raw/_corpus/json/policies/AACT_HOME/source_record.json",
+    "00_raw/_corpus/json/policies/CLINICALTRIALS_GOV_DATA_API/source_record.json"
   ],
   "rule": "Generated ELN, LIMS, reviewer, scientist, or repository records must be explicitly labeled synthetic.",
   "source_refs": [

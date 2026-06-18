@@ -17,8 +17,8 @@
   "preferred_name": "OSIMERTINIB",
   "provenance": "derived_from_raw_layer",
   "raw_sources": [
-    "00_raw/json/registries/chembl/CHEMBL3353410/molecule.json",
-    "00_raw/json/registries/chembl/CHEMBL3353410/mechanism.json"
+    "00_raw/_corpus/json/registries/chembl/CHEMBL3353410/molecule.json",
+    "00_raw/_corpus/json/registries/chembl/CHEMBL3353410/mechanism.json"
   ],
   "target_chembl_id": "CHEMBL203"
 }

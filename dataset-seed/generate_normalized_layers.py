@@ -19,7 +19,7 @@ from xml.etree import ElementTree as ET
 
 
 BASE = Path(__file__).resolve().parent
-RAW = BASE / "00_raw"
+RAW = BASE / "00_raw" / "_corpus"  # canonical corpus (see generate_raw_layer.py)
 CATALOG_PATH = BASE / "_source" / "source_catalog.json"
 
 FOLDERS = {
@@ -829,8 +829,8 @@ def write_schemas() -> None:
     schemas = {
         "research_documents": """# 01 Research Documents Schema
 
-Normalized research article entities derived from `00_raw/xml/articles/pmc_oa/`
-and `00_raw/json/articles/pmc_oa/`.
+Normalized research article entities derived from `00_raw/_corpus/xml/articles/pmc_oa/`
+and `00_raw/_corpus/json/articles/pmc_oa/`.
 
 ## Required fields
 

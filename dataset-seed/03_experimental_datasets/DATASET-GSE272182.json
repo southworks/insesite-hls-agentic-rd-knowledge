@@ -11,9 +11,9 @@
   "privacy_posture": "cell-line or assay-level source selected",
   "provenance": "derived_from_raw_layer",
   "raw_sources": [
-    "00_raw/json/datasets/geo/GSE272182/geo_esummary.json",
-    "00_raw/txt/datasets/geo/GSE272182/series_soft.txt",
-    "00_raw/json/datasets/geo/GSE272182/source_record.json"
+    "00_raw/_corpus/json/datasets/geo/GSE272182/geo_esummary.json",
+    "00_raw/_corpus/txt/datasets/geo/GSE272182/series_soft.txt",
+    "00_raw/_corpus/json/datasets/geo/GSE272182/source_record.json"
   ],
   "sample_accessions": [
     "GSM8395373",

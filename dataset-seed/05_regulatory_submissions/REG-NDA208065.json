@@ -39,7 +39,7 @@
   ],
   "provenance": "derived_from_raw_layer",
   "raw_sources": [
-    "00_raw/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/OPENFDA_DRUGSFDA_NDA208065.json"
+    "00_raw/_corpus/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/OPENFDA_DRUGSFDA_NDA208065.json"
   ],
   "source_system": "openfda_drugsfda",
   "sponsor_name": "ASTRAZENECA",

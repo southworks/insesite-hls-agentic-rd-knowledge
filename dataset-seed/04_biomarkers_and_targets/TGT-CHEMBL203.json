@@ -14,7 +14,7 @@
   "preferred_name": "Epidermal growth factor receptor",
   "provenance": "derived_from_raw_layer",
   "raw_sources": [
-    "00_raw/json/registries/chembl/CHEMBL3353410/target_CHEMBL203.json"
+    "00_raw/_corpus/json/registries/chembl/CHEMBL3353410/target_CHEMBL203.json"
   ],
   "target_type": "SINGLE PROTEIN"
 }

@@ -5,8 +5,8 @@
   "document_type": "regulatory_source_document",
   "provenance": "derived_from_raw_layer",
   "raw_sources": [
-    "00_raw/pdf/regulatory/DRUGSATFDA_NDA208065_APPROVAL_LETTER/DRUGSATFDA_NDA208065_APPROVAL_LETTER.pdf",
-    "00_raw/json/regulatory/DRUGSATFDA_NDA208065_APPROVAL_LETTER/source_record.json"
+    "00_raw/_corpus/pdf/regulatory/DRUGSATFDA_NDA208065_APPROVAL_LETTER/DRUGSATFDA_NDA208065_APPROVAL_LETTER.pdf",
+    "00_raw/_corpus/json/regulatory/DRUGSATFDA_NDA208065_APPROVAL_LETTER/source_record.json"
   ],
   "source_id": "DRUGSATFDA_NDA208065_APPROVAL_LETTER",
   "source_system": "drugsatfda",

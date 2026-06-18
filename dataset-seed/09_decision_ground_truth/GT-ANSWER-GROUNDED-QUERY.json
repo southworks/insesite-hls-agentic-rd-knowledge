@@ -9,7 +9,7 @@
   },
   "primary_reason": "response_must_ground_osimertinib_resistance_or_trial_claims_in_article_trial_dataset_or_label_entities",
   "raw_sources": [
-    "00_raw/raw_manifest.json"
+    "00_raw/_corpus/raw_manifest.json"
   ],
   "required_human_review": false,
   "risk_flags": [],

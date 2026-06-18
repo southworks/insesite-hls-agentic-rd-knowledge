@@ -5,8 +5,8 @@
   "policy_ref": "HLS-LIC-200",
   "provenance": "curated_from_raw_layer_policy_sources",
   "raw_sources": [
-    "00_raw/raw_manifest.json",
-    "00_raw/raw_manifest.json"
+    "00_raw/_corpus/raw_manifest.json",
+    "00_raw/_corpus/raw_manifest.json"
   ],
   "rule": "Store article full text only when PMC OA license metadata confirms acceptable reuse terms.",
   "source_refs": [

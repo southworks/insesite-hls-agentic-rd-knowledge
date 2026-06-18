@@ -56,10 +56,10 @@ Generated agent inputs are written as first-level format folders in the Raw
 Layer:
 
 ```text
-00_raw/txt/agent_inputs/<category>/<document_id>.txt
-00_raw/md/agent_inputs/<category>/<document_id>.md
-00_raw/html/agent_inputs/<category>/<document_id>.html
-00_raw/pdf/agent_inputs/<category>/<document_id>.pdf
+00_raw/_corpus/txt/agent_inputs/<category>/<document_id>.txt
+00_raw/_corpus/md/agent_inputs/<category>/<document_id>.md
+00_raw/_corpus/html/agent_inputs/<category>/<document_id>.html
+00_raw/_corpus/pdf/agent_inputs/<category>/<document_id>.pdf
 ```
 
 This mirrors the existing scenario convention where alternate document formats

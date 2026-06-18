@@ -15,6 +15,6 @@
   "name": "EGFR C797S",
   "provenance": "curated_from_raw_layer_evidence",
   "raw_sources": [
-    "00_raw/raw_manifest.json"
+    "00_raw/_corpus/raw_manifest.json"
   ]
 }

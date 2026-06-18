@@ -9,7 +9,7 @@
   },
   "primary_reason": "all_selected_article_full_text_has_verified_pmc_oa_license",
   "raw_sources": [
-    "00_raw/raw_manifest.json"
+    "00_raw/_corpus/raw_manifest.json"
   ],
   "required_human_review": false,
   "risk_flags": [],

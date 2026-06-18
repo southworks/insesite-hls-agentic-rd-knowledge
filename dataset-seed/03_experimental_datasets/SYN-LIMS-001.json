@@ -7,7 +7,7 @@
   "privacy_posture": "fictional/synthetic operational record; no patient data",
   "provenance": "synthetic_from_public_structure",
   "raw_sources": [
-    "00_raw/csv/synthetic_eln_lims/lims_sample_manifest.csv"
+    "00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv"
   ],
   "replicate": 1,
   "sample_id": "SYN-LIMS-001",

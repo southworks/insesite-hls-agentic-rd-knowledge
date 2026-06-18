@@ -15,9 +15,9 @@
   "provenance": "derived_from_raw_layer",
   "publication_date": "2017-05-17",
   "raw_sources": [
-    "00_raw/xml/articles/pmc_oa/PMC5447962/article.xml",
-    "00_raw/json/articles/pmc_oa/PMC5447962/europe_pmc_metadata.json",
-    "00_raw/xml/articles/pmc_oa/PMC5447962/pmc_oa_license.xml"
+    "00_raw/_corpus/xml/articles/pmc_oa/PMC5447962/article.xml",
+    "00_raw/_corpus/json/articles/pmc_oa/PMC5447962/europe_pmc_metadata.json",
+    "00_raw/_corpus/xml/articles/pmc_oa/PMC5447962/pmc_oa_license.xml"
   ],
   "source_identifiers": {
     "doi": "10.3390/cancers9050052",

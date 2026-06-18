@@ -45,43 +45,41 @@ Selected public source families:
 | Partner/vendor repositories | `csv/partner_vendor_repositories/` | Synthetic from public source catalog |
 | ELN/LIMS | `txt/synthetic_eln_lims/`, `csv/synthetic_eln_lims/` | Synthetic from public source structure |
 
-## Folder Structure
+## Folder Structure - organized by scenario / test case
+
+The Raw Layer is organized **by scenario / test case, not by format**. Because HLS is
+*entity-based* (the same entity - e.g. `RDOC-PMC6889286`, `TRIAL-NCT02296125` - is cited by
+more than one case), a strict per-scenario partition requires **duplication**. So the layout
+keeps one canonical copy and adds self-contained per-scenario folders:
 
 ```text
 dataset-seed/
 |-- _source/
 |   `-- source_catalog.json
 |-- 00_raw/
-|   |-- json/
-|   |   |-- articles/pmc_oa/<PMCID>/*.json
-|   |   |-- trials/clinicaltrials_gov/<NCT_ID>/*.json
-|   |   |-- datasets/geo/<GSE_ACCESSION>/*.json
-|   |   |-- registries/chembl/CHEMBL3353410/*.json
-|   |   |-- regulatory/<SOURCE_ID>/*.json
-|   |   `-- policies/<SOURCE_ID>/source_record.json
-|   |-- xml/
-|   |   `-- articles/pmc_oa/<PMCID>/*.xml
-|   |-- pdf/
-|   |   |-- trials/clinicaltrials_gov/<NCT_ID>/*.pdf
-|   |   |-- regulatory/<SOURCE_ID>/*.pdf
-|   |   `-- agent_inputs/<ENTITY_CATEGORY>/<DOCUMENT_ID>.pdf
-|   |-- html/
-|   |   |-- regulatory/<SOURCE_ID>/*.html
-|   |   |-- policies/<SOURCE_ID>/*.html
-|   |   `-- agent_inputs/<ENTITY_CATEGORY>/<DOCUMENT_ID>.html
-|   |-- txt/
-|   |   |-- datasets/geo/<GSE_ACCESSION>/*.txt
-|   |   |-- synthetic_eln_lims/*.txt
-|   |   `-- agent_inputs/<ENTITY_CATEGORY>/<DOCUMENT_ID>.txt
-|   |-- csv/
-|   |   |-- synthetic_eln_lims/*.csv
-|   |   `-- partner_vendor_repositories/*.csv
-|   |-- md/
-|   |   `-- agent_inputs/<ENTITY_CATEGORY>/<DOCUMENT_ID>.md
-|   |-- agent_document_manifest.json
-|   `-- raw_manifest.json
-`-- generate_raw_layer.py
+|   |-- _corpus/                 <- CANONICAL: the single source of truth (all source files)
+|   |   |-- json/  xml/  pdf/  html/  txt/  csv/  md/   <- by source family + format, as fetched
+|   |   |   |   articles/pmc_oa/<PMCID>/...   trials/clinicaltrials_gov/<NCT_ID>/...
+|   |   |   |   datasets/geo/<GSE>/...        registries/chembl/...   regulatory/<SOURCE_ID>/...
+|   |   |   |   policies/<SOURCE_ID>/...      synthetic_eln_lims/...  partner_vendor_repositories/...
+|   |   |   `-- <fmt>/agent_inputs/<ENTITY_CATEGORY>/<DOCUMENT_ID>.<fmt>   <- multi-format replicas
+|   |   |-- agent_document_manifest.json
+|   |   `-- raw_manifest.json
+|   |-- GT-INGEST-ARTICLES/       <- per-scenario DUPLICATES of the raw files each case cites
+|   |-- GT-LINK-TRIAL-REGULATORY/
+|   |-- GT-USE-CELL-LINE-DATASETS/
+|   |-- GT-REQUIRE-SYNTHETIC-PROVENANCE/
+|   `-- GT-ANSWER-GROUNDED-QUERY/
+|-- generate_raw_layer.py         <- fetches/synthesizes the corpus into 00_raw/_corpus/
+|-- build_scenario_folders.py     <- (offline) builds the GT-* folders from _corpus/
+`-- generate_agent_documents.py   <- writes the multi-format replicas into _corpus/
 ```
+
+**Single source of truth:** only `00_raw/_corpus/` is canonical - `raw_manifest.json` and every
+normalized entity's `raw_sources` point there. The `GT-*/` folders are deliberate duplicates
+(49 copied files across the 5 cases) so a demo can point at one self-contained directory; they
+are rebuilt offline by `build_scenario_folders.py` from each case's `source_entities` ->
+`raw_sources`. See [TEST_CASES.md](TEST_CASES.md).
 
 Current generated public/synthetic source artifact summary:
 
@@ -111,16 +109,17 @@ cd dataset-seed
 python3 generate_agent_documents.py
 ```
 
-This produces 41 evidence cards across 4 formats:
+This produces 41 evidence cards across 4 formats (in the canonical corpus):
 
 ```text
-00_raw/txt/agent_inputs/<category>/<document_id>.txt
-00_raw/md/agent_inputs/<category>/<document_id>.md
-00_raw/html/agent_inputs/<category>/<document_id>.html
-00_raw/pdf/agent_inputs/<category>/<document_id>.pdf
+00_raw/_corpus/txt/agent_inputs/<category>/<document_id>.txt
+00_raw/_corpus/md/agent_inputs/<category>/<document_id>.md
+00_raw/_corpus/html/agent_inputs/<category>/<document_id>.html
+00_raw/_corpus/pdf/agent_inputs/<category>/<document_id>.pdf
 ```
 
-The cross-format manifest is `00_raw/agent_document_manifest.json`.
+The cross-format manifest is `00_raw/_corpus/agent_document_manifest.json`. These replicas are
+cross-cutting consistency-test assets, so they stay in `_corpus/` (not the per-scenario folders).
 
 See [AGENT_INPUTS.md](AGENT_INPUTS.md) and
 [FORMAT_DECISIONS.md](FORMAT_DECISIONS.md).
@@ -141,12 +140,12 @@ python3 generate_raw_layer.py
 The script:
 
 1. Reads `_source/source_catalog.json`.
-2. Rebuilds `00_raw/` from scratch.
+2. Rebuilds `00_raw/_corpus/` from scratch.
 3. Downloads public source artifacts using official APIs, public CDN links, or
    official public pages.
 4. Generates synthetic ELN/LIMS and partner repository records from public
    source structure.
-5. Writes `00_raw/raw_manifest.json` with hashes and file sizes.
+5. Writes `00_raw/_corpus/raw_manifest.json` with hashes and file sizes.
 
 `generate_raw_layer.py` uses Python standard library modules and `curl` as a
 fallback for public sources that reject local Python SSL/user-agent behavior.
@@ -155,10 +154,15 @@ Recommended full regeneration order:
 
 ```bash
 cd dataset-seed
-python3 generate_raw_layer.py
-python3 generate_normalized_layers.py
-python3 generate_agent_documents.py
+python3 generate_raw_layer.py          # fetch/synthesize -> 00_raw/_corpus/
+python3 generate_normalized_layers.py  # normalized entities from _corpus/
+python3 generate_agent_documents.py    # multi-format replicas in _corpus/
+python3 build_scenario_folders.py      # (offline) rebuild 00_raw/GT-*/ from _corpus/
 ```
+
+`build_scenario_folders.py` is offline and deterministic - re-run it any time the
+canonical corpus or the ground-truth `source_entities` change to refresh the per-scenario
+duplicate folders.
 
 ## Source Records
 

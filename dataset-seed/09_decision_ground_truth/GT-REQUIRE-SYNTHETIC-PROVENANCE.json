@@ -8,7 +8,7 @@
   },
   "primary_reason": "eln_lims_records_are_synthetic_and_marked_synthetic_from_public_structure",
   "raw_sources": [
-    "00_raw/raw_manifest.json"
+    "00_raw/_corpus/raw_manifest.json"
   ],
   "required_human_review": false,
   "risk_flags": [],

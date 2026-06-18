@@ -10,7 +10,7 @@
   ],
   "provenance": "curated_from_raw_layer_evidence",
   "raw_sources": [
-    "00_raw/txt/datasets/geo/GSE298111/series_soft.txt"
+    "00_raw/_corpus/txt/datasets/geo/GSE298111/series_soft.txt"
   ],
   "reason": "Selected GEO record uses cell-line or assay-level source material.",
   "required_human_review": false,

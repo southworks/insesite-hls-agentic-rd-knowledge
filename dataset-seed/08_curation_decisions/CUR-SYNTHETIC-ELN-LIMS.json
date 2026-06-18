@@ -9,7 +9,7 @@
   ],
   "provenance": "curated_from_raw_layer_evidence",
   "raw_sources": [
-    "00_raw/txt/synthetic_eln_lims/lims_quality_control_report.txt"
+    "00_raw/_corpus/txt/synthetic_eln_lims/lims_quality_control_report.txt"
   ],
   "reason": "Synthetic records are clearly labeled and use only fictional staff names.",
   "required_human_review": false,

@@ -5,8 +5,8 @@
   "provenance": "curated_from_raw_layer_evidence",
   "rationale": "Research document belongs to the EGFR-mutated NSCLC/osimertinib source baseline.",
   "raw_sources": [
-    "00_raw/xml/articles/pmc_oa/PMC13143971/article.xml",
-    "00_raw/json/articles/pmc_oa/PMC13143971/europe_pmc_metadata.json"
+    "00_raw/_corpus/xml/articles/pmc_oa/PMC13143971/article.xml",
+    "00_raw/_corpus/json/articles/pmc_oa/PMC13143971/europe_pmc_metadata.json"
   ],
   "relation_type": "discusses_target_or_pathway",
   "source_entity_id": "RDOC-PMC13143971",
