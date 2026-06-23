@@ -1,0 +1,13 @@
+{
+  "enforced_policy_refs": [
+    "HLS-DATA-100",
+    "HLS-GEO-400",
+    "HLS-LIC-200"
+  ],
+  "records_under_review": [
+    "PMC4771182",
+    "GSE297057",
+    "GSE301973"
+  ],
+  "task": "flag_sensitive_content_and_capture_decisions"
+}

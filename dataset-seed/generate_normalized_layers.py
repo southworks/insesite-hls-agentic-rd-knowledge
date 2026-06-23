@@ -17,6 +17,8 @@ from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree as ET
 
+from scenarios import SCENARIOS, STAGE_FOLDERS, scenario_folder
+
 
 BASE = Path(__file__).resolve().parent
 RAW = BASE / "00_raw" / "_corpus"  # canonical corpus (see generate_raw_layer.py)
@@ -67,6 +69,18 @@ def raw_path(fmt: str, *parts: str | Path) -> Path:
     for part in parts:
         path /= part
     return path
+
+
+def normalize_raw_ref(ref: str) -> str:
+    """Point a raw reference at the canonical `_corpus/` layout.
+
+    Some legacy `source_record.json` files still carry pre-`_corpus` paths like
+    `00_raw/pdf/...`. The canonical corpus lives under `00_raw/_corpus/`, so rewrite
+    any `00_raw/<fmt>/` that is missing the `_corpus` segment.
+    """
+    if ref.startswith("00_raw/") and not ref.startswith("00_raw/_corpus/"):
+        return ref.replace("00_raw/", "00_raw/_corpus/", 1)
+    return ref
 
 
 def compact_text(value: str | None, limit: int = 1200) -> str:
@@ -220,9 +234,12 @@ def generate_clinical_trials(catalog: dict[str, Any]) -> list[dict[str, Any]]:
                 "healthy_volunteers": eligibility.get("healthyVolunteers"),
             },
             "has_results": study.get("hasResults"),
-            "public_documents": source_record.get("documents", []),
+            "public_documents": [
+                {**d, "local_path": normalize_raw_ref(d["local_path"])}
+                for d in source_record.get("documents", [])
+            ],
             "raw_sources": [rel(trial_json_dir / "study.json")] + [
-                d["local_path"] for d in source_record.get("documents", [])
+                normalize_raw_ref(d["local_path"]) for d in source_record.get("documents", [])
             ],
             "provenance": "derived_from_raw_layer",
             "privacy_posture": "aggregate clinical trial registration/results only",
@@ -485,7 +502,7 @@ def generate_regulatory_submissions() -> list[dict[str, Any]]:
     for source_record_path in source_records:
         source_record = load_json(source_record_path)
         source_id = source_record["source_id"]
-        raw_files = [source_record["local_path"]]
+        raw_files = [normalize_raw_ref(source_record["local_path"])]
         doc = {
             "document_id": f"REGDOC-{source_id}",
             "document_type": "regulatory_source_document",
@@ -760,69 +777,54 @@ def generate_curation_decisions(catalog: dict[str, Any]) -> list[dict[str, Any]]
 
 
 def generate_ground_truth() -> list[dict[str, Any]]:
-    cases = [
-        {
-            "scenario_id": "GT-INGEST-ARTICLES",
-            "expected_agent": "ingestion_translation_agent",
-            "expected_decision": "approve",
-            "primary_reason": "all_selected_article_full_text_has_verified_pmc_oa_license",
-            "top_policy_refs": ["HLS-LIC-200", "HLS-DATA-100"],
-            "source_entities": ["RDOC-PMC6889286", "RDOC-PMC5447962", "RDOC-PMC13070087", "RDOC-PMC13129538", "RDOC-PMC13143971"],
-            "expected_outputs": {"accepted_article_count": 5, "denied_article_count": 1},
-        },
-        {
-            "scenario_id": "GT-LINK-TRIAL-REGULATORY",
-            "expected_agent": "metadata_linking_agent",
-            "expected_decision": "approve",
-            "primary_reason": "trial_and_regulatory_entities_link_through_osimertinib_tagrisso_azd9291_identifiers",
-            "top_policy_refs": ["HLS-TRIAL-300", "HLS-REG-500"],
-            "source_entities": ["TRIAL-NCT02296125", "TRIAL-NCT02151981", "REG-NDA208065", "LBL-TAGRISSO-OPENFDA"],
-            "expected_outputs": {"required_links": ["LINK-FLAURA-REG-NDA208065", "LINK-REG-NDA208065-LBL-TAGRISSO-OPENFDA"]},
-        },
-        {
-            "scenario_id": "GT-USE-CELL-LINE-DATASETS",
-            "expected_agent": "metadata_linking_agent",
-            "expected_decision": "approve",
-            "primary_reason": "selected_geo_records_are_cell_line_or_assay_level",
-            "top_policy_refs": ["HLS-GEO-400", "HLS-DATA-100"],
-            "source_entities": ["DATASET-GSE323366", "DATASET-GSE323365", "DATASET-GSE272182", "DATASET-GSE300311", "DATASET-GSE298111"],
-            "expected_outputs": {"accepted_geo_count": 5, "excluded_geo_count": 2},
-        },
-        {
-            "scenario_id": "GT-REQUIRE-SYNTHETIC-PROVENANCE",
-            "expected_agent": "curation_compliance_agent",
-            "expected_decision": "approve_with_required_labeling",
-            "primary_reason": "eln_lims_records_are_synthetic_and_marked_synthetic_from_public_structure",
-            "top_policy_refs": ["HLS-DATA-110"],
-            "source_entities": ["SYN-LIMS-001", "SYN-LIMS-010"],
-            "expected_outputs": {"synthetic_records_must_include_provenance": "synthetic_from_public_structure"},
-        },
-        {
-            "scenario_id": "GT-ANSWER-GROUNDED-QUERY",
-            "expected_agent": "search_chat_agent",
-            "expected_decision": "answer_with_citations",
-            "primary_reason": "response_must_ground_osimertinib_resistance_or_trial_claims_in_article_trial_dataset_or_label_entities",
-            "top_policy_refs": ["HLS-TRIAL-300", "HLS-LIC-200"],
-            "source_entities": ["RDOC-PMC6889286", "TRIAL-NCT02296125", "DATASET-GSE323366", "LBL-TAGRISSO-OPENFDA"],
-            "expected_outputs": {"minimum_citation_count": 2, "must_include_raw_source_trace": True},
-        },
-    ]
+    """Emit one e2e ground-truth rollup per scenario (RKM-XXX.json).
 
-    for case in cases:
-        case.update(
-            {
-                "document_type": "decision_ground_truth",
-                "document_date": "2026-06-17",
-                "source_system": "hls_knowledge_mining_ground_truth",
-                "required_human_review": False,
-                "risk_flags": [],
-                "summary_explanation": case["primary_reason"].replace("_", " "),
-                "raw_sources": [rel(RAW / "raw_manifest.json")],
-            }
-        )
-        write_json(FOLDERS["decision_ground_truth"] / f"{case['scenario_id']}.json", case)
+    Each rollup describes the full workflow path: the orchestrator request, the ordered
+    per-agent stages (with their start-from-any-point `agent_input`, the entities handed in,
+    the entities/decision produced, and the HITL gate), and the final outcome. The scenario
+    set is defined once in `scenarios.py`; this replaces the previous per-agent GT-*.json.
+    """
+    gt_dir = FOLDERS["decision_ground_truth"]
+    # Drop any legacy per-agent cases so the folder holds only the e2e rollups + SCHEMA.md.
+    for stale in list(gt_dir.glob("GT-*.json")) + list(gt_dir.glob("RKM-*.json")):
+        stale.unlink()
 
-    return cases
+    rollups: list[dict[str, Any]] = []
+    for scenario in SCENARIOS:
+        folder = scenario_folder(scenario)
+        stages = []
+        for order, stage in enumerate(scenario["stages"], start=1):
+            stages.append({
+                "order": order,
+                "stage": stage["stage"],
+                "agent": stage["agent"],
+                "raw_layer_folder": f"00_raw/{folder}/{STAGE_FOLDERS[stage['stage']]}/",
+                "agent_input": stage["agent_input"],
+                "input_entities": stage.get("input_entities", []),
+                "output_entities": stage.get("output_entities", []),
+                "expected_output": stage["expected_output"],
+                "decision": stage["decision"],
+                "gate": stage["gate"],
+            })
+        rollup = {
+            "scenario_id": scenario["scenario_id"],
+            "document_type": "decision_ground_truth",
+            "scenario_kind": "e2e_workflow_path",
+            "document_date": "2026-06-23",
+            "source_system": "hls_knowledge_mining_ground_truth",
+            "title": scenario["title"],
+            "path": scenario["path"],
+            "scenario_folder": folder,
+            "orchestrator_request": scenario["orchestrator_request"],
+            "stages": stages,
+            "final_outcome": scenario["final_outcome"],
+            "required_human_review": scenario["required_human_review"],
+            "raw_sources": [rel(RAW / "raw_manifest.json")],
+        }
+        rollups.append(rollup)
+        write_json(gt_dir / f"{scenario['scenario_id']}.json", rollup)
+
+    return rollups
 
 
 def write_schemas() -> None:
@@ -981,22 +983,32 @@ Allow/deny/review decisions for source inclusion and compliance guardrails.
 """,
         "decision_ground_truth": """# 09 Decision Ground Truth Schema
 
-Expected agent outcomes for evaluating ingestion, linking, retrieval, and curation flows.
+End-to-end ground truth: one rollup per scenario (`RKM-XXX.json`). Each scenario is a full
+path through the workflow (Orchestrator -> Ingestion -> Metadata/Linking -> Search/Chat ->
+Curation/Compliance); the four scenarios differ at the human-in-the-loop gates. Defined once
+in `scenarios.py`; built into `00_raw/RKM-XXX_<path>/` by `build_scenario_folders.py`.
 
-## Required fields
+## Scenario-level fields
 
-- `scenario_id`
+- `scenario_id` (e.g. `RKM-001`)
 - `document_type` = `decision_ground_truth`
-- `expected_agent`
-- `expected_decision`
-- `primary_reason`
-- `top_policy_refs`
-- `source_entities`
-- `expected_outputs`
-- `required_human_review`
-- `risk_flags`
-- `summary_explanation`
-- `raw_sources`
+- `scenario_kind` = `e2e_workflow_path`
+- `title`, `path` (e.g. `full_approval`, `guardrail_review`, `synthetic_provenance`, `curation_denied`)
+- `scenario_folder` (the `00_raw/` folder), `orchestrator_request`
+- `stages` (ordered per-agent steps, see below)
+- `final_outcome`, `required_human_review`, `raw_sources`
+
+## Per-stage fields (`stages[]`)
+
+- `order`, `stage`, `agent`
+- `raw_layer_folder` — the self-contained `00_raw/.../<stage>/` folder
+- `agent_input` — structured payload to START this agent in isolation, "as if the upstream
+  agents had already run" (the handoff contract). For `search_chat` this carries the NL `query`
+  + `retrieval_scope_entities` — the one input the loan reference schema does not model.
+- `input_entities` — normalized entities handed in from upstream (copied to `<stage>/input/`)
+- `output_entities` — normalized entities this stage would produce (copied to `<stage>/expected_output/`)
+- `expected_output` — measurable expectations (counts, required links, answer points/citations, decision)
+- `decision`, `gate` (`approved` | `denied` | `denied_pending_human_review` | `approved_with_labeling` | `null`)
 """,
     }
 

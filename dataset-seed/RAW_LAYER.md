@@ -65,21 +65,33 @@ dataset-seed/
 |   |   |   `-- <fmt>/agent_inputs/<ENTITY_CATEGORY>/<DOCUMENT_ID>.<fmt>   <- multi-format replicas
 |   |   |-- agent_document_manifest.json
 |   |   `-- raw_manifest.json
-|   |-- GT-INGEST-ARTICLES/       <- per-scenario DUPLICATES of the raw files each case cites
-|   |-- GT-LINK-TRIAL-REGULATORY/
-|   |-- GT-USE-CELL-LINE-DATASETS/
-|   |-- GT-REQUIRE-SYNTHETIC-PROVENANCE/
-|   `-- GT-ANSWER-GROUNDED-QUERY/
+|   |-- RKM-001_full_approval/    <- per-scenario, per-agent e2e folders (see below)
+|   |-- RKM-002_guardrail_review/
+|   |-- RKM-003_synthetic_provenance/
+|   `-- RKM-004_curation_denied/
+|-- scenarios.py                  <- single source of truth for the 4 e2e scenarios
 |-- generate_raw_layer.py         <- fetches/synthesizes the corpus into 00_raw/_corpus/
-|-- build_scenario_folders.py     <- (offline) builds the GT-* folders from _corpus/
+|-- build_scenario_folders.py     <- (offline) builds the RKM-* folders from _corpus/ + entities
 `-- generate_agent_documents.py   <- writes the multi-format replicas into _corpus/
 ```
 
+Each scenario folder is an **end-to-end** workflow path with a sub-folder per agent/stage:
+
+```text
+00_raw/RKM-001_full_approval/
+  01_orchestrator/request.json
+  02_ingestion_translation/  agent_input.json  input/  expected_output/
+  03_metadata_linking/       agent_input.json  input/  expected_output/
+  04_search_chat/            agent_input.json  input/  expected_output/
+  05_curation_compliance/    agent_input.json  input/  expected_output/
+  scenario.json              <- mirror of 09_decision_ground_truth/RKM-001.json
+```
+
 **Single source of truth:** only `00_raw/_corpus/` is canonical - `raw_manifest.json` and every
-normalized entity's `raw_sources` point there. The `GT-*/` folders are deliberate duplicates
-(49 copied files across the 5 cases) so a demo can point at one self-contained directory; they
-are rebuilt offline by `build_scenario_folders.py` from each case's `source_entities` ->
-`raw_sources`. See [TEST_CASES.md](TEST_CASES.md).
+normalized entity's `raw_sources` point there. The `RKM-*/` folders are deliberate duplicates so
+each agent of each scenario can be started in isolation from one self-contained directory; they
+are rebuilt offline by `build_scenario_folders.py` from [`scenarios.py`](scenarios.py). See
+[TEST_CASES.md](TEST_CASES.md) and [HANDOFF.md](HANDOFF.md).
 
 Current generated public/synthetic source artifact summary:
 
@@ -126,9 +138,10 @@ See [AGENT_INPUTS.md](AGENT_INPUTS.md) and
 
 ## Test Cases
 
-The five decision ground-truth cases live in `09_decision_ground_truth/`.
-Use [TEST_CASES.md](TEST_CASES.md) to understand each case's expected result
-and trace its `source_entities` back to concrete files under `00_raw/`.
+The four end-to-end scenario rollups live in `09_decision_ground_truth/RKM-*.json`, each a full
+workflow path built into `00_raw/RKM-*_<path>/`. Use [TEST_CASES.md](TEST_CASES.md) and
+[HANDOFF.md](HANDOFF.md) to understand each scenario's stages and trace each stage's
+`output_entities` back to concrete files under `00_raw/`.
 
 ## Generation Script
 
@@ -157,12 +170,12 @@ cd dataset-seed
 python3 generate_raw_layer.py          # fetch/synthesize -> 00_raw/_corpus/
 python3 generate_normalized_layers.py  # normalized entities from _corpus/
 python3 generate_agent_documents.py    # multi-format replicas in _corpus/
-python3 build_scenario_folders.py      # (offline) rebuild 00_raw/GT-*/ from _corpus/
+python3 build_scenario_folders.py      # (offline) rebuild 00_raw/RKM-*/ from _corpus/ + entities
 ```
 
 `build_scenario_folders.py` is offline and deterministic - re-run it any time the
-canonical corpus or the ground-truth `source_entities` change to refresh the per-scenario
-duplicate folders.
+canonical corpus or the scenario definitions in `scenarios.py` change to refresh the
+per-scenario / per-agent folders.
 
 ## Source Records
 

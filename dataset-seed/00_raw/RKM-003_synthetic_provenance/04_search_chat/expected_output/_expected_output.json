@@ -1,0 +1,17 @@
+{
+  "agent": "search_chat_agent",
+  "decision": "answer_with_citations",
+  "expected_output": {
+    "decision": "answer_with_citations",
+    "expected_citations": [
+      "SYN-LIMS-001",
+      "DATASET-GSE323366"
+    ],
+    "minimum_citation_count": 2,
+    "must_include_raw_source_trace": true,
+    "must_state_synthetic_provenance": "synthetic_from_public_structure"
+  },
+  "gate": null,
+  "output_entities": [],
+  "stage": "search_chat"
+}

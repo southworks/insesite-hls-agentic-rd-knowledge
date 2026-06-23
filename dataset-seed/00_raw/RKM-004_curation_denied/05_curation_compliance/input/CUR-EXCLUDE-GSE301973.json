@@ -1,0 +1,19 @@
+{
+  "curator": "Marisol Vega, Research Data Steward (fictional)",
+  "decision": "deny",
+  "decision_date": "2026-06-17",
+  "decision_id": "CUR-EXCLUDE-GSE301973",
+  "document_type": "curation_decision",
+  "policy_refs": [
+    "HLS-DATA-100",
+    "HLS-GEO-400"
+  ],
+  "provenance": "curated_from_raw_layer_evidence",
+  "raw_sources": [
+    "_source/source_catalog.json"
+  ],
+  "reason": "Sample titles reference before/after treatment specimens.",
+  "required_human_review": false,
+  "source_id": "GSE301973",
+  "source_type": "excluded_candidate"
+}

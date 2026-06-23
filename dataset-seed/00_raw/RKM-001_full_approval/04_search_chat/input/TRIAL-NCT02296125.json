@@ -1,0 +1,202 @@
+{
+  "acronym": "FLAURA",
+  "arms": [
+    {
+      "description": "AZD9291 (80 mg or 40 mg orally, once daily) plus placebo Erlotinib (150mg or 100mg orally, once daily) or placebo Gefitinib (250 mg orally, once daily), in accordance with the randomization schedule.",
+      "interventions": [
+        "Drug: AZD9291 80 mg/40 mg + placebo",
+        "Drug: Placebo Erlotinib 150/100mg",
+        "Drug: Placebo Gefitinib 250 mg"
+      ],
+      "label": "AZD9291+ placebo",
+      "type": "EXPERIMENTAL"
+    },
+    {
+      "description": "Erlotinib (150 mg or 100 mg orally, once daily) or placebo Gefitinib (250 mg orally, once daily) plus placebo AZD9291 (80 mg or 40 mg orally, once daily), in accordance with the randomisation schedule. Following objective disease progression according to RECIST 1.1, as per investigator assessment, patients who were randomized to Standard of Care arm may have the option to receive open-label AZD9291 (crossover to active AZD9291).",
+      "interventions": [
+        "Drug: Erlotinib 150/100 mg",
+        "Drug: Gefitinib 250 mg",
+        "Drug: Placebo AZD9291 80 mg/ 40 mg"
+      ],
+      "label": "Standard of Care + placebo AZD9291",
+      "type": "ACTIVE_COMPARATOR"
+    }
+  ],
+  "brief_title": "AZD9291 Versus Gefitinib or Erlotinib in Patients With Locally Advanced or Metastatic Non-small Cell Lung Cancer",
+  "collaborators": [
+    "Parexel"
+  ],
+  "completion_date": "2025-11-20",
+  "conditions": [
+    "Locally Advanced or Metastatic EGFR Sensitising Mutation Positive Non Small Cell Lung Cancer"
+  ],
+  "document_type": "clinical_trial",
+  "eligibility_summary": {
+    "healthy_volunteers": false,
+    "maximum_age": "100 Years",
+    "minimum_age": "18 Years",
+    "sex": "ALL"
+  },
+  "enrollment": {
+    "count": 674,
+    "type": "ACTUAL"
+  },
+  "has_results": true,
+  "interventions": [
+    {
+      "arm_group_labels": [
+        "AZD9291+ placebo"
+      ],
+      "name": "AZD9291 80 mg/40 mg + placebo",
+      "other_names": [],
+      "type": "DRUG"
+    },
+    {
+      "arm_group_labels": [
+        "AZD9291+ placebo"
+      ],
+      "name": "Placebo Erlotinib 150/100mg",
+      "other_names": [
+        "Placebo Tarceva 150/100 mg"
+      ],
+      "type": "DRUG"
+    },
+    {
+      "arm_group_labels": [
+        "AZD9291+ placebo"
+      ],
+      "name": "Placebo Gefitinib 250 mg",
+      "other_names": [
+        "Placebo Iressa 250 mg"
+      ],
+      "type": "DRUG"
+    },
+    {
+      "arm_group_labels": [
+        "Standard of Care + placebo AZD9291"
+      ],
+      "name": "Erlotinib 150/100 mg",
+      "other_names": [
+        "Tarceva 150/100 mg"
+      ],
+      "type": "DRUG"
+    },
+    {
+      "arm_group_labels": [
+        "Standard of Care + placebo AZD9291"
+      ],
+      "name": "Gefitinib 250 mg",
+      "other_names": [
+        "Iressa 250mg"
+      ],
+      "type": "DRUG"
+    },
+    {
+      "arm_group_labels": [
+        "Standard of Care + placebo AZD9291"
+      ],
+      "name": "Placebo AZD9291 80 mg/ 40 mg",
+      "other_names": [],
+      "type": "DRUG"
+    }
+  ],
+  "keywords": [
+    "Advanced Non-Small Cell Lung Cancer; EGFRm+; AZD9291; TKI; Phase III"
+  ],
+  "last_update_posted": "2026-04-21",
+  "lead_sponsor": "AstraZeneca",
+  "official_title": "A Phase III, Double-blind, Randomised Study to Assess the Safety and Efficacy of AZD9291 Versus a Standard of Care Epidermal Growth Factor Receptor Tyrosine Kinase Inhibitor as First Line Treatment in Patients With Epidermal Growth Factor Receptor Mutation Positive, Locally Advanced or Metastatic Non Small Cell Lung Cancer.",
+  "organization": "AstraZeneca",
+  "overall_status": "COMPLETED",
+  "phases": [
+    "PHASE3"
+  ],
+  "primary_completion_date": "2017-06-19",
+  "primary_outcomes": [
+    {
+      "description": "Progression-free survival was defined as the time from randomization until the date of objective disease progression or death (by any cause in the absence of progression) regardless of whether the participant withdrew from randomized therapy or received another anti-cancer therapy prior to progression and was used to assess the efficacy of single agent osimertinib compared with SoC EGFR-TKI therapy as measured by PFS. The primary endpoint of PFS was based on Investigator assessment.",
+      "measure": "Median Progression Free Survival (PFS) (Months)",
+      "time_frame": "At baseline and every 6 weeks for the first 18 months and then every 12 weeks relative to randomisation until progression"
+    },
+    {
+      "description": "Progression-free survival was defined as the time from randomization until the date of objective disease progression or death (by any cause in the absence of progression) regardless of whether the participant withdrew from randomized therapy or received another anti-cancer therapy prior to progression and was used to assess the efficacy of single agent osimertinib compared with SoC EGFR-TKI therapy as measured by PFS.",
+      "measure": "Percentage of Participants in Progression Free Survival at 6, 12, and 18 Months",
+      "time_frame": "At baseline and every 6 weeks for the first 18 months and then every 12 weeks relative to randomisation until progression"
+    }
+  ],
+  "privacy_posture": "aggregate clinical trial registration/results only",
+  "provenance": "derived_from_raw_layer",
+  "public_documents": [
+    {
+      "date": "2018-03-07",
+      "filename": "Prot_000.pdf",
+      "label": "Study Protocol",
+      "local_path": "00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/Prot_000.pdf",
+      "size_from_api": 3422547,
+      "url": "https://cdn.clinicaltrials.gov/large-docs/25/NCT02296125/Prot_000.pdf"
+    },
+    {
+      "date": "2017-02-28",
+      "filename": "SAP_001.pdf",
+      "label": "Statistical Analysis Plan",
+      "local_path": "00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/SAP_001.pdf",
+      "size_from_api": 1373130,
+      "url": "https://cdn.clinicaltrials.gov/large-docs/25/NCT02296125/SAP_001.pdf"
+    }
+  ],
+  "raw_sources": [
+    "00_raw/_corpus/json/trials/clinicaltrials_gov/NCT02296125/study.json",
+    "00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/Prot_000.pdf",
+    "00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/SAP_001.pdf"
+  ],
+  "secondary_outcomes": [
+    {
+      "measure": "Objective Response Rate (ORR)",
+      "time_frame": "At baseline and every 6 weeks for the first 18 months and then every 12 weeks relative to randomisation until progression"
+    },
+    {
+      "measure": "Duration of Response (DoR)",
+      "time_frame": "At baseline and every 6 weeks for the first 18 months and then every 12 weeks until objective disease progression"
+    },
+    {
+      "measure": "Disease Control Rate (DCR)",
+      "time_frame": "At baseline and every 6 weeks for the first 18 months and then every 12 weeks until objective disease progression"
+    },
+    {
+      "measure": "Depth of Response",
+      "time_frame": "At baseline and every 6 weeks for the first 18 months and then every 12 weeks until objective disease progression"
+    },
+    {
+      "measure": "Overall Survival (OS)- Number of Participants With an Event",
+      "time_frame": "From first dose to end of study or date of death from any cause, whichever comes first, assessed every 6 weeks (approximately 29 months)"
+    },
+    {
+      "measure": "Plasma Concentrations of AZD9291",
+      "time_frame": "Blood samples collected from each participant at pre-dose, 0.5 to 2 hours, and 3 to 5 hours post-dose on Day 1 Cycle 1, and every other cycle thereafter up to and including Cycle 13 (approximately 9 months)"
+    },
+    {
+      "measure": "Plasma Concentrations of Metabolites AZ5104",
+      "time_frame": "Blood samples collected from each participant at pre-dose, 0.5 to 2 hours, and 3 to 5 hours post-dose on Day 1 Cycle 1, and every other cycle thereafter up to and including Cycle 13 (approximately 9 months)"
+    },
+    {
+      "measure": "Plasma Concentrations of Metabolite AZ7550",
+      "time_frame": "Blood samples collected from each participant at pre-dose, 0.5 to 2 hours, and 3 to 5 hours post-dose on Day 1 Cycle 1, and every other cycle thereafter up to and including Cycle 13 (approximately 9 months)"
+    },
+    {
+      "measure": "Participants Reported Outcome by Cancer Therapy Satisfaction Questionnaire 16 Items (CTSQ-16 Questionnaire)",
+      "time_frame": "Questionnaire completed in cycle 2 and 3, prior to Week 6 scan (approximately 2 months)"
+    },
+    {
+      "measure": "Change From Baseline in European Organisation for Research and Treatment of Cancer (EORTC) Quality of Life (QLQ) Questionnaires Lung Cancer 13 (QLQ-LC13)",
+      "time_frame": "Questionnaires completed at baseline, first 9 months, and at week 1, 2, 3, 4, 5, 6, 12, 18, 24, 30 and 36"
+    },
+    {
+      "measure": "Change From Baseline in European Organisation for Research and Treatment of Cancer Quality of Life Questionnaire - Core 30 Items (EORTC QLQ-C30)",
+      "time_frame": "Questionnaires completed at baseline, first 9 months, and at week 6, 12, 18, 24, 30, and 36."
+    }
+  ],
+  "source_system": "clinicaltrials_gov",
+  "start_date": "2014-12-03",
+  "study_type": "INTERVENTIONAL",
+  "trial_id": "NCT02296125"
+}

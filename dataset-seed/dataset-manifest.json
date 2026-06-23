@@ -35,7 +35,7 @@
       "folder": "08_curation_decisions"
     },
     {
-      "entity_count": 5,
+      "entity_count": 4,
       "folder": "09_decision_ground_truth"
     }
   ],
@@ -45,7 +45,7 @@
     "selected_geo_records": "cell-line or assay-level records only",
     "synthetic_people": "fictional lab/reviewer names only"
   },
-  "raw_layer_manifest": "00_raw/raw_manifest.json",
+  "raw_layer_manifest": "00_raw/_corpus/raw_manifest.json",
   "scenario": "HLS Agentic R&D knowledge mining with Cohere models",
   "therapeutic_area": "EGFR-mutated non-small cell lung cancer"
 }

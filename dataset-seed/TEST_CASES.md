@@ -1,235 +1,201 @@
-# Test Cases - Decision Ground Truth
+# Test Cases — End-to-End Workflow Scenarios
 
-This document explains how to read the HLS dataset seed evaluation cases and
-trace each expected outcome back to concrete Raw Layer files.
+The test cases are **end-to-end**: each scenario is one full path through the workflow
+(Orchestrator → Ingestion & translation → Metadata & linking → Search & chat →
+Curation & compliance). The four scenarios differ at the **human-in-the-loop gates**, so
+together they exercise the distinct paths of the diagram. The scenario set is defined once
+in [`scenarios.py`](scenarios.py).
 
-## Where The Cases Live
+For the per-agent handoff contract (what each stage receives and produces) see
+[HANDOFF.md](HANDOFF.md).
 
-The five evaluation cases are JSON files in:
+## Scenario index
 
-```text
-09_decision_ground_truth/
-```
-
-Each case includes:
-
-- `scenario_id`: stable test case identifier.
-- `expected_agent`: the agent capability being evaluated.
-- `expected_decision`: the expected high-level result.
-- `source_entities`: normalized entities that must be used as evidence.
-- `expected_outputs`: measurable output expectations.
-
-The `raw_sources` field inside the `GT-*` files points to
-`00_raw/_corpus/raw_manifest.json` because the ground-truth file itself is the
-evaluation case. To find the concrete Raw Layer inputs, follow
-`source_entities`.
-
-## Raw layer is organized by scenario
-
-Each case also has a **self-contained folder** so you can start a test flow by pointing an
-agent at one directory:
-
-```text
-00_raw/<SCENARIO-ID>/...
-```
-
-These folders **duplicate** the concrete raw files each case cites (49 copied files across the
-5 cases). Because HLS is entity-based, an entity used by two cases is duplicated into both
-folders. The canonical copies live under `00_raw/_corpus/` (the single source of truth that
-`raw_manifest.json` and every `raw_sources` reference); the `GT-*/` folders are rebuilt offline
-from those by `build_scenario_folders.py`. The cross-cutting multi-format `agent_inputs/`
-replicas stay in `_corpus/` only.
-
-## How To Trace A Case To Raw Files
-
-Use this path:
-
-```text
-09_decision_ground_truth/GT-*.json
-  -> source_entities[]
-  -> matching normalized entity in 01_* through 08_*
-  -> that entity's raw_sources[]
-  -> concrete files under 00_raw/
-```
-
-Example:
-
-```text
-09_decision_ground_truth/GT-ANSWER-GROUNDED-QUERY.json
-  -> source_entities: RDOC-PMC6889286
-  -> 01_research_documents/RDOC-PMC6889286.json
-  -> raw_sources:
-     - 00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/article.xml
-     - 00_raw/_corpus/json/articles/pmc_oa/PMC6889286/europe_pmc_metadata.json
-     - 00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/pmc_oa_license.xml
-```
-
-## Case Index
-
-| Case | Expected agent | Expected decision | Expected outputs |
+| Scenario | Path | Final outcome | What it stresses |
 | --- | --- | --- | --- |
-| `GT-INGEST-ARTICLES` | `ingestion_translation_agent` | `approve` | 5 accepted articles, 1 denied article |
-| `GT-LINK-TRIAL-REGULATORY` | `metadata_linking_agent` | `approve` | Required links: `LINK-FLAURA-REG-NDA208065`, `LINK-REG-NDA208065-LBL-TAGRISSO-OPENFDA` |
-| `GT-USE-CELL-LINE-DATASETS` | `metadata_linking_agent` | `approve` | 5 accepted GEO datasets, 2 excluded GEO datasets |
-| `GT-REQUIRE-SYNTHETIC-PROVENANCE` | `curation_compliance_agent` | `approve_with_required_labeling` | Synthetic records must include `synthetic_from_public_structure` provenance |
-| `GT-ANSWER-GROUNDED-QUERY` | `search_chat_agent` | `answer_with_citations` | At least 2 citations and a Raw Layer source trace |
+| `RKM-001` | `full_approval` | `approved` | Happy path: ingest 5 OA articles, link FLAURA↔NDA208065, grounded answer, curation approves. All gates Approved. |
+| `RKM-002` | `guardrail_review` | `needs_human_review` | Ingestion denies a no-license article (`PMC4771182`); linking excludes patient-derived GEO (`GSE297057`, `GSE301973`); curation flags → gate `denied_pending_human_review`. |
+| `RKM-003` | `synthetic_provenance` | `approved_with_required_labeling` | Synthetic ELN/LIMS flow; curation requires `synthetic_from_public_structure` labeling. |
+| `RKM-004` | `curation_denied` | `denied` | Patient-derived candidate (`GSE301973`) blocked at the curation gate; search refuses (no grounded evidence). |
 
-## Case Details
+## Where the cases live
 
-### GT-INGEST-ARTICLES
-
-Purpose: verify that selected article full text can be ingested only when the
-PMC OA license is acceptable and the source is not a patient-level case report.
-
-Expected result:
-
-- `expected_decision`: `approve`
-- `accepted_article_count`: `5`
-- `denied_article_count`: `1`
-
-Source entities and Raw Layer files:
-
-| Source entity | Normalized entity | Raw Layer files |
-| --- | --- | --- |
-| `RDOC-PMC6889286` | `01_research_documents/RDOC-PMC6889286.json` | `00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/article.xml`; `00_raw/_corpus/json/articles/pmc_oa/PMC6889286/europe_pmc_metadata.json`; `00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/pmc_oa_license.xml` |
-| `RDOC-PMC5447962` | `01_research_documents/RDOC-PMC5447962.json` | `00_raw/_corpus/xml/articles/pmc_oa/PMC5447962/article.xml`; `00_raw/_corpus/json/articles/pmc_oa/PMC5447962/europe_pmc_metadata.json`; `00_raw/_corpus/xml/articles/pmc_oa/PMC5447962/pmc_oa_license.xml` |
-| `RDOC-PMC13070087` | `01_research_documents/RDOC-PMC13070087.json` | `00_raw/_corpus/xml/articles/pmc_oa/PMC13070087/article.xml`; `00_raw/_corpus/json/articles/pmc_oa/PMC13070087/europe_pmc_metadata.json`; `00_raw/_corpus/xml/articles/pmc_oa/PMC13070087/pmc_oa_license.xml` |
-| `RDOC-PMC13129538` | `01_research_documents/RDOC-PMC13129538.json` | `00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/article.xml`; `00_raw/_corpus/json/articles/pmc_oa/PMC13129538/europe_pmc_metadata.json`; `00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml` |
-| `RDOC-PMC13143971` | `01_research_documents/RDOC-PMC13143971.json` | `00_raw/_corpus/xml/articles/pmc_oa/PMC13143971/article.xml`; `00_raw/_corpus/json/articles/pmc_oa/PMC13143971/europe_pmc_metadata.json`; `00_raw/_corpus/xml/articles/pmc_oa/PMC13143971/pmc_oa_license.xml` |
-
-The denied article is represented as a curation decision:
-
-- `08_curation_decisions/CUR-EXCLUDE-PMC4771182.json`
-
-### GT-LINK-TRIAL-REGULATORY
-
-Purpose: verify that trial and regulatory entities link through shared
-osimertinib / Tagrisso / AZD9291 identifiers.
-
-Expected result:
-
-- `expected_decision`: `approve`
-- required links:
-  - `07_evidence_links/LINK-FLAURA-REG-NDA208065.json`
-  - `07_evidence_links/LINK-REG-NDA208065-LBL-TAGRISSO-OPENFDA.json`
-
-Source entities and Raw Layer files:
-
-| Source entity | Normalized entity | Raw Layer files |
-| --- | --- | --- |
-| `TRIAL-NCT02296125` | `02_clinical_trials/TRIAL-NCT02296125.json` | `00_raw/_corpus/json/trials/clinicaltrials_gov/NCT02296125/study.json`; `00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/Prot_000.pdf`; `00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/SAP_001.pdf` |
-| `TRIAL-NCT02151981` | `02_clinical_trials/TRIAL-NCT02151981.json` | `00_raw/_corpus/json/trials/clinicaltrials_gov/NCT02151981/study.json`; `00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02151981/Prot_000.pdf`; `00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02151981/SAP_001.pdf` |
-| `REG-NDA208065` | `05_regulatory_submissions/REG-NDA208065.json` | `00_raw/_corpus/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/OPENFDA_DRUGSFDA_NDA208065.json` |
-| `LBL-TAGRISSO-OPENFDA` | `05_regulatory_submissions/LBL-TAGRISSO-OPENFDA.json` | `00_raw/_corpus/json/regulatory/OPENFDA_LABEL_TAGRISSO/OPENFDA_LABEL_TAGRISSO.json` |
-
-### GT-USE-CELL-LINE-DATASETS
-
-Purpose: verify that the selected experimental datasets are cell-line or
-assay-level sources and that patient-derived candidates remain excluded.
-
-Expected result:
-
-- `expected_decision`: `approve`
-- `accepted_geo_count`: `5`
-- `excluded_geo_count`: `2`
-
-Source entities and Raw Layer files:
-
-| Source entity | Normalized entity | Raw Layer files |
-| --- | --- | --- |
-| `DATASET-GSE323366` | `03_experimental_datasets/DATASET-GSE323366.json` | `00_raw/_corpus/json/datasets/geo/GSE323366/geo_esummary.json`; `00_raw/_corpus/txt/datasets/geo/GSE323366/series_soft.txt`; `00_raw/_corpus/json/datasets/geo/GSE323366/source_record.json` |
-| `DATASET-GSE323365` | `03_experimental_datasets/DATASET-GSE323365.json` | `00_raw/_corpus/json/datasets/geo/GSE323365/geo_esummary.json`; `00_raw/_corpus/txt/datasets/geo/GSE323365/series_soft.txt`; `00_raw/_corpus/json/datasets/geo/GSE323365/source_record.json` |
-| `DATASET-GSE272182` | `03_experimental_datasets/DATASET-GSE272182.json` | `00_raw/_corpus/json/datasets/geo/GSE272182/geo_esummary.json`; `00_raw/_corpus/txt/datasets/geo/GSE272182/series_soft.txt`; `00_raw/_corpus/json/datasets/geo/GSE272182/source_record.json` |
-| `DATASET-GSE300311` | `03_experimental_datasets/DATASET-GSE300311.json` | `00_raw/_corpus/json/datasets/geo/GSE300311/geo_esummary.json`; `00_raw/_corpus/txt/datasets/geo/GSE300311/series_soft.txt`; `00_raw/_corpus/json/datasets/geo/GSE300311/source_record.json` |
-| `DATASET-GSE298111` | `03_experimental_datasets/DATASET-GSE298111.json` | `00_raw/_corpus/json/datasets/geo/GSE298111/geo_esummary.json`; `00_raw/_corpus/txt/datasets/geo/GSE298111/series_soft.txt`; `00_raw/_corpus/json/datasets/geo/GSE298111/source_record.json` |
-
-The excluded GEO candidates are represented as curation decisions:
-
-- `08_curation_decisions/CUR-EXCLUDE-GSE297057.json`
-- `08_curation_decisions/CUR-EXCLUDE-GSE301973.json`
-
-### GT-REQUIRE-SYNTHETIC-PROVENANCE
-
-Purpose: verify that generated ELN/LIMS-style operational records are clearly
-marked as synthetic and do not imply real patient data.
-
-Expected result:
-
-- `expected_decision`: `approve_with_required_labeling`
-- `synthetic_records_must_include_provenance`: `synthetic_from_public_structure`
-
-Source entities and Raw Layer files:
-
-| Source entity | Normalized entity | Raw Layer files |
-| --- | --- | --- |
-| `SYN-LIMS-001` | `03_experimental_datasets/SYN-LIMS-001.json` | `00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv` |
-| `SYN-LIMS-010` | `03_experimental_datasets/SYN-LIMS-010.json` | `00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv` |
-
-Supporting synthetic operational raw files:
-
-- `00_raw/_corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt`
-- `00_raw/_corpus/txt/synthetic_eln_lims/lims_quality_control_report.txt`
-
-### GT-ANSWER-GROUNDED-QUERY
-
-Purpose: verify that a search/chat answer about the HLS knowledge-mining
-baseline is grounded in citations and preserves Raw Layer traceability.
-
-Expected result:
-
-- `expected_decision`: `answer_with_citations`
-- `minimum_citation_count`: `2`
-- `must_include_raw_source_trace`: `true`
-
-Source entities and Raw Layer files:
-
-| Source entity | Normalized entity | Raw Layer files |
-| --- | --- | --- |
-| `RDOC-PMC6889286` | `01_research_documents/RDOC-PMC6889286.json` | `00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/article.xml`; `00_raw/_corpus/json/articles/pmc_oa/PMC6889286/europe_pmc_metadata.json`; `00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/pmc_oa_license.xml` |
-| `TRIAL-NCT02296125` | `02_clinical_trials/TRIAL-NCT02296125.json` | `00_raw/_corpus/json/trials/clinicaltrials_gov/NCT02296125/study.json`; `00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/Prot_000.pdf`; `00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02296125/SAP_001.pdf` |
-| `DATASET-GSE323366` | `03_experimental_datasets/DATASET-GSE323366.json` | `00_raw/_corpus/json/datasets/geo/GSE323366/geo_esummary.json`; `00_raw/_corpus/txt/datasets/geo/GSE323366/series_soft.txt`; `00_raw/_corpus/json/datasets/geo/GSE323366/source_record.json` |
-| `LBL-TAGRISSO-OPENFDA` | `05_regulatory_submissions/LBL-TAGRISSO-OPENFDA.json` | `00_raw/_corpus/json/regulatory/OPENFDA_LABEL_TAGRISSO/OPENFDA_LABEL_TAGRISSO.json` |
-
-## Multi-format Agent Inputs
-
-The Raw Layer also includes format replicas for extraction consistency tests.
-Use:
+Two aligned views of the same scenario set:
 
 ```text
-00_raw/_corpus/agent_document_manifest.json
+09_decision_ground_truth/RKM-XXX.json     <- e2e rollup (orchestrator request + ordered stages + gates + final outcome)
+00_raw/RKM-XXX_<path>/                     <- self-contained per-agent folders to RUN the flow
+  01_orchestrator/request.json
+  02_ingestion_translation/   agent_input.json  input/  expected_output/
+  03_metadata_linking/        agent_input.json  input/  expected_output/
+  04_search_chat/             agent_input.json  input/  expected_output/
+  05_curation_compliance/     agent_input.json  input/  expected_output/
+  scenario.json               <- mirror of the 09 rollup
 ```
 
-This manifest maps each `document_id` to equivalent files in:
+## Start the flow from any agent
+
+Each stage folder is self-contained, so a demo can begin mid-chain "as if the previous
+agents had already run":
+
+- `agent_input.json` — the structured payload to **start** that agent in isolation.
+- `input/` — the documents it starts from (raw files for ingestion; the upstream agent's
+  normalized entities for the downstream agents).
+- `expected_output/` — the entities + `_expected_output.json` that agent **would** produce
+  (so you can feed a guaranteed output to the next stage without running the previous one).
+
+Example — start at Search & chat in the happy path:
+
+```bash
+cat 00_raw/RKM-001_full_approval/04_search_chat/agent_input.json          # the NL query + scope
+ls  00_raw/RKM-001_full_approval/04_search_chat/input/                    # the entities in retrieval scope
+cat 00_raw/RKM-001_full_approval/04_search_chat/expected_output/_expected_output.json
+```
+
+## Step-by-step validation runbook
+
+Follow this to the letter to validate each scenario. The stage folder for each `order` is:
+`order 1 → 02_ingestion_translation`, `2 → 03_metadata_linking`, `3 → 04_search_chat`,
+`4 → 05_curation_compliance`. Shorthand below: `SC=00_raw/RKM-XXX_<path>`.
+
+### Step 0 — Preconditions (once)
+
+```bash
+cd dataset-seed
+python3 build_scenario_folders.py        # (re)build the per-agent folders from scenarios.py
+ls 00_raw/RKM-*/                          # 4 scenario folders must exist
+```
+
+### Step 1 — Generic procedure for ONE stage
+
+Repeat for every stage, in `order`, of the scenario under test:
+
+1. **Read what you feed the agent:**
+   `cat $SC/<stage>/agent_input.json` (the structured task/query) and
+   `ls $SC/<stage>/input/` (ingestion → raw `json/`,`xml/`; downstream → the upstream entities).
+2. **Run the agent under test** with exactly that `agent_input.json` + `input/`.
+3. **Assert the output** against `$SC/<stage>/expected_output/_expected_output.json`:
+   - `decision` matches,
+   - `gate` matches (`null` if no HITL gate at that stage),
+   - `output_entities[]` matches the produced entity ids (and, for stages that persist
+     entities, the per-entity JSON files in `expected_output/` are what should be written).
+4. **Chain to the next stage without running this one:** the next stage's `input/` already
+   contains this stage's guaranteed `expected_output/`, so you can start mid-chain at any point.
+
+Show the expected for any stage:
+
+```bash
+SC=00_raw/RKM-001_full_approval
+jq '{decision, gate, output_entities}' $SC/02_ingestion_translation/expected_output/_expected_output.json
+```
+
+### Step 2 — Per-scenario expected results (assert these in order)
+
+**RKM-001 `full_approval` → `approved`**
+
+| Order | Stage | Feed (`input/`) | Expected `decision` | `gate` | Expected `output_entities` |
+| --- | --- | --- | --- | --- | --- |
+| 1 | ingestion_translation | 5 OA articles (raw `xml/`,`json/`) | `approve` | `null` | 5× `RDOC-*` |
+| 2 | metadata_linking | trials + regulatory entities | `approve` | `approved` | `LINK-FLAURA-REG-NDA208065`, `LINK-REG-NDA208065-LBL-TAGRISSO-OPENFDA`, `CMP-CHEMBL3353410`, `TGT-CHEMBL203` |
+| 3 | search_chat | article+trial+dataset+label | `answer_with_citations` | `null` | — (≥2 citations, raw trace) |
+| 4 | curation_compliance | the 5 `RDOC-*` | `approve` | `approved` | 5× `CUR-PMC*` |
+
+**RKM-002 `guardrail_review` → `needs_human_review`**
+
+| Order | Stage | Expected `decision` | `gate` | Expected `output_entities` |
+| --- | --- | --- | --- | --- |
+| 1 | ingestion_translation | `approve_with_exclusions` | `null` | 5× `RDOC-*` **+ `CUR-EXCLUDE-PMC4771182`** (no-license denied) |
+| 2 | metadata_linking | `approve_with_exclusions` | `approved` | 5× accepted `DATASET-GSE*` **+ `CUR-EXCLUDE-GSE297057`, `CUR-EXCLUDE-GSE301973`** (patient-derived) |
+| 3 | search_chat | `answer_with_citations` | `null` | — (answers over admitted corpus only) |
+| 4 | curation_compliance | `flag_for_human_review` | **`denied_pending_human_review`** | the 3 `CUR-EXCLUDE-*` |
+
+**RKM-003 `synthetic_provenance` → `approved_with_required_labeling`**
+
+| Order | Stage | Expected `decision` | `gate` | Expected `output_entities` |
+| --- | --- | --- | --- | --- |
+| 1 | ingestion_translation | `approve` | `null` | `SYN-LIMS-001`, `SYN-LIMS-010` (provenance `synthetic_from_public_structure`) |
+| 2 | metadata_linking | `approve` | `approved` | `DATASET-GSE323366` (synthetic samples mapped to public series) |
+| 3 | search_chat | `answer_with_citations` | `null` | — (answer states synthetic provenance) |
+| 4 | curation_compliance | `approve_with_required_labeling` | **`approved_with_labeling`** | `CUR-SYNTHETIC-ELN-LIMS` |
+
+**RKM-004 `curation_denied` → `denied`**
+
+| Order | Stage | Expected `decision` | `gate` | Expected `output_entities` |
+| --- | --- | --- | --- | --- |
+| 1 | ingestion_translation | `defer_to_curation` | `null` | — (metadata only, no payload stored) |
+| 2 | metadata_linking | `no_action` | `null` | — (nothing admitted to link) |
+| 3 | search_chat | `refuse_no_grounded_evidence` | `null` | — (refuses; no admitted evidence) |
+| 4 | curation_compliance | `deny` | **`denied`** | `CUR-EXCLUDE-GSE301973` |
+
+Print all stages of a scenario at once to compare during a run:
+
+```bash
+jq -r '.scenario_id, "final_outcome="+.final_outcome,
+  (.stages[] | "  ["+(.order|tostring)+"] "+.stage+" decision="+.decision+" gate="+(.gate//"null")
+   +" out="+(.output_entities|join(",")))' \
+  09_decision_ground_truth/RKM-002.json
+```
+
+### Step 3 — Final scenario assertion
+
+After the last stage, assert the rollup's `final_outcome` and HITL flag:
+
+```bash
+jq '{scenario_id, final_outcome, required_human_review}' 09_decision_ground_truth/RKM-004.json
+# RKM-001 approved | RKM-002 needs_human_review (review=true) | RKM-003 approved_with_required_labeling | RKM-004 denied (review=true)
+```
+
+### Step 4 — Dataset self-check (run now, no agent runtime needed)
+
+Validates the scenario plumbing itself — every produced entity resolves to a normalized
+entity file, and each stage folder is wired for the chain:
+
+```bash
+cd dataset-seed
+for f in 09_decision_ground_truth/RKM-*.json; do
+  echo "## $f"
+  jq -r '.stages[].output_entities[]' "$f" | sort -u | while read e; do
+    [ -z "$e" ] && continue
+    hit=$(find 01_* 02_* 03_* 04_* 05_* 06_* 07_* 08_* -name "$e.json" | head -1)
+    [ -n "$hit" ] && echo "  ok   $e -> $hit" || echo "  MISS $e"
+  done
+done
+```
+
+Every line should read `ok` (no `MISS`). This confirms each scenario's expected outputs map
+to real entities before you wire in a live agent runtime.
+
+## How to trace a stage to raw files
 
 ```text
-00_raw/_corpus/txt/agent_inputs/<category>/<document_id>.txt
-00_raw/_corpus/md/agent_inputs/<category>/<document_id>.md
-00_raw/_corpus/html/agent_inputs/<category>/<document_id>.html
-00_raw/_corpus/pdf/agent_inputs/<category>/<document_id>.pdf
+09_decision_ground_truth/RKM-XXX.json
+  -> stages[].output_entities[]
+  -> matching normalized entity in 01_* .. 08_*
+  -> that entity's raw_sources[]
+  -> concrete files under 00_raw/_corpus/  (also duplicated into the stage's input/ or expected_output/)
 ```
 
-These replicas are useful when validating that different input formats produce
-the same or similar extracted entities. They are not the source of truth; the
-source of truth remains the public/synthetic Raw Layer files referenced by each
-normalized entity's `raw_sources`.
+The canonical corpus in `00_raw/_corpus/` stays the single source of truth referenced by
+`raw_manifest.json` and every normalized entity's `raw_sources`. The `RKM-XXX/` folders are
+deterministic duplicates rebuilt by [`build_scenario_folders.py`](build_scenario_folders.py).
 
-## Quick Lookup Commands
-
-List all cases:
+## Quick lookup
 
 ```bash
-find dataset-seed/09_decision_ground_truth -name 'GT-*.json' | sort
+# list scenarios
+ls dataset-seed/09_decision_ground_truth/RKM-*.json
+
+# show a scenario's stages (agent / decision / gate)
+jq '{scenario_id, path, final_outcome, stages: [.stages[] | {order, agent, decision, gate}]}' \
+  dataset-seed/09_decision_ground_truth/RKM-002.json
 ```
 
-Show source entities and expected output for one case:
+## Regenerate
 
 ```bash
-jq '{scenario_id, expected_agent, expected_decision, source_entities, expected_outputs}' \
-  dataset-seed/09_decision_ground_truth/GT-ANSWER-GROUNDED-QUERY.json
-```
-
-Show the Raw Layer files for one normalized entity:
-
-```bash
-jq '.raw_sources' dataset-seed/02_clinical_trials/TRIAL-NCT02296125.json
+cd dataset-seed
+python3 generate_raw_layer.py          # fetch/synthesize -> 00_raw/_corpus/  (needs network)
+python3 generate_normalized_layers.py  # normalized entities + 09 RKM rollups (reads scenarios.py)
+python3 generate_agent_documents.py    # multi-format replicas in _corpus/
+python3 build_scenario_folders.py      # (offline) build 00_raw/RKM-*/ per-agent folders
 ```

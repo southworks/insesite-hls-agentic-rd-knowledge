@@ -1,0 +1,14 @@
+{
+  "enforced_policy_refs": [
+    "HLS-DATA-100",
+    "HLS-LIC-200"
+  ],
+  "records_under_review": [
+    "RDOC-PMC6889286",
+    "RDOC-PMC5447962",
+    "RDOC-PMC13070087",
+    "RDOC-PMC13129538",
+    "RDOC-PMC13143971"
+  ],
+  "task": "flag_sensitive_content_and_capture_decisions"
+}

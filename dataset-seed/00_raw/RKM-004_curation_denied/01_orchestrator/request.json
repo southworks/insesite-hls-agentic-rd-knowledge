@@ -1,0 +1,11 @@
+{
+  "intent": "ingest_candidate_dataset",
+  "request_id": "RKM-004-REQ",
+  "routed_to": [
+    "ingestion_translation_agent",
+    "metadata_linking_agent",
+    "search_chat_agent",
+    "curation_compliance_agent"
+  ],
+  "topic": "patient-derived GEO candidate GSE301973 (before/after treatment specimens)"
+}

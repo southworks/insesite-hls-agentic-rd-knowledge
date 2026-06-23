@@ -1,0 +1,32 @@
+{
+  "assay_context": [
+    "RNA-seq",
+    "resistance model",
+    "EGFR inhibition",
+    "osimertinib response"
+  ],
+  "dataset_id": "GSE272182",
+  "document_type": "experimental_dataset",
+  "overall_design": "",
+  "privacy_posture": "cell-line or assay-level source selected",
+  "provenance": "derived_from_raw_layer",
+  "raw_sources": [
+    "00_raw/_corpus/json/datasets/geo/GSE272182/geo_esummary.json",
+    "00_raw/_corpus/txt/datasets/geo/GSE272182/series_soft.txt",
+    "00_raw/_corpus/json/datasets/geo/GSE272182/source_record.json"
+  ],
+  "sample_accessions": [
+    "GSM8395373",
+    "GSM8395374",
+    "GSM8395370",
+    "GSM8395371",
+    "GSM8395372",
+    "GSM8395375"
+  ],
+  "sample_count": 6,
+  "selected_reason": "PC9 sensitive versus osimertinib-resistant replicates",
+  "source_system": "ncbi_geo",
+  "summary": "Background: Osimertinib resistance is the main challenge of the treatment in EGFR mutant lung adenocarcinoma (LUAD). The role of N6-methyladenosine (m6A) modification of circular RNAs (circRNAs) in osimertinib-resistant LUAD remains largely unknown. Methods: Parental and resistant cell lines, as well as human and mouse lung tissue samples were implemented. We used MeRIP-seq and circRNA-seq to screen the potential circRNA candidate that influenced osimertinib resistance. The sensitivity of LUAD cells was detected by Cell Counting Kit-8 (CCK-8) assay. The interaction between circRNA and proteins was validated by RNA immunoprecipitation and RNA pulldown. We generated circRNA encapsulated in lipid nanoparticle (LNP). Bioluminescence imaging assay was used for the monitoring of orthotopic transplantation model. Results: It was observed that circRNA LMNB1 (cLMNB1) exhibited elevated levels of m6A modification and diminished expression in osimertinib-resistant LUAD. cLMNB1 increased the sensitivity of LUAD to osimertinib in vitro and in vivo. METTL3 increased the m6A modification of cLMNB1 and inhibited its expression through the reading protein YTHDF2. cLMNB1 acted as a scaffold between Fibroblast growth factor receptor 4 (FGFR4) and E3 ubiquitin-protein ligase CBL (c-Cbl), enhancing the ubiquitin-dependent degradation of FGFR4. cLMNB1 with mutation of m6A modification site (cLMNB...",
+  "taxon": "Homo sapiens",
+  "title": "N6-methyladenosine modification of cLMNB1 overcomes osimertinib resistance by destabilizing FGFR4 in non-small cell lung cancer"
+}

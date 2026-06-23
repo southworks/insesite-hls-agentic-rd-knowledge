@@ -1,0 +1,12 @@
+{
+  "agent": "ingestion_translation_agent",
+  "decision": "defer_to_curation",
+  "expected_output": {
+    "flagged_candidate": "GSE301973",
+    "normalized_count": 0,
+    "note": "metadata only \u2014 deferred to curation"
+  },
+  "gate": null,
+  "output_entities": [],
+  "stage": "ingestion_translation"
+}

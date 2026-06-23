@@ -1,0 +1,18 @@
+{
+  "agent": "curation_compliance_agent",
+  "decision": "approve",
+  "expected_output": {
+    "decision": "approve",
+    "excluded_count": 0,
+    "required_human_review": false
+  },
+  "gate": "approved",
+  "output_entities": [
+    "CUR-PMC6889286",
+    "CUR-PMC5447962",
+    "CUR-PMC13070087",
+    "CUR-PMC13129538",
+    "CUR-PMC13143971"
+  ],
+  "stage": "curation_compliance"
+}

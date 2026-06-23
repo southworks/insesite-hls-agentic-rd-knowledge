@@ -1,0 +1,17 @@
+{
+  "candidate_article_pmcids": [
+    "PMC6889286",
+    "PMC5447962",
+    "PMC13070087",
+    "PMC13129538",
+    "PMC13143971",
+    "PMC4771182"
+  ],
+  "negative_candidate": {
+    "decision_entity": "CUR-EXCLUDE-PMC4771182",
+    "expected": "deny",
+    "pmcid": "PMC4771182"
+  },
+  "portal_source_manifest": "00_raw/_corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
+  "task": "connect_portals_and_license_check_articles"
+}

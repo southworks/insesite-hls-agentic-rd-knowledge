@@ -1,0 +1,16 @@
+{
+  "agent": "curation_compliance_agent",
+  "decision": "flag_for_human_review",
+  "expected_output": {
+    "decision": "flag_for_human_review",
+    "flagged_count": 3,
+    "required_human_review": true
+  },
+  "gate": "denied_pending_human_review",
+  "output_entities": [
+    "CUR-EXCLUDE-PMC4771182",
+    "CUR-EXCLUDE-GSE297057",
+    "CUR-EXCLUDE-GSE301973"
+  ],
+  "stage": "curation_compliance"
+}

@@ -1,0 +1,24 @@
+{
+  "candidate_dataset_ids": [
+    "GSE323366",
+    "GSE323365",
+    "GSE272182",
+    "GSE300311",
+    "GSE298111",
+    "GSE297057",
+    "GSE301973"
+  ],
+  "negative_candidates": [
+    {
+      "dataset_id": "GSE297057",
+      "decision_entity": "CUR-EXCLUDE-GSE297057",
+      "expected": "exclude"
+    },
+    {
+      "dataset_id": "GSE301973",
+      "decision_entity": "CUR-EXCLUDE-GSE301973",
+      "expected": "exclude"
+    }
+  ],
+  "task": "select_cell_line_or_assay_level_datasets"
+}

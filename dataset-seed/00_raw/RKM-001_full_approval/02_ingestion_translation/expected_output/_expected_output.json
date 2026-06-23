@@ -1,0 +1,17 @@
+{
+  "agent": "ingestion_translation_agent",
+  "decision": "approve",
+  "expected_output": {
+    "accepted_article_count": 5,
+    "denied_article_count": 0
+  },
+  "gate": null,
+  "output_entities": [
+    "RDOC-PMC6889286",
+    "RDOC-PMC5447962",
+    "RDOC-PMC13070087",
+    "RDOC-PMC13129538",
+    "RDOC-PMC13143971"
+  ],
+  "stage": "ingestion_translation"
+}

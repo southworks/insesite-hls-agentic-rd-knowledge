@@ -1,0 +1,11 @@
+{
+  "agent": "metadata_linking_agent",
+  "decision": "no_action",
+  "expected_output": {
+    "link_count": 0,
+    "reason": "candidate_not_admitted"
+  },
+  "gate": null,
+  "output_entities": [],
+  "stage": "metadata_linking"
+}

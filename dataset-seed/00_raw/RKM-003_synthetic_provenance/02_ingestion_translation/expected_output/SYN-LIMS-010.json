@@ -1,0 +1,18 @@
+{
+  "assay": "RNA-seq",
+  "condition": "si-GLMP",
+  "document_type": "synthetic_lims_sample",
+  "intended_signal": "resistance pathway knockdown",
+  "model": "PC9OR si-GLMP",
+  "privacy_posture": "fictional/synthetic operational record; no patient data",
+  "provenance": "synthetic_from_public_structure",
+  "raw_sources": [
+    "00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv"
+  ],
+  "replicate": 1,
+  "sample_id": "SYN-LIMS-010",
+  "source_geo_sample": "GSM9008621",
+  "source_geo_series": "GSE298111",
+  "source_system": "synthetic_lims",
+  "timepoint": "endpoint"
+}

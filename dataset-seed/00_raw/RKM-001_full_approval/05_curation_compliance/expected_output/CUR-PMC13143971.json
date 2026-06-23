@@ -1,0 +1,19 @@
+{
+  "curator": "Marisol Vega, Research Data Steward (fictional)",
+  "decision": "approve",
+  "decision_date": "2026-06-17",
+  "decision_id": "CUR-PMC13143971",
+  "document_type": "curation_decision",
+  "policy_refs": [
+    "HLS-LIC-200",
+    "HLS-DATA-100"
+  ],
+  "provenance": "curated_from_raw_layer_evidence",
+  "raw_sources": [
+    "00_raw/_corpus/xml/articles/pmc_oa/PMC13143971/pmc_oa_license.xml"
+  ],
+  "reason": "PMC OA license matched expected reuse posture and article is not a case-report source.",
+  "required_human_review": false,
+  "source_id": "PMC13143971",
+  "source_type": "pmc_open_access_article"
+}

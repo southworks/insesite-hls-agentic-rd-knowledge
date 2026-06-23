@@ -1,0 +1,22 @@
+{
+  "agent": "search_chat_agent",
+  "decision": "answer_with_citations",
+  "expected_output": {
+    "decision": "answer_with_citations",
+    "expected_citations": [
+      "RDOC-PMC6889286",
+      "TRIAL-NCT02296125",
+      "LBL-TAGRISSO-OPENFDA"
+    ],
+    "minimum_citation_count": 2,
+    "must_exclude_entities": [
+      "GSE297057",
+      "GSE301973",
+      "PMC4771182"
+    ],
+    "must_include_raw_source_trace": true
+  },
+  "gate": null,
+  "output_entities": [],
+  "stage": "search_chat"
+}

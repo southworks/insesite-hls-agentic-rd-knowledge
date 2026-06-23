@@ -1,0 +1,24 @@
+{
+  "action_type": "INHIBITOR",
+  "aliases": [
+    "Tagrisso",
+    "AZD9291"
+  ],
+  "atc_classifications": [
+    "L01EB04"
+  ],
+  "chembl_id": "CHEMBL3353410",
+  "document_type": "compound",
+  "entity_id": "CMP-CHEMBL3353410",
+  "first_approval": 2015,
+  "max_phase": "4.0",
+  "mechanism_of_action": "Epidermal growth factor receptor erbB1 inhibitor",
+  "molecule_type": "Small molecule",
+  "preferred_name": "OSIMERTINIB",
+  "provenance": "derived_from_raw_layer",
+  "raw_sources": [
+    "00_raw/_corpus/json/registries/chembl/CHEMBL3353410/molecule.json",
+    "00_raw/_corpus/json/registries/chembl/CHEMBL3353410/mechanism.json"
+  ],
+  "target_chembl_id": "CHEMBL203"
+}

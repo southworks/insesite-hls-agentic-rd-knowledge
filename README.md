@@ -41,7 +41,8 @@ Current dataset planning and raw-source materials include:
 - `dataset-seed/TEST_CASES.md`
 - `dataset-seed/AGENT_INPUTS.md`
 - `dataset-seed/FORMAT_DECISIONS.md`
-- `dataset-seed/00_raw/_corpus/{csv,html,json,md,pdf,txt,xml}/` (canonical) and `dataset-seed/00_raw/GT-*/` (per-scenario)
+- `dataset-seed/scenarios.py`, `dataset-seed/HANDOFF.md`
+- `dataset-seed/00_raw/_corpus/{csv,html,json,md,pdf,txt,xml}/` (canonical) and `dataset-seed/00_raw/RKM-*_<path>/` (per-scenario, per-agent e2e folders)
 - `dataset-seed/01_*` through `dataset-seed/09_*`
 - `dataset-seed/dataset-manifest.json`
 
