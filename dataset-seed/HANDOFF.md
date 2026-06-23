@@ -1,6 +1,6 @@
 # Agent Handoff — what each agent receives, produces, and passes on
 
-This document is the precise **pasa-manos** (handoff) map between the agents in the
+This document is the precise handoff map between the agents in the
 *HLS – Agentic R&D knowledge mining* workflow and the dataset entities that carry the
 data across the chain. It is the bridge between the proposal diagram and `dataset-seed/`.
 
