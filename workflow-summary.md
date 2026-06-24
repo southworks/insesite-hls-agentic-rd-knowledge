@@ -1,72 +1,81 @@
 # Agentic R&D Knowledge Mining — Workflow Summary
 
-Referencia de negocio y funcionalidad basada en el diagrama de arquitectura del proyecto. Orientada a equipos que implementan la solución con **Microsoft Foundry**, **Agent Framework** y **modelos Cohere**, sin requerir conocimiento previo del dominio de I+D farmacéutico.
+Business and functional reference for the HLS Agentic R&D Knowledge Mining solution, built on **Microsoft Foundry**, **Agent Framework**, and **Cohere models**. The system is organized as **two independent blocks** — one for **ingesting** knowledge and one for **querying** it — that share a common knowledge store but run as separate workflows.
 
-## Problema de negocio
+---
 
-Sistema de **minería de conocimiento de I+D** para organizaciones de Healthcare & Life Sciences (HLS). Centraliza artefactos de investigación dispersos — artículos, protocolos, registros de laboratorio, datasets, resultados y políticas regionales — y los convierte en un **hub de conocimiento consultable**, trazable y gobernado.
+## TL;DR
 
-Desafíos que aborda:
+- The architecture is **not** a single continuous end-to-end pipeline.
+- It is split into **two independent blocks**:
+  - **Block 1 — Ingestion** (Ingestion & Translation → Metadata & Linking → human approval gate)
+  - **Block 2 — Querying** (Search & Chat → Curation & Compliance → human approval gate)
+- Block 1 is **not a prerequisite trigger** for Block 2. They are decoupled and run on their own schedules/triggers.
+- The only thing connecting them is the **shared knowledge store**: everything Block 1 produces lives in **Microsoft Fabric**, and Block 2 reads from it.
+- Each block ends with its own **human-in-the-loop** approval gate (Approved / Denied).
 
-- Ingerir y normalizar fuentes heterogéneas (portales, ELN/LIMS, repositorios de partners, submissions)
-- Extraer metadatos, entidades y versiones; vincular documentos con estudios y datasets
-- Permitir búsqueda y chat con **citas fundamentadas** y linaje de la evidencia
-- Detectar brechas de contenido y material sensible; cumplir políticas de compliance
-- Mantener **supervisión humana** en dos fases independientes, cada una con su propio actor (curación de conocimiento y compliance)
+---
 
-## Dos fases del workflow
+## The two blocks
 
-El sistema no es un pipeline único de punta a punta: se organiza en **dos fases secuenciales**, separadas por una aprobación humana. Cada fase agrupa dos agentes y un actor humano que revisa la salida conjunta de ambos.
+The two blocks are decoupled. Block 1 populates the knowledge store; Block 2 consumes it. Block 2 does not wait on a Block 1 run — it operates against whatever knowledge already lives in Fabric, whenever a query or compliance review is needed.
 
-| | **Fase 1 — Ingesta y estructuración** | **Fase 2 — Consulta y compliance** |
-|---|--------------------------------------|--------------------------------------|
-| **Agentes** | Ingestion & translation → Metadata & linking | Search & chat → Curation & compliance |
-| **Actor humano** | Curador de conocimiento | Responsable de compliance |
-| **Qué aprueba** | Calidad de ingestión, metadatos y enlaces | Respuestas de búsqueda/chat y hallazgos de curación |
-| **Resultado** | Contenido publicado en el hub | Ciclo de compliance cerrado y auditado |
+| | **Block 1 — Ingestion** | **Block 2 — Querying** |
+|---|--------------------------|-------------------------|
+| **Purpose** | Bring in raw R&D knowledge, normalize it, structure it, and persist it | Let users query the knowledge and run curation/compliance over it |
+| **Agents** | Ingestion & Translation → Metadata & Linking | Search & Chat → Curation & Compliance |
+| **Human gate** | Approve / Deny the ingested + structured content | Approve / Deny query results and curation findings |
+| **Trigger** | New source material arrives, scheduled ingestion run, manual load | A researcher asks a question, a compliance review is scheduled, an audit runs |
+| **Output** | Curated, linked knowledge persisted in **Fabric** | Grounded answers with citations/lineage; flagged gaps and compliance decisions |
 
-### Encadenamiento entre fases
-
-La fase 2 **solo puede iniciarse tras el approve de la fase 1**, pero no tiene por qué ser de forma inmediata:
-
-| Modo | Cuándo ocurre | Ejemplo |
-|------|---------------|---------|
-| **Inmediato** | La fase 2 arranca en cuanto el curador aprueba | Ciclo completo de incorporación de un estudio en una sola sesión |
-| **Diferido** | La fase 2 se ejecuta en otro momento, días o semanas después | Tras la publicación, un investigador consulta el hub o se programa una auditoría de compliance |
-
-En ambos modos el orquestador **persiste el contexto de la fase 1** y lo reutiliza al reanudar la fase 2, sin re-ejecutar ingestión ni vinculación.
+### How they relate
 
 ```
-Fase 1 ──[approve curador]──► Fase 2
-              │
-              ├── inmediato  (misma sesión)
-              └── diferido   (otro momento: consulta, auditoría, notificación a owner)
+BLOCK 1 (Ingestion)                          BLOCK 2 (Querying)
+Ingestion & Translation                      Search & Chat
+        │                                            │
+        ▼                                            ▼
+Metadata & Linking                           Curation & Compliance
+        │                                            │
+        ▼                                            ▼
+[Approval gate]                              [Approval gate]
+        │                                            ▲
+        ▼                                            │
+   ┌─────────────────────────────────────────────────┐
+   │             Microsoft Fabric (knowledge store)    │
+   └─────────────────────────────────────────────────┘
 ```
 
-## Flujo general
+Block 1 **writes** to Fabric. Block 2 **reads** from Fabric. There is no direct hand-off between the two blocks — Fabric is the integration point.
 
-El workflow es **secuencial en dos fases** (ver sección anterior). El diagrama siguiente muestra ambas fases, sus agentes y el enlace punteado que indica que la fase 2 puede encadenarse de inmediato o en otro momento.
+---
+
+## Workflow diagram
 
 ```mermaid
 flowchart TB
-    REQ["Conocimiento de I+D<br/>(artículos, protocolos, ELN/LIMS, datasets, submissions, políticas)"]
-    ORCH["Orquestador – Research knowledge hub agent"]
+    REQ["R&D Knowledge sources<br/>(articles, protocols, ELN/LIMS, datasets, results, submissions, partner repos, region policies)"]
+    ORCH["Orchestrator – Research knowledge hub agent"]
 
-    subgraph phase1 [Fase 1 – Ingesta y estructuración]
-        ING["Ingestion & translation"]
-        META["Metadata & linking"]
-        HITL1["Curador de conocimiento<br/>Approve / Deny"]
+    subgraph block1 [Block 1 – Ingestion]
+        ING["Ingestion & Translation"]
+        META["Metadata & Linking"]
+        HITL1["Human-in-the-loop<br/>Approve / Deny"]
         ING --> META --> HITL1
     end
 
-    subgraph phase2 [Fase 2 – Consulta y compliance]
-        SRCH["Search & chat"]
-        CUR["Curation & compliance"]
-        HITL2["Responsable de compliance<br/>Approve / Deny"]
+    subgraph fabric [Microsoft Fabric]
+        STORE["Curated & linked R&D knowledge<br/>(persistent store)"]
+    end
+
+    subgraph block2 [Block 2 – Querying]
+        SRCH["Search & Chat"]
+        CUR["Curation & Compliance"]
+        HITL2["Human-in-the-loop<br/>Approve / Deny"]
         SRCH --> CUR --> HITL2
     end
 
-    subgraph rag [Pipeline RAG]
+    subgraph rag [Shared RAG pipeline]
         EMB["Cohere Embed"]
         VDB["Vector DB"]
         RR["Cohere Rerank"]
@@ -74,221 +83,172 @@ flowchart TB
         EMB --> VDB --> RR --> TOP
     end
 
-    subgraph data [Datos / sistemas]
-        CMS["R&D Content management system"]
-        ART["Research articles"]
-        BRAND["Brand guidelines"]
-        COMP["Preference / compliance data"]
-        PART["Partner / vendor repos"]
-        INV["Inventory"]
-        DE["Data Entry portal"]
-    end
-
-    subgraph gov [Gobernanza]
-        G1["App Insights"]
-        G2["Tracing y monitoreo"]
-        G3["Evaluaciones"]
-        G4["Safety & compliance"]
-        G5["Identity management"]
-    end
-
     REQ --> ORCH
-    ORCH --> phase1
-    HITL1 -.->|"inmediato o diferido"| phase2
-    phase1 & phase2 --> rag
-    phase1 & phase2 --> data
-    phase1 & phase2 --> gov
+    ORCH --> block1
+    ORCH --> block2
+    HITL1 --> STORE
+    STORE --> SRCH
+    block1 --> rag
+    block2 --> rag
 ```
 
-## Capas de la arquitectura
+The orchestrator coordinates both blocks but does **not** chain Block 1 into Block 2. Each block is invoked on its own trigger; Fabric is the durable bridge between them.
 
-### 1. Orquestador (Research knowledge hub agent)
+---
 
-- **Rol:** coordinar el flujo entre agentes especializados del hub de conocimiento.
-- **Entrada:** artefactos y solicitudes de conocimiento de I+D (nuevos documentos, consultas de investigadores, revisiones de compliance).
-- **Función:** definir qué agentes corren, en qué orden y con qué contexto; propagar memoria entre pasos; **pausar entre fases** hasta recibir aprobación humana y **reanudar la fase 2** cuando corresponda (inmediato o diferido).
+## Architecture layers
 
-**Implementación:** desplegar como agente principal en **Microsoft Foundry Agent Service**, orquestando sub-agentes vía **Agent Framework**.
+### 1. Orchestrator (Research knowledge hub agent)
 
-### 2. Agentes especializados
+- **Role:** coordinate the specialized agents within each block.
+- **Function:** decide which agents run, in what order, and with what context **within a block**; propagate memory between the two agents of a block; manage the human approval gate for that block.
+- **Important:** the orchestrator treats Block 1 and Block 2 as **independent workflows**. It does not require a Block 1 run to precede a Block 2 run.
+- **Implementation:** deployed as the primary agent on **Microsoft Foundry Agent Service**, orchestrating sub-agents via **Agent Framework**.
 
-Cada agente comparte la misma pila técnica:
+### 2. Specialized agents
 
-| Componente   | Tecnología                          |
-|--------------|-------------------------------------|
-| Plataforma   | Microsoft Foundry Agent Service     |
-| Orquestación | Agent Framework (Microsoft)         |
-| Modelo       | Cohere Command A+                   |
-| Memoria      | Contexto entre pasos del workflow   |
-| Integración  | Azure MCP                           |
-| Retrieval    | Cohere Embed + Vector DB + Cohere Rerank |
+Every agent shares the same technical stack:
 
-| Agente                         | Fase | Responsabilidad de negocio                                                                 |
-|--------------------------------|------|--------------------------------------------------------------------------------------------|
-| **Ingestion & translation**    | 1    | Conecta a portales y fuentes; desduplica y normaliza formatos de datos                   |
-| **Metadata & linking**         | 1    | Extrae entidades y versiones; vincula documentos con datasets y estudios (RAG)           |
-| **Search & chat**              | 2    | Retrieval con citas fundamentadas y linaje; responde consultas y redacta resúmenes (RAG)  |
-| **Curation & compliance**      | 2    | Marca brechas y contenido sensible; notifica a responsables y registra decisiones        |
+| Component    | Technology                                |
+|--------------|-------------------------------------------|
+| Platform     | Microsoft Foundry Agent Service           |
+| Orchestration| Agent Framework (Microsoft)               |
+| Model        | Cohere Command A+                         |
+| Memory       | Context across workflow steps             |
+| Integration  | Azure MCP                                  |
+| Retrieval    | Cohere Embed + Vector DB + Cohere Rerank  |
 
-#### Acciones por agente (según diagrama)
+| Agent                        | Block | Business responsibility                                                              |
+|------------------------------|-------|--------------------------------------------------------------------------------------|
+| **Ingestion & Translation**  | 1     | Connect to portals/sources; de-duplicate and normalize formats                       |
+| **Metadata & Linking**       | 1     | Extract entities and versions; link documents to datasets and studies (RAG)          |
+| **Search & Chat**            | 2     | Retrieve with grounded citations and lineage; answer queries and draft summaries (RAG)|
+| **Curation & Compliance**    | 2     | Flag gaps and sensitive content; prompt owners and capture decisions                 |
 
-| Agente | Acciones concretas |
-|--------|-------------------|
-| **Ingestion & translation** | Conectar a portales · Desduplicar y normalizar formatos |
-| **Metadata & linking** | Extraer entidades y versiones · Vincular documentos con datasets y estudios |
-| **Search & chat** | Retrieval con citas fundamentadas y linaje · Responder consultas y redactar resúmenes |
-| **Curation & compliance** | Marcar brechas y contenido sensible · Notificar a responsables y capturar decisiones |
+#### Concrete actions (per diagram)
 
-### Pipeline RAG compartido
+| Agent | Actions |
+|-------|---------|
+| **Ingestion & Translation** | Connect portals · De-duplicate, normalize formats |
+| **Metadata & Linking** | Extract entities & versions · Link docs ↔ datasets ↔ studies |
+| **Search & Chat** | Retrieve with grounded citations & lineage · Answer queries; draft summaries |
+| **Curation & Compliance** | Flag gaps, sensitive content · Prompt owners, capture decisions |
 
-Los agentes de **Metadata & linking** y **Search & chat** utilizan un pipeline de retrieval común:
+### Microsoft Fabric — the knowledge store
+
+All knowledge produced by **Block 1** is persisted in **Microsoft Fabric**:
+
+- After the Block 1 approval gate, the curated, normalized, and linked content (entities, versions, document↔dataset↔study relationships) lands in Fabric.
+- Fabric is the **system of record** for the mined R&D knowledge and the **source** that Block 2 queries.
+- Because the store is durable and independent, Block 2 can run at any time against the accumulated knowledge — there is no need to re-run ingestion to query.
+
+### Shared RAG pipeline
+
+Both blocks rely on a common retrieval pipeline:
 
 ```
 Cohere Embed → Vector DB → Cohere Rerank → Top-N context
 ```
 
-| Etapa | Función |
-|-------|---------|
-| **Cohere Embed** | Genera embeddings vectoriales del contenido indexado |
-| **Vector DB** | Almacena y recupera vectores (Azure AI Search u otro vector store compatible) |
-| **Cohere Rerank** | Reordena candidatos por relevancia antes de pasarlos al modelo |
-| **Top-N context** | Fragmentos finales que alimentan la generación con Cohere Command A+ |
+| Stage | Function |
+|-------|----------|
+| **Cohere Embed** | Generate vector embeddings of indexed content |
+| **Vector DB** | Store and retrieve vectors (Azure AI Search or another compatible vector store) |
+| **Cohere Rerank** | Re-order candidates by relevance before passing to the model |
+| **Top-N context** | Final passages that ground generation with Cohere Command A+ |
 
-### Orden de ejecución
+In Block 1 the pipeline supports linking (embedding content for indexing); in Block 2 it powers grounded search and chat.
 
-Los cuatro agentes se ejecutan **en secuencia dentro de cada fase**. El orquestador coordina una fase a la vez, propaga memoria entre los dos agentes de esa fase y **pausa entre fases** hasta recibir la aprobación humana correspondiente.
+### 3. Data / systems of record
 
-La fase 2 arranca tras el approve de la fase 1, ya sea **de inmediato** (ciclo continuo en la misma sesión) o **en otro momento** (consulta de un investigador, auditoría programada, respuesta de un owner a una notificación de curación). En el modo diferido, el orquestador retoma el contexto persistido sin re-ejecutar ingestión ni vinculación.
+| System | Use |
+|--------|-----|
+| **Microsoft Fabric** | Durable store for mined, curated R&D knowledge; the bridge between Block 1 and Block 2 |
+| **R&D Content management system** | Central research-content repository; destination for metadata and links |
+| **Research articles** | Scientific articles and reference publications |
+| **Brand guidelines** | Brand and scientific-communication guidance |
+| **Preference / compliance data** | Policies, regional preferences, and compliance rules |
+| **Partner / vendor repos** | External partner and vendor repositories |
+| **Inventory** | Inventory of knowledge assets (datasets, protocols, submissions) |
+| **Data Entry portal** | Manual entry, corrections, and overrides |
 
-**Cadena de ejecución:**
+Agents read/write these systems through **Azure MCP**.
 
-```
-Fase 1:  Ingestion & translation → Metadata & linking → [Curador de conocimiento]
-              │
-              ├── inmediato ──► Fase 2
-              └── diferido  ──► Fase 2 (en otro momento)
-Fase 2:  Search & chat → Curation & compliance → [Responsable de compliance]
-```
+#### Input sources (R&D Knowledge)
 
-#### Fase 1 — Ingesta y estructuración
+- Research articles and protocols
+- ELN/LIMS-style records (Electronic Lab Notebook / Laboratory Information Management System)
+- Datasets, results, and submissions
+- Partner/vendor repositories
+- Regional policies
 
-| Paso | Qué hace | Actor |
-|------|----------|-------|
-| **Ingestion & translation** | Conecta a portales y fuentes externas; desduplica y normaliza formatos heterogéneos | Agente |
-| **Metadata & linking** | Extrae entidades, versiones y relaciones; vincula documentos con datasets y estudios (RAG) | Agente |
-| **Human-in-the-loop** | Revisa la **salida conjunta** de ingestión y vinculación: calidad de datos, metadatos, enlaces y coherencia del grafo | **Curador de conocimiento** (actor 1) |
+### 4. Governance and Responsible AI
 
-El curador valida que el contenido ingerido y su estructura son correctos antes de que el conocimiento quede disponible para consulta o curación posterior.
+- **App Insights** — operational performance of agents and endpoints
+- **Tracing & monitoring** — traceability of reasoning, retrieval, and actions
+- **Evaluations** — quality of extraction, retrieval, answers, and compliance decisions
+- **Safety & compliance** — sensitive-content, PHI/PII, and HLS regulatory policies
+- **Identity management** — access and security (Microsoft Entra ID)
 
-#### Fase 2 — Consulta y compliance
+---
 
-| Paso | Qué hace | Actor |
-|------|----------|-------|
-| **Search & chat** | Expone el conocimiento aprobado; responde consultas con citas fundamentadas y linaje (RAG) | Agente |
-| **Curation & compliance** | Detecta brechas, contenido sensible o desactualizado; notifica a owners y registra decisiones | Agente |
-| **Human-in-the-loop** | Revisa la **salida conjunta** de búsqueda/chat y curación: respuestas, hallazgos de compliance y acciones propuestas | **Responsable de compliance** (actor 2) |
+## Human-in-the-loop
 
-La fase 2 es un **ciclo de revisión** que el orquestador dispara al instante o más tarde. Puede incluir consultas de búsqueda/chat y la pasada de curación de compliance en la misma ejecución.
+Each block has its own independent approval gate:
 
-#### Resumen de actores humanos
+| Gate | Block | Reviews output of | What it approves |
+|------|-------|-------------------|------------------|
+| **Block 1 gate** | 1 | Ingestion & Translation + Metadata & Linking | Quality of ingested, normalized, and linked content before it persists to Fabric |
+| **Block 2 gate** | 2 | Search & Chat + Curation & Compliance | Generated answers and curation/compliance findings before they are finalized |
 
-| Actor | Fase | Revisa salida de | Cuándo |
-|-------|------|------------------|--------|
-| **Curador de conocimiento** | 1 | Ingestion & translation + Metadata & linking | Al cierre de la fase 1 |
-| **Responsable de compliance** | 2 | Search & chat + Curation & compliance | Al cierre de la fase 2 (inmediato o diferido respecto a la fase 1) |
+No sensitive content is published or finalized autonomously; a human signs off at the end of each block.
 
-En términos de gestión del conocimiento: **ingesta → estructuración → aprobación (curador) → [pausa opcional] → consulta → curación → aprobación (compliance)**.
+---
 
-**Secuencia lógica del workflow:**
 
-1. **Fase 1:** ingerir y normalizar artefactos; extraer metadatos y enlaces.
-2. **Fase 1 — HITL:** el curador de conocimiento aprueba o rechaza el paquete de ingestión + metadatos.
-3. **Transición:** la fase 2 puede iniciarse de inmediato o quedar pendiente para otro momento.
-4. **Fase 2:** ejecutar búsqueda/chat y curación de compliance sobre el contenido ya aprobado.
-5. **Fase 2 — HITL:** el responsable de compliance aprueba o rechaza el resultado de consulta + curación.
 
-### 3. Datos / sistemas de registro
+---
 
-| Sistema | Uso |
-|---------|-----|
-| **R&D Content management system** | Repositorio central de contenido de investigación; destino de metadatos y enlaces |
-| **Research articles** | Artículos científicos y publicaciones de referencia |
-| **Brand guidelines** | Directrices de marca y comunicación científica |
-| **Preference / compliance data** | Políticas, preferencias regionales y reglas de compliance |
-| **Partner / vendor repos** | Repositorios externos de partners y proveedores |
-| **Inventory** | Inventario de activos de conocimiento (datasets, protocolos, submissions) |
-| **Data Entry portal** | Entrada manual, correcciones y overrides |
+## Example use case
 
-Los agentes leen y escriben vía **Azure MCP** contra estos sistemas.
+### Block 1 — Ingestion (runs when new material arrives)
 
-#### Fuentes de entrada (R&D Knowledge)
+1. **Orchestrator** starts Block 1 for the results of study **ABC-2024**.
+2. **Ingestion & Translation** connects to the study portal, de-duplicates documents, and normalizes formats (PDFs, tables, ELN records).
+3. **Metadata & Linking** extracts entities (compound, phase, endpoint), versions, and links between the report, datasets, and related protocols; indexes content in the Vector DB via Cohere Embed.
+4. A reviewer approves the ingested package at the **Block 1 gate** → the curated, linked knowledge is **persisted to Microsoft Fabric**.
 
-El diagrama identifica como punto de partida del workflow:
+### Block 2 — Querying (runs independently, any time)
 
-- Artículos y protocolos de investigación
-- Registros estilo ELN/LIMS (Electronic Lab Notebook / Laboratory Information Management System)
-- Datasets, resultados y submissions
-- Repositorios de partners/vendors
-- Políticas regionales
+1. **Orchestrator** starts Block 2 when a researcher asks: *"Which protocols share the same primary endpoint as ABC-2024?"*
+2. **Search & Chat** reads from **Fabric**, retrieves relevant context, applies Cohere Rerank, and answers with citations and lineage.
+3. **Curation & Compliance** detects a section missing a reference to EU regional policy and prompts the study owner.
+4. A reviewer approves the results at the **Block 2 gate** → the query/curation cycle is closed and audited.
 
-### 4. Gobernanza y Responsible AI
+Block 2 here runs against knowledge already in Fabric; it does not depend on a fresh Block 1 run.
 
-- **App Insights** — rendimiento operativo de agentes y endpoints
-- **Tracing & monitoring** — trazabilidad de razonamiento, retrieval y acciones
-- **Evaluations** — calidad de extracción, retrieval, respuestas y decisiones de compliance
-- **Safety & compliance** — políticas de contenido sensible, PHI/PII y normativa HLS
-- **Identity management** — acceso y seguridad (Microsoft Entra ID)
+---
 
-## Leyenda del diagrama
+## Implementation implications
 
-| Símbolo | Significado |
-|---------|-------------|
-| Caja morada | Agente |
-| Caja verde | Modelo (Cohere Command A+) |
-| Caja beige | Sistemas / datos externos |
-| Caja azul | Acciones del agente |
-| Persona (rosa) | Human-in-the-loop: dos actores distintos (curador de conocimiento · responsable de compliance) |
-| Lupa (RAG) | Retrieval-Augmented Generation: metadatos, búsqueda y citas fundamentadas |
-
-## Caso de uso de ejemplo
-
-**Entrada:** "Incorporar al hub los resultados del estudio ABC-2024 y permitir consultas sobre su relación con protocolos previos".
-
-### Fase 1 — Ingesta y estructuración
-
-1. **Orquestador** inicia la fase 1.
-2. **Ingestion & translation** conecta al portal del estudio, desduplica documentos y normaliza formatos (PDF, tablas, registros ELN).
-3. **Metadata & linking** extrae entidades (compuesto, fase, endpoint), versiones y enlaces entre el informe, datasets y protocolos relacionados; indexa en Vector DB vía Cohere Embed.
-4. El **curador de conocimiento** (actor 1) revisa en conjunto la calidad de la ingestión y el grafo de metadatos/enlaces → **Approve**. El contenido queda publicado en el hub.
-
-### Fase 2 — Consulta y compliance *(inmediata o diferida)*
-
-*Escenario A — inmediato:* la fase 2 arranca en cuanto el curador aprueba.
-
-*Escenario B — diferido:* dos semanas después, un investigador consulta el hub; el orquestador retoma el contexto de la fase 1 y dispara la fase 2.
-
-5. **Search & chat** responde a *"¿Qué protocolos comparten el mismo endpoint primario?"* con citas y linaje; usa Cohere Rerank para priorizar contexto relevante.
-6. **Curation & compliance** detecta una sección sin referencia a política regional EU y notifica al owner del estudio.
-7. El **responsable de compliance** (actor 2) revisa en conjunto las respuestas generadas y las acciones de curación propuestas → **Approve**; el ciclo queda cerrado y auditado.
-
-## Implicaciones para la implementación
-
-| Dimensión | Implicación |
+| Dimension | Implication |
 |-----------|-------------|
-| **Dominio** | HLS / R&D: gestión del conocimiento científico, trazabilidad de evidencia, compliance regulatorio |
-| **Arquitectura** | Dos fases secuenciales con orquestación pausable (Agent Framework + Foundry); fase 2 inmediata o diferida |
-| **Modelos Cohere** | **Command A+** para razonamiento y generación; **Embed** y **Rerank** para el pipeline RAG |
-| **Plataforma** | **Microsoft Foundry Agent Service** como host de agentes; **Agent Framework** para definir workflows y handoffs |
-| **Integraciones** | CMS de I+D, repositorios de partners, portales de datos, Vector DB, Azure MCP |
-| **IA** | LLM (Cohere Command A+) + RAG (Embed/Rerank) + memoria + herramientas (MCP) |
-| **Operación** | Trazabilidad, evaluación y compliance desde el diseño; App Insights y tracing obligatorios |
-| **Humano** | Dos fases con dos actores distintos: curador (fase 1) y compliance (fase 2); la fase 2 puede ser inmediata o diferida; no publicación autónoma de contenido sensible |
+| **Domain** | HLS / R&D: scientific knowledge management, evidence traceability, regulatory compliance |
+| **Architecture** | Two **independent** blocks (ingestion vs. querying), bridged by Microsoft Fabric |
+| **Cohere models** | **Command A+** for reasoning/generation; **Embed** and **Rerank** for the RAG pipeline |
+| **Platform** | **Microsoft Foundry Agent Service** hosting agents; **Agent Framework** for workflows and hand-offs |
+| **Persistence** | **Microsoft Fabric** as the durable knowledge store and integration point between blocks |
+| **Integrations** | R&D CMS, partner repos, data portals, Vector DB, Azure MCP |
+| **AI** | LLM (Cohere Command A+) + RAG (Embed/Rerank) + memory + tools (MCP) |
+| **Operations** | Traceability, evaluation, and compliance by design; App Insights and tracing required |
+| **Human** | Two independent approval gates, one per block; no autonomous publishing of sensitive content |
 
-### Checklist para equipos de implementación
+### Implementation checklist
 
-1. **Foundry:** provisionar proyecto, desplegar Cohere Command A+, Embed y Rerank; configurar Agent Service.
-2. **Agent Framework:** definir el orquestador, dos sub-workflows (fase 1 y fase 2) y los cuatro sub-agentes; soportar pausa entre fases y reanudación diferida con contexto persistido.
-3. **RAG:** crear índice vectorial (Azure AI Search u otro); pipeline Embed → store → Rerank → Top-N.
-4. **MCP:** exponer herramientas para CMS, portales, compliance data e inventory.
-5. **HITL:** implementar dos flujos de approve/deny con actores distintos — curador tras fase 1 (ingesta + metadatos) y compliance tras fase 2 (búsqueda + curación); soportar reanudación diferida de la fase 2 con contexto persistido.
-6. **Gobernanza:** habilitar App Insights, tracing, evaluaciones y Entra ID desde el primer despliegue.
+1. **Foundry:** provision the project; deploy Cohere Command A+, Embed, and Rerank; configure Agent Service.
+2. **Agent Framework:** define the orchestrator and two **independent** workflows (Block 1 and Block 2) plus the four sub-agents.
+3. **Fabric:** stand up the Fabric knowledge store; have Block 1 write curated/linked knowledge to it and Block 2 read from it.
+4. **RAG:** create the vector index (Azure AI Search or other); pipeline Embed → store → Rerank → Top-N.
+5. **MCP:** expose tools for the CMS, portals, compliance data, and inventory.
+6. **HITL:** implement two independent approve/deny gates — one closing Block 1 (before persistence to Fabric) and one closing Block 2.
+7. **Governance:** enable App Insights, tracing, evaluations, and Entra ID from the first deployment.
