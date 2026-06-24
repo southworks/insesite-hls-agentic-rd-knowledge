@@ -1,0 +1,12 @@
+{
+  "agent": "search_chat_agent",
+  "decision": "no_grounded_answer",
+  "expected_output": {
+    "citation_count": 0,
+    "decision": "no_grounded_answer",
+    "reason": "knowledge_base_empty"
+  },
+  "gate": null,
+  "output_entities": [],
+  "stage": "search_chat"
+}

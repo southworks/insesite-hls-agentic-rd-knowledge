@@ -24,152 +24,182 @@ here — while keeping one canonical corpus as the single source of truth.
 
 ## Decision
 
-The test cases are **end-to-end**: each scenario is one full path through the 4-agent workflow,
-and the four differ at the human-in-the-loop gates. Each scenario folder has a sub-folder per
-agent/stage so any agent can be started in isolation (see [TEST_CASES.md](TEST_CASES.md)).
+HLS is **two separate processes, decoupled in time** (no single orchestrator) — see the
+interpretation correction in [HANDOFF.md](HANDOFF.md). So the scenarios split into two families:
+**ingestion** (`ING-*`, load knowledge) and **search** (`QRY-*`, query it later). Each scenario
+folder has a sub-folder per stage so any step can be started in isolation (see
+[TEST_CASES.md](TEST_CASES.md)).
 
 ```
 00_raw/
-  _corpus/                       ← CANONICAL: all source files + raw_manifest.json (single source of truth)
-  RKM-001_full_approval/         ← e2e path: all gates Approved
-  RKM-002_guardrail_review/      ← e2e path: deny/exclude → human review
-  RKM-003_synthetic_provenance/  ← e2e path: approve_with_required_labeling
-  RKM-004_curation_denied/       ← e2e path: blocked at curation gate
+  _corpus/                          ← CANONICAL: all source files + raw_manifest.json (single source of truth)
+  ING-001_full_approval/            ← ingestion: clean upload, approved, persisted
+  ING-002_guardrail_review/         ← ingestion: deny/exclude → human review (nothing persisted)
+  ING-003_synthetic_provenance/     ← ingestion: approve_with_required_labeling
+  ING-004_sensitive_blocked/        ← ingestion: blocked at human-approval gate
+  QRY-001_no_data/                  ← search: empty KB → no grounded answer
+  QRY-002_grounded/                 ← search: populated KB → grounded answer with citations
 
-00_raw/RKM-001_full_approval/
-  01_orchestrator/request.json
-  02_ingestion_translation/  agent_input.json  input/  expected_output/
-  03_metadata_linking/       agent_input.json  input/  expected_output/
-  04_search_chat/            agent_input.json  input/  expected_output/
-  05_curation_compliance/    agent_input.json  input/  expected_output/
-  scenario.json              ← mirror of 09_decision_ground_truth/RKM-001.json
+00_raw/ING-001_full_approval/                 00_raw/QRY-002_grounded/
+  01_upload/         trigger.json               01_query/          trigger.json
+  02_ingestion_translation/  (agent stage)      02_search_chat/          (agent stage)
+  03_metadata_linking/       (agent stage)      03_curation_compliance/  (agent stage)
+  04_human_approval/  gate.json                 04_response/       response.json
+  05_persistence/     persisted.json            scenario.json
+  scenario.json   ← mirror of 09_decision_ground_truth/<ID>.json
 ```
 
 - `raw_manifest.json` and every normalized entity's `raw_sources` point into `_corpus/` (kept the
   single source of truth).
-- The `RKM-*/` folders are rebuilt offline and deterministically by
+- The `ING-*/` and `QRY-*/` folders are rebuilt offline and deterministically by
   [`build_scenario_folders.py`](build_scenario_folders.py) from [`scenarios.py`](scenarios.py)
-  (each stage's `input` = upstream docs/entities, `expected_output` = what it would produce).
+  (each agent stage's `input` = upstream docs/entities, `expected_output` = what it would produce).
 - Cross-cutting multi-format `agent_inputs/` replicas stay in `_corpus/` (not per-scenario).
 
-See [RAW_LAYER.md](RAW_LAYER.md), [TEST_CASES.md](TEST_CASES.md), and [HANDOFF.md](HANDOFF.md).
+See [RAW_LAYER.md](RAW_LAYER.md), [TEST_CASES.md](TEST_CASES.md), [HANDOFF.md](HANDOFF.md), and the
+plain-language [TESTING_GUIDE.md](TESTING_GUIDE.md).
 
 ## Demo flow stories
 
-Each story is one e2e scenario. The **Narrative** is a real-life, conversational walk-through of
-how the data moves agent → agent; the bullets above it are the concrete demo handles.
+Two flows, run at different times. The **Narrative** is a real-life, conversational walk-through of
+how the data moves step → step; the bullets above it are the concrete demo handles.
 
-### Story A — "Full approval" (`RKM-001_full_approval`)
+### ⭐ The headline demo — "search empty → ingest → search again"
 
-- **Start anywhere:** point an agent at `00_raw/RKM-001_full_approval/<stage>/` — e.g.
-  `04_search_chat/agent_input.json` carries the NL osimertinib query and `input/` holds the
-  article (`PMC6889286`), trial (`NCT02296125`), GEO dataset (`GSE323366`) and Tagrisso label.
-- **Flow:** ingestion accepts 5 OA articles → linking connects FLAURA ↔ `NDA208065` ↔ label →
-  search answers with citations → curation approves. Every gate Approved.
-- **Expected:** `09_decision_ground_truth/RKM-001.json` — `final_outcome: approved`.
-- **Value:** the canonical happy path — clean ingestion all the way to a grounded, approved answer.
+Run three scenarios in sequence to show the knowledge base go from empty to answering:
 
-**Narrative (real-life data flow).** A translational oncology team is putting together the
-first-line evidence base for osimertinib in EGFR-mutated NSCLC. A researcher asks the knowledge
-hub: *"Pull together what we know about first-line osimertinib and the evidence behind it."* The
-**orchestrator** reads that intent and fans the work out to the four agents. The **ingestion &
-translation agent** reaches into the public portals listed in the partner/vendor manifest, pulls
-five open-access review articles, and checks each one's reuse license; all five are clean CC-BY,
-so it normalizes them into tidy `RDOC-*` records and hands that clean batch downstream. The
-**metadata & linking agent** picks up those records plus the FLAURA / AURA3 trials and the
-`NDA208065` regulatory application and label, notices they all talk about the *same* molecule
-(osimertinib / Tagrisso / AZD9291), and stitches them into an evidence graph — emitting explicit
-`LINK-*` edges and extracting the compound and target entities. A human glances at the proposed
-links and approves them (first gate). Now the **search & chat agent** can actually answer the
-researcher's question: it retrieves across the linked corpus and replies with citations to the
-article, the trial, and the label, each traceable back to the raw file it came from. Finally the
-**curation & compliance agent** reviews everything that was admitted, finds nothing sensitive, and
-signs off. The researcher walks away with a cited answer *and* an auditable graph behind it.
+1. **`QRY-001_no_data`** — ask the osimertinib question against an **empty** KB → *"no grounded
+   information yet."*
+2. **`ING-001_full_approval`** — upload + ingest the five articles → **persisted** into the KB.
+3. **`QRY-002_grounded`** — ask the **same** question → a grounded answer with citations now appears.
 
-### Story B — "Guardrail → human review" (`RKM-002_guardrail_review`)
+Same question, two results — because data was loaded in between. That contrast is the demo.
 
-- **Start here:** `00_raw/RKM-002_guardrail_review/` — same assembly but with a no-license
-  article (`PMC4771182`) and patient-derived GEO (`GSE297057`, `GSE301973`) in the candidate pool.
-- **Flow:** ingestion denies the bad-license article → linking excludes the patient-derived
-  datasets → curation flags the exclusions and routes to a human.
-- **Expected:** `09_decision_ground_truth/RKM-002.json` — `final_outcome: needs_human_review`,
-  curation gate `denied_pending_human_review`.
-- **Value:** exercises the deny/exclude branch and the HITL email gate of the diagram.
+---
 
-**Narrative (real-life data flow).** Same goal as Story A, but this time the candidate pool came
-from a broad, messy portal sweep — and not everything in it is safe to keep. The **ingestion
-agent** runs its license check and hits `PMC4771182`: the PMC OA API reports its license as
-*none*, so the agent refuses to store the full text and keeps metadata only, recording an explicit
-deny. The clean articles still pass. When the **metadata & linking agent** looks at the candidate
-GEO datasets, it inspects the sample titles and realizes two of them — `GSE297057` (patient FFPE
-specimens) and `GSE301973` (before/after treatment specimens) — are patient-derived, so it
-excludes them and only lets the cell-line datasets through. The **search agent** answers the
-question, but deliberately only over the *admitted* corpus, so the excluded sources never leak
-into a citation. Then the **curation & compliance agent** gathers the three exclusions (one
-licensing, two PHI), flags them as compliance-relevant, and — because these are exactly the kind
-of calls a human should confirm — does *not* auto-approve. It routes the case to a reviewer by
-email and parks the run at the human-in-the-loop gate. The story shows guardrails firing
-mid-pipeline and the data handoff pausing for human judgment instead of silently proceeding.
+## Ingestion flow stories
 
-### Story C — "Synthetic provenance → approve with labeling" (`RKM-003_synthetic_provenance`)
+### Story A — "Full approval" (`ING-001_full_approval`)
 
-- **Start here:** `00_raw/RKM-003_synthetic_provenance/` — synthetic ELN/LIMS sample manifest,
-  notebook, and QC report (`02_ingestion_translation/input/`) derived from public GEO structure.
+- **Start anywhere:** point a step at `00_raw/ING-001_full_approval/<stage>/` — e.g.
+  `02_ingestion_translation/input/` holds the five uploaded open-access articles as raw `xml/`+`json/`.
+- **Flow:** upload → ingestion accepts 5 OA articles → linking connects FLAURA ↔ `NDA208065` ↔ label
+  → human approves → entities persisted into the KB.
+- **Expected:** `09_decision_ground_truth/ING-001.json` — `final_outcome: approved_persisted`.
+- **Value:** the canonical load — clean upload all the way to persisted, searchable knowledge.
+
+**Narrative (real-life data flow).** A translational oncology team wants the first-line osimertinib
+evidence available in the knowledge hub. A data steward clicks **"Upload & ingest"** and drops in
+five open-access review articles — these uploaded files stand in for material that could come from
+external medical portals. The **ingestion & translation agent** license-checks each one; all five
+are clean CC-BY, so it normalizes them into tidy `RDOC-*` records. The **metadata & linking agent**
+picks up those records plus the FLAURA / AURA3 trials and the `NDA208065` application and label,
+notices they all describe the *same* molecule (osimertinib / Tagrisso / AZD9291), and stitches them
+into an evidence graph — emitting `LINK-*` edges and extracting the compound and target. A human
+reviews the batch and **approves** it, and it's **persisted** into the CMS/knowledge base. Nothing
+has been *queried* yet — this flow's whole job is to make the knowledge exist and be trustworthy.
+
+### Story B — "Guardrail → human review" (`ING-002_guardrail_review`)
+
+- **Start here:** `00_raw/ING-002_guardrail_review/` — same load but with a no-license article
+  (`PMC4771182`) and patient-derived GEO (`GSE297057`, `GSE301973`) in the uploaded pool.
+- **Flow:** ingestion denies the bad-license article → linking excludes the patient-derived datasets
+  → the human-approval gate holds the batch for review; nothing is persisted.
+- **Expected:** `09_decision_ground_truth/ING-002.json` — `final_outcome: needs_human_review`,
+  approval gate `denied_pending_human_review`.
+- **Value:** the guardrail branch — license/PHI screening, then a human checkpoint before persistence.
+
+**Narrative (real-life data flow).** Same goal, messier upload. The **ingestion agent** runs its
+license check and hits `PMC4771182`: the PMC OA API reports its license as *none*, so it refuses to
+store the full text and keeps metadata only, recording an explicit deny. The clean articles still
+pass. The **metadata & linking agent** inspects the candidate GEO sample titles and finds two
+patient-derived sets — `GSE297057` (FFPE specimens) and `GSE301973` (before/after treatment
+specimens) — and excludes them, letting only the cell-line datasets through. At the **human-approval
+gate**, the reviewer is shown the three exclusions and the batch is **held for review** rather than
+auto-approved — so nothing is persisted until a person signs off. Guardrails fire during ingestion,
+and persistence waits for human judgment.
+
+### Story C — "Synthetic provenance → approve with labeling" (`ING-003_synthetic_provenance`)
+
+- **Start here:** `00_raw/ING-003_synthetic_provenance/01_upload/` — synthetic ELN/LIMS sample
+  manifest, notebook, and QC report derived from public GEO structure.
 - **Flow:** ingestion normalizes the synthetic records (stamping provenance) → linking associates
-  each synthetic sample to its public GEO series → search can answer about them → curation approves
-  *with required labeling*.
-- **Expected:** `09_decision_ground_truth/RKM-003.json` — `final_outcome:
+  each sample to its public GEO series → human approves *with required labeling* → persisted.
+- **Expected:** `09_decision_ground_truth/ING-003.json` — `final_outcome:
   approved_with_required_labeling`, provenance `synthetic_from_public_structure`.
-- **Value:** shows how lab-style operational records enter the hub without implying patient data,
-  and how a provenance label is enforced and travels with the data.
+- **Value:** lab-style operational records enter the KB without implying patient data; the provenance
+  label travels with them.
 
-**Narrative (real-life data flow).** A lab has its own internal ELN/LIMS paperwork — a sample
-manifest, an experiment notebook, a QC report — for a PC9/H1650 EGFR-inhibition study. These were
-generated from the public GEO structure and contain *no* real patient data, but they look exactly
-like the kind of operational records that usually would. The lab wants them searchable in the
-knowledge hub without anyone ever mistaking them for clinical specimens. The **ingestion agent**
-reads the CSV/TXT records and normalizes them into `SYN-LIMS-*` entities, and — critically —
-stamps every one with the provenance tag `synthetic_from_public_structure` so the "this is
-synthetic" fact is baked in from the first hop. The **metadata & linking agent** then ties each
-synthetic sample back to the real public series it was modeled on (`SYN-LIMS-001` → `GSE323366`),
-so the lineage is explicit. The **search agent** can now field a question like *"which synthetic
-samples map to the PC9/H1650 series, and what's their provenance?"* and answer with citations that
-state the synthetic origin out loud. The **curation & compliance agent** applies the data-handling
-policy and reaches a nuanced verdict: approve — but *with required labeling*. The records are
-admitted on the condition that the synthetic-provenance label stays attached wherever they go. The
-story is about metadata (provenance) being a first-class part of the handoff, not an afterthought.
+**Narrative (real-life data flow).** A lab uploads its internal ELN/LIMS paperwork for a PC9/H1650
+EGFR-inhibition study — generated from public GEO structure, containing *no* real patient data, but
+looking exactly like records that usually would. The **ingestion agent** normalizes them into
+`SYN-LIMS-*` entities and stamps each with `synthetic_from_public_structure` so the "this is
+synthetic" fact is baked in from the first hop. The **metadata & linking agent** ties each sample
+back to the real public series it was modeled on (`SYN-LIMS-001` → `GSE323366`). At the gate, the
+human **approves with a required-labeling condition**, and the records are persisted carrying that
+label — so nobody downstream mistakes synthetic data for real patient data.
 
-### Story D — "Sensitive content blocked → denied" (`RKM-004_curation_denied`)
+### Story D — "Sensitive content blocked → denied" (`ING-004_sensitive_blocked`)
 
-- **Start here:** `00_raw/RKM-004_curation_denied/` — a single patient-derived GEO candidate
+- **Start here:** `00_raw/ING-004_sensitive_blocked/` — a single patient-derived GEO candidate
   (`GSE301973`), ingested as metadata only.
-- **Flow:** ingestion defers the admissibility call → linking has nothing to link → search refuses
-  (no grounded evidence) → curation denies and requires human review.
-- **Expected:** `09_decision_ground_truth/RKM-004.json` — `final_outcome: denied`, curation gate
-  `denied`.
-- **Value:** the hard-stop path — compliance blocks content end-to-end and it never enters the base.
+- **Flow:** ingestion defers the call → linking has nothing to link → the human-approval gate denies
+  → nothing is persisted.
+- **Expected:** `09_decision_ground_truth/ING-004.json` — `final_outcome: denied_not_persisted`,
+  approval gate `denied`.
+- **Value:** the hard-stop — compliance blocks content before it ever enters the KB.
 
-**Narrative (real-life data flow).** Someone proposes adding `GSE301973` to the knowledge base — a
-GEO dataset whose sample titles reference before/after *treatment* specimens, i.e. patient-derived
-material. The **orchestrator** routes the candidate in. The **ingestion agent** connects to the
-portal but pulls only the metadata; it does *not* store any patient-level payload and deliberately
-defers the real admissibility decision to curation rather than making it alone. With nothing
-admitted, the **metadata & linking agent** has no entities to link, so it's a clean no-op — the
-pipeline doesn't manufacture connections to content that hasn't cleared compliance. When the
-**search agent** is asked to summarize the dataset, it refuses: there is no grounded, admitted
-evidence it could cite, and answering from un-vetted patient data is exactly what the system is
-built to avoid. Finally the **curation & compliance agent** makes the explicit call — the sample
-titles reference patient specimens, so it *denies* the candidate, flags it as sensitive, and marks
-it for human review. The final gate is **Denied**; `GSE301973` never becomes part of the knowledge
-base. This is the mirror image of Story A: instead of clean data flowing all the way to an
-approved answer, unsafe data is stopped cold and the trail of *why* is captured at every hop.
+**Narrative (real-life data flow).** Someone tries to upload `GSE301973`, a GEO dataset whose sample
+titles reference before/after *treatment* specimens — patient-derived material. The **ingestion
+agent** recognizes the risk and stores **metadata only**, deliberately deferring the admissibility
+call rather than making it alone. With nothing admitted, the **metadata & linking agent** has
+nothing to link — a clean no-op. At the **human-approval gate** the reviewer **denies** the
+candidate; it never becomes part of the knowledge base. The mirror image of Story A: unsafe data is
+stopped cold and the trail of *why* is captured at every step.
+
+## Search flow stories
+
+### Story E — "Empty knowledge base" (`QRY-001_no_data`)
+
+- **Start here:** `00_raw/QRY-001_no_data/` — the osimertinib query against an **empty** KB
+  (`02_search_chat/input/` is empty).
+- **Flow:** query → search finds nothing to ground on → compliance confirms a safe "no data" reply →
+  response returned.
+- **Expected:** `09_decision_ground_truth/QRY-001.json` — `final_outcome: no_grounded_answer`,
+  `kb_state: empty`.
+- **Value:** the *before* state of the headline demo.
+
+**Narrative (real-life data flow).** A clinician-researcher opens the search console and clicks
+**"Run query"** with the preset osimertinib question — but **nothing has been ingested yet**. The
+**search & chat agent** has an empty knowledge base to retrieve from, so it can't ground an answer
+and returns `no_grounded_answer`. The **curation & compliance agent** reviews that draft and
+confirms the safe, honest response is to say *"no grounded information is available yet."* The system
+refuses to invent an answer it can't cite.
+
+### Story F — "Populated knowledge base" (`QRY-002_grounded`)
+
+- **Start here:** `00_raw/QRY-002_grounded/` — the **same** query, now against a **populated** KB
+  (`02_search_chat/input/` holds the persisted article, trial, dataset, label).
+- **Flow:** query → search retrieves the persisted evidence and drafts an answer with citations →
+  compliance reviews it clean → response returned.
+- **Expected:** `09_decision_ground_truth/QRY-002.json` — `final_outcome: answer_with_citations`,
+  `kb_state: populated`.
+- **Value:** the *after* state of the headline demo.
+
+**Narrative (real-life data flow).** After `ING-001` persisted the evidence, the same researcher
+runs the **same** query again. This time the **search & chat agent** retrieves the persisted
+article, trial, dataset and label, and drafts an answer about osimertinib resistance and its
+first-line evidence — with **≥2 citations and a raw-source trace** back to the original files. The
+**curation & compliance agent** reviews the draft, finds no sensitive content, and **approves** it
+for return. The grounded answer is delivered. Nothing about the search flow re-ran ingestion — it
+simply queried knowledge that was already there.
 
 ## Reproduce
 
 ```bash
 cd dataset-seed
 python3 generate_raw_layer.py          # fetch/synthesize -> 00_raw/_corpus/  (needs network)
-python3 generate_normalized_layers.py  # normalized entities + 09 RKM rollups (reads scenarios.py)
+python3 generate_normalized_layers.py  # normalized entities + 09 ING/QRY rollups (reads scenarios.py)
 python3 generate_agent_documents.py    # multi-format replicas in _corpus/
-python3 build_scenario_folders.py      # (offline) rebuild 00_raw/RKM-*/ from _corpus/ + entities
+python3 build_scenario_folders.py      # (offline) rebuild 00_raw/{ING,QRY}-*/ from _corpus/ + entities
 ```

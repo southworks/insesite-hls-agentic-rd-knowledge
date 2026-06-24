@@ -1,0 +1,12 @@
+{
+  "draft_answer_citations": [
+    "RDOC-PMC6889286",
+    "TRIAL-NCT02296125",
+    "LBL-TAGRISSO-OPENFDA"
+  ],
+  "enforced_policy_refs": [
+    "HLS-TRIAL-300",
+    "HLS-LIC-200"
+  ],
+  "task": "review_answer_before_return"
+}

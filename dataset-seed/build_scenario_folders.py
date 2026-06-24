@@ -2,31 +2,34 @@
 """
 Build the per-scenario, per-agent Raw Layer folders for the HLS dataset seed.
 
-The test cases are end-to-end: each scenario is one full path through the workflow
-(Orchestrator -> Ingestion -> Metadata/Linking -> Search/Chat -> Curation/Compliance),
-differing at the human-in-the-loop gates. The scenario set is defined once in
-`scenarios.py` (imported here and by generate_normalized_layers.py).
+HLS is **two isolated flows** (no single orchestrator), decoupled in time:
 
-The canonical corpus in 00_raw/_corpus/ (produced by generate_raw_layer.py) is the single
-source of truth. This script creates, per scenario, one folder with a sub-folder per stage:
+    INGESTION: upload -> ingestion/translation -> metadata linking -> human approval -> persistence
+    SEARCH:    query  -> search/chat -> curation/compliance review -> response
 
-    00_raw/RKM-XXX_<path>/
-      01_orchestrator/        request.json
-      02_ingestion_translation/
-        agent_input.json      <- structured payload to START this agent in isolation
-        input/                <- the documents the agent starts from (raw or upstream entities)
-        expected_output/      <- the entities/decision it would produce (so the next agent can start)
-          _expected_output.json
-      03_metadata_linking/    (same shape)
-      04_search_chat/
-      05_curation_compliance/
-      scenario.json           <- e2e rollup mirror of 09_decision_ground_truth/RKM-XXX.json
+The scenario set is defined once in `scenarios.py` (imported here and by
+generate_normalized_layers.py). The canonical corpus in 00_raw/_corpus/ (produced by
+generate_raw_layer.py) is the single source of truth. This script creates, per scenario, one
+folder with a sub-folder per stage:
+
+    00_raw/ING-XXX_<path>/                  00_raw/QRY-XXX_<path>/
+      01_upload/         trigger.json         01_query/          trigger.json
+      02_ingestion_translation/              02_search_chat/
+        agent_input.json                       agent_input.json
+        input/  expected_output/               input/  expected_output/
+      03_metadata_linking/  (agent)          03_curation_compliance/ (agent)
+      04_human_approval/    gate.json        04_response/       response.json
+      05_persistence/       persisted.json
+      scenario.json   <- mirror of 09_decision_ground_truth/<ID>.json
+
+Each stage's primary file is named by its kind (trigger.json | agent_input.json | gate.json |
+persisted.json | response.json). Only `agent` stages carry input/ + expected_output/.
 
 Because HLS is entity-based, raw files and normalized entities are intentionally duplicated
 into every stage/scenario that uses them; the canonical copies in _corpus/ and the normalized
 01_*..08_* layers remain the source referenced by raw_manifest.json.
 
-Idempotent: existing 00_raw/RKM-*/ folders are removed and rebuilt. Offline (no fetch).
+Idempotent: existing 00_raw/{ING,QRY}-*/ folders are removed and rebuilt. Offline (no fetch).
 Run AFTER generate_normalized_layers.py (it copies normalized entity JSON into the folders).
 """
 
@@ -36,7 +39,7 @@ import json
 import shutil
 from pathlib import Path
 
-from scenarios import SCENARIOS, scenario_folder, stage_folder
+from scenarios import SCENARIOS, scenario_folder, stage_folder, stage_primary
 
 BASE = Path(__file__).resolve().parent
 RAW = BASE / "00_raw"
@@ -89,37 +92,47 @@ def build_stage(scenario: dict, stage: dict, scenario_dir: Path, index: dict[str
                 warnings: list[str]) -> int:
     scenario_id = scenario["scenario_id"]
     stage_dir = scenario_dir / stage_folder(stage)
-    input_dir = stage_dir / "input"
-    output_dir = stage_dir / "expected_output"
-    input_dir.mkdir(parents=True, exist_ok=True)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    stage_dir.mkdir(parents=True, exist_ok=True)
     files = 0
 
-    # agent_input.json — the payload to start this agent in isolation.
-    (stage_dir / "agent_input.json").write_text(
-        json.dumps(stage["agent_input"], indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    # Primary file, named by stage kind (trigger.json | agent_input.json | gate.json | ...).
+    filename, _key, content = stage_primary(stage)
+    (stage_dir / filename).write_text(
+        json.dumps(content, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
-    # input/ — documents the agent starts from.
+    # input/ — documents/entities the stage starts from.
     input_raw = list(stage.get("input_raw", []))
-    if stage.get("input_from_output_raw"):
+    for eid in stage.get("input_entities_raw", []):          # raw behind uploaded entities
+        ef = index.get(eid)
+        if ef is not None:
+            input_raw += raw_sources_for(ef)
+    if stage.get("input_from_output_raw"):                   # raw the agent ingests behind its output
         for eid in stage.get("output_entities", []):
             ef = index.get(eid)
             if ef is not None:
                 input_raw += raw_sources_for(ef)
-    for rel in sorted(set(input_raw)):
-        files += copy_raw(rel, input_dir, warnings, scenario_id)
-    for eid in stage.get("input_entities", []):
-        files += copy_entity(eid, input_dir, index, warnings, scenario_id)
+    input_entities = stage.get("input_entities", [])
+    # Agent stages always get an input/ (possibly empty, e.g. a query against an empty KB).
+    if input_raw or input_entities or stage["kind"] == "agent":
+        input_dir = stage_dir / "input"
+        input_dir.mkdir(parents=True, exist_ok=True)
+        for rel in sorted(set(input_raw)):
+            files += copy_raw(rel, input_dir, warnings, scenario_id)
+        for eid in input_entities:
+            files += copy_entity(eid, input_dir, index, warnings, scenario_id)
 
-    # expected_output/ — entities + the measurable expectation summary.
-    for eid in stage.get("output_entities", []):
-        files += copy_entity(eid, output_dir, index, warnings, scenario_id)
-    (output_dir / "_expected_output.json").write_text(
-        json.dumps({
-            "stage": stage["stage"], "agent": stage["agent"], "decision": stage["decision"],
-            "gate": stage["gate"], "output_entities": stage.get("output_entities", []),
-            "expected_output": stage["expected_output"],
-        }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    # expected_output/ — only agent stages produce a measurable expectation + output entities.
+    if stage["kind"] == "agent":
+        output_dir = stage_dir / "expected_output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        for eid in stage.get("output_entities", []):
+            files += copy_entity(eid, output_dir, index, warnings, scenario_id)
+        (output_dir / "_expected_output.json").write_text(
+            json.dumps({
+                "stage": stage["stage"], "agent": stage.get("agent"), "decision": stage.get("decision"),
+                "gate": stage.get("gate"), "output_entities": stage.get("output_entities", []),
+                "expected_output": stage.get("expected_output"),
+            }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return files
 
 
@@ -135,12 +148,6 @@ def main() -> None:
     warnings: list[str] = []
     for scenario in SCENARIOS:
         scenario_dir = RAW / scenario_folder(scenario)
-        # 01_orchestrator/request.json
-        orch_dir = scenario_dir / "01_orchestrator"
-        orch_dir.mkdir(parents=True, exist_ok=True)
-        (orch_dir / "request.json").write_text(
-            json.dumps(scenario["orchestrator_request"], indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
         files = 0
         for stage in scenario["stages"]:
             files += build_stage(scenario, stage, scenario_dir, index, warnings)

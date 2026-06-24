@@ -1,0 +1,16 @@
+{
+  "decision": "approve",
+  "request": "approve_ingested_batch_for_persistence",
+  "reviewer": "Marisol Vega, Research Data Steward (fictional)",
+  "submitted_entities": [
+    "RDOC-PMC6889286",
+    "RDOC-PMC5447962",
+    "RDOC-PMC13070087",
+    "RDOC-PMC13129538",
+    "RDOC-PMC13143971",
+    "LINK-FLAURA-REG-NDA208065",
+    "LINK-REG-NDA208065-LBL-TAGRISSO-OPENFDA",
+    "CMP-CHEMBL3353410",
+    "TGT-CHEMBL203"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "action": "upload_and_ingest",
+  "candidate_dataset_ids": [
+    "GSE323366",
+    "GSE323365",
+    "GSE272182",
+    "GSE300311",
+    "GSE298111",
+    "GSE297057",
+    "GSE301973"
+  ],
+  "external_connector_conceptual": "Connect Portals \u2014 uploaded files stand in for data that could come from external medical portals",
+  "note": "controlled button/process trigger \u2014 not a free-form chatbot",
+  "portal_source_manifest": "00_raw/_corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
+  "surface": "ingestion_console",
+  "type": "ui_action",
+  "uploaded_pmcids": [
+    "PMC6889286",
+    "PMC5447962",
+    "PMC13070087",
+    "PMC13129538",
+    "PMC13143971",
+    "PMC4771182"
+  ]
+}

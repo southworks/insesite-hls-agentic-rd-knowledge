@@ -1,5 +1,0 @@
-{
-  "query": "Summarize the GSE301973 dataset.",
-  "retrieval_scope_entities": [],
-  "task": "answer_grounded_query"
-}

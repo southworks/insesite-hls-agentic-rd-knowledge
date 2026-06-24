@@ -1,8 +1,0 @@
-{
-  "raw_records": [
-    "00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv",
-    "00_raw/_corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt",
-    "00_raw/_corpus/txt/synthetic_eln_lims/lims_quality_control_report.txt"
-  ],
-  "task": "ingest_synthetic_eln_lims"
-}

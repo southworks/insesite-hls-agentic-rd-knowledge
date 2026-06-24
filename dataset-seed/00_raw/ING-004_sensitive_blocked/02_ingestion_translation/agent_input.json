@@ -1,0 +1,7 @@
+{
+  "candidate_dataset_ids": [
+    "GSE301973"
+  ],
+  "portal_source_manifest": "00_raw/_corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
+  "task": "ingest_candidate_dataset_metadata_only"
+}

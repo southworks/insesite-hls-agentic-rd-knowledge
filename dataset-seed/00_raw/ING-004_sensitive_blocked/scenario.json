@@ -1,0 +1,130 @@
+{
+  "document_date": "2026-06-24",
+  "document_type": "decision_ground_truth",
+  "final_outcome": "denied_not_persisted",
+  "flow": "ingestion",
+  "path": "sensitive_blocked",
+  "raw_sources": [
+    "00_raw/_corpus/raw_manifest.json"
+  ],
+  "required_human_review": true,
+  "scenario_folder": "ING-004_sensitive_blocked",
+  "scenario_id": "ING-004",
+  "scenario_kind": "e2e_flow_path",
+  "source_system": "hls_knowledge_mining_ground_truth",
+  "stages": [
+    {
+      "agent": null,
+      "decision": null,
+      "expected_output": null,
+      "gate": null,
+      "input_entities": [],
+      "kind": "trigger",
+      "order": 1,
+      "output_entities": [],
+      "raw_layer_folder": "00_raw/ING-004_sensitive_blocked/01_upload/",
+      "stage": "upload",
+      "trigger": {
+        "action": "upload_and_ingest",
+        "candidate_dataset_ids": [
+          "GSE301973"
+        ],
+        "external_connector_conceptual": "Connect Portals — uploaded files stand in for data that could come from external medical portals",
+        "note": "GSE301973 references before/after treatment specimens (patient-derived)",
+        "portal_source_manifest": "00_raw/_corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
+        "surface": "ingestion_console",
+        "type": "ui_action"
+      }
+    },
+    {
+      "agent": "ingestion_translation_agent",
+      "agent_input": {
+        "candidate_dataset_ids": [
+          "GSE301973"
+        ],
+        "portal_source_manifest": "00_raw/_corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
+        "task": "ingest_candidate_dataset_metadata_only"
+      },
+      "decision": "defer_to_human_approval",
+      "expected_output": {
+        "flagged_candidate": "GSE301973",
+        "normalized_count": 0,
+        "note": "metadata only — deferred to human approval"
+      },
+      "gate": null,
+      "input_entities": [],
+      "kind": "agent",
+      "order": 2,
+      "output_entities": [],
+      "raw_layer_folder": "00_raw/ING-004_sensitive_blocked/02_ingestion_translation/",
+      "stage": "ingestion_translation"
+    },
+    {
+      "agent": "metadata_linking_agent",
+      "agent_input": {
+        "admitted_entities": [],
+        "task": "link_admitted_entities"
+      },
+      "decision": "no_action",
+      "expected_output": {
+        "link_count": 0,
+        "reason": "candidate_not_admitted"
+      },
+      "gate": null,
+      "input_entities": [],
+      "kind": "agent",
+      "order": 3,
+      "output_entities": [],
+      "raw_layer_folder": "00_raw/ING-004_sensitive_blocked/03_metadata_linking/",
+      "stage": "metadata_linking"
+    },
+    {
+      "agent": null,
+      "decision": "deny",
+      "expected_output": null,
+      "gate": "denied",
+      "gate_record": {
+        "candidate": "GSE301973",
+        "decision": "deny",
+        "reason": "patient_derived_specimens",
+        "request": "approve_candidate_for_persistence",
+        "reviewer": "Marisol Vega, Research Data Steward (fictional)"
+      },
+      "input_entities": [],
+      "kind": "gate",
+      "order": 4,
+      "output_entities": [],
+      "raw_layer_folder": "00_raw/ING-004_sensitive_blocked/04_human_approval/",
+      "stage": "human_approval"
+    },
+    {
+      "agent": null,
+      "decision": null,
+      "expected_output": null,
+      "gate": null,
+      "input_entities": [],
+      "kind": "sink",
+      "order": 5,
+      "output_entities": [],
+      "persisted": {
+        "persisted_entities": [],
+        "status": "denied_not_persisted",
+        "target": "cms_knowledge_base"
+      },
+      "raw_layer_folder": "00_raw/ING-004_sensitive_blocked/05_persistence/",
+      "stage": "persistence"
+    }
+  ],
+  "title": "Load a patient-derived candidate — blocked at human approval, never persisted",
+  "trigger": {
+    "action": "upload_and_ingest",
+    "candidate_dataset_ids": [
+      "GSE301973"
+    ],
+    "external_connector_conceptual": "Connect Portals — uploaded files stand in for data that could come from external medical portals",
+    "note": "controlled button/process trigger — not a free-form chatbot",
+    "request_id": "ING-004-REQ",
+    "surface": "ingestion_console",
+    "type": "ui_action"
+  }
+}

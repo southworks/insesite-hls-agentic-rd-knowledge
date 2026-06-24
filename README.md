@@ -6,13 +6,12 @@ Dataset and solution accelerator workspace for an HLS agentic R&D knowledge mini
 
 This repository defines a compliance-safe dataset for an agentic research knowledge hub. The dataset starts from a raw layer of public or simulated R&D knowledge artifacts and produces downstream entities that represent how agents ingest, normalize, link, retrieve, curate, and govern research content.
 
-The scenario is aligned to:
+HLS is **two separate processes, decoupled in time** (not one continuous flow with a single orchestrator). Each is started by a controlled UI action, not a free-form chatbot:
 
-- Ingestion and translation of R&D source material
-- Metadata extraction, entity extraction, and version linking
-- Retrieval with Cohere Embed and Cohere Rerank
-- Search and chat over grounded research evidence
-- Curation, compliance review, and human approval decisions
+- **Ingestion flow** — *load* knowledge: upload documents → ingestion & translation → metadata extraction & linking → human approval → persistence into the CMS/knowledge base. (Manual file upload stands in for the conceptual "Connect Portals" external connector.)
+- **Search flow** — *query* that knowledge later: UI query → search & chat retrieval (Cohere Embed/Rerank) → curation & compliance review of the result → grounded answer with citations.
+
+The headline demo is stateful: **search an empty KB → ingest → search again** and the grounded answer now appears. See [dataset-seed/HANDOFF.md](dataset-seed/HANDOFF.md), [dataset-seed/TEST_CASES.md](dataset-seed/TEST_CASES.md), and [dataset-seed/TESTING_GUIDE.md](dataset-seed/TESTING_GUIDE.md).
 
 ## Dataset Direction
 
@@ -39,10 +38,11 @@ Current dataset planning and raw-source materials include:
 - `dataset-seed/build_scenario_folders.py`
 - `dataset-seed/RAW_LAYER.md`
 - `dataset-seed/TEST_CASES.md`
+- `dataset-seed/TESTING_GUIDE.md` (high-level demo runbook: drive each scenario by injecting the per-agent folders)
 - `dataset-seed/AGENT_INPUTS.md`
 - `dataset-seed/FORMAT_DECISIONS.md`
 - `dataset-seed/scenarios.py`, `dataset-seed/HANDOFF.md`
-- `dataset-seed/00_raw/_corpus/{csv,html,json,md,pdf,txt,xml}/` (canonical) and `dataset-seed/00_raw/RKM-*_<path>/` (per-scenario, per-agent e2e folders)
+- `dataset-seed/00_raw/_corpus/{csv,html,json,md,pdf,txt,xml}/` (canonical) and `dataset-seed/00_raw/{ING,QRY}-*_<path>/` (per-scenario, per-stage flow folders)
 - `dataset-seed/01_*` through `dataset-seed/09_*`
 - `dataset-seed/dataset-manifest.json`
 

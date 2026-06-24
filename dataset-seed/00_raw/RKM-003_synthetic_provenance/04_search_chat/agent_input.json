@@ -1,9 +1,0 @@
-{
-  "query": "Which synthetic ELN/LIMS samples map to the PC9/H1650 EGFR-inhibition GEO series, and what is their provenance?",
-  "retrieval_scope_entities": [
-    "SYN-LIMS-001",
-    "SYN-LIMS-010",
-    "DATASET-GSE323366"
-  ],
-  "task": "answer_grounded_query"
-}

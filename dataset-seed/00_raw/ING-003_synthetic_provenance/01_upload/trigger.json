@@ -1,0 +1,12 @@
+{
+  "action": "upload_and_ingest",
+  "external_connector_conceptual": "Connect Portals \u2014 uploaded files stand in for data that could come from external medical portals",
+  "note": "synthetic ELN/LIMS derived from public GEO structure \u2014 no patient data",
+  "surface": "ingestion_console",
+  "type": "ui_action",
+  "uploaded_files": [
+    "00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv",
+    "00_raw/_corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt",
+    "00_raw/_corpus/txt/synthetic_eln_lims/lims_quality_control_report.txt"
+  ]
+}

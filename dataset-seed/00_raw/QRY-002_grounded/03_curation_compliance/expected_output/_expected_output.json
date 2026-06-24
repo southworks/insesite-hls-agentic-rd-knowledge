@@ -1,0 +1,12 @@
+{
+  "agent": "curation_compliance_agent",
+  "decision": "approve_response",
+  "expected_output": {
+    "decision": "approve_response",
+    "required_human_review": false,
+    "sensitive_content_found": false
+  },
+  "gate": "approved",
+  "output_entities": [],
+  "stage": "curation_compliance"
+}

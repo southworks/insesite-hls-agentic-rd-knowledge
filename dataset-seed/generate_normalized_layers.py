@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree as ET
 
-from scenarios import SCENARIOS, STAGE_FOLDERS, scenario_folder
+from scenarios import SCENARIOS, STAGE_FOLDERS, scenario_folder, stage_primary
 
 
 BASE = Path(__file__).resolve().parent
@@ -777,50 +777,56 @@ def generate_curation_decisions(catalog: dict[str, Any]) -> list[dict[str, Any]]
 
 
 def generate_ground_truth() -> list[dict[str, Any]]:
-    """Emit one e2e ground-truth rollup per scenario (RKM-XXX.json).
+    """Emit one e2e ground-truth rollup per scenario (ING-XXX.json / QRY-XXX.json).
 
-    Each rollup describes the full workflow path: the orchestrator request, the ordered
-    per-agent stages (with their start-from-any-point `agent_input`, the entities handed in,
-    the entities/decision produced, and the HITL gate), and the final outcome. The scenario
-    set is defined once in `scenarios.py`; this replaces the previous per-agent GT-*.json.
+    HLS is two isolated flows. Each rollup describes one full path through ONE flow: the UI
+    trigger, the ordered stages (each with its start-from-any-point primary payload, the
+    entities handed in, the entities/decision produced, and the HITL gate), and the final
+    outcome. The scenario set is defined once in `scenarios.py`.
     """
     gt_dir = FOLDERS["decision_ground_truth"]
-    # Drop any legacy per-agent cases so the folder holds only the e2e rollups + SCHEMA.md.
-    for stale in list(gt_dir.glob("GT-*.json")) + list(gt_dir.glob("RKM-*.json")):
-        stale.unlink()
+    # Drop legacy/previous cases so the folder holds only the current rollups + SCHEMA.md.
+    for pat in ("GT-*.json", "RKM-*.json", "ING-*.json", "QRY-*.json"):
+        for stale in gt_dir.glob(pat):
+            stale.unlink()
 
     rollups: list[dict[str, Any]] = []
     for scenario in SCENARIOS:
         folder = scenario_folder(scenario)
         stages = []
         for order, stage in enumerate(scenario["stages"], start=1):
+            _filename, key, content = stage_primary(stage)
             stages.append({
                 "order": order,
                 "stage": stage["stage"],
-                "agent": stage["agent"],
+                "kind": stage["kind"],
+                "agent": stage.get("agent"),
                 "raw_layer_folder": f"00_raw/{folder}/{STAGE_FOLDERS[stage['stage']]}/",
-                "agent_input": stage["agent_input"],
+                key: content,
                 "input_entities": stage.get("input_entities", []),
                 "output_entities": stage.get("output_entities", []),
-                "expected_output": stage["expected_output"],
-                "decision": stage["decision"],
-                "gate": stage["gate"],
+                "expected_output": stage.get("expected_output"),
+                "decision": stage.get("decision"),
+                "gate": stage.get("gate"),
             })
         rollup = {
             "scenario_id": scenario["scenario_id"],
             "document_type": "decision_ground_truth",
-            "scenario_kind": "e2e_workflow_path",
-            "document_date": "2026-06-23",
+            "scenario_kind": "e2e_flow_path",
+            "flow": scenario["flow"],
+            "document_date": "2026-06-24",
             "source_system": "hls_knowledge_mining_ground_truth",
             "title": scenario["title"],
             "path": scenario["path"],
             "scenario_folder": folder,
-            "orchestrator_request": scenario["orchestrator_request"],
+            "trigger": scenario["trigger"],
             "stages": stages,
             "final_outcome": scenario["final_outcome"],
             "required_human_review": scenario["required_human_review"],
             "raw_sources": [rel(RAW / "raw_manifest.json")],
         }
+        if "kb_state" in scenario:
+            rollup["kb_state"] = scenario["kb_state"]
         rollups.append(rollup)
         write_json(gt_dir / f"{scenario['scenario_id']}.json", rollup)
 
@@ -983,32 +989,43 @@ Allow/deny/review decisions for source inclusion and compliance guardrails.
 """,
         "decision_ground_truth": """# 09 Decision Ground Truth Schema
 
-End-to-end ground truth: one rollup per scenario (`RKM-XXX.json`). Each scenario is a full
-path through the workflow (Orchestrator -> Ingestion -> Metadata/Linking -> Search/Chat ->
-Curation/Compliance); the four scenarios differ at the human-in-the-loop gates. Defined once
-in `scenarios.py`; built into `00_raw/RKM-XXX_<path>/` by `build_scenario_folders.py`.
+End-to-end ground truth for HLS's **two isolated flows** — one rollup per scenario:
+
+- `ING-XXX.json` — INGESTION: upload -> ingestion/translation -> metadata linking ->
+  human approval -> persistence into the CMS/knowledge base.
+- `QRY-XXX.json` — SEARCH: UI query -> search/chat retrieval -> curation/compliance review
+  of the result -> response. Runs later, against already-persisted knowledge.
+
+The flows are decoupled in time (no single orchestrator over all agents). Defined once in
+`scenarios.py`; built into `00_raw/{ING,QRY}-XXX_<path>/` by `build_scenario_folders.py`.
 
 ## Scenario-level fields
 
-- `scenario_id` (e.g. `RKM-001`)
+- `scenario_id` (e.g. `ING-001`, `QRY-001`)
 - `document_type` = `decision_ground_truth`
-- `scenario_kind` = `e2e_workflow_path`
-- `title`, `path` (e.g. `full_approval`, `guardrail_review`, `synthetic_provenance`, `curation_denied`)
-- `scenario_folder` (the `00_raw/` folder), `orchestrator_request`
-- `stages` (ordered per-agent steps, see below)
+- `scenario_kind` = `e2e_flow_path`
+- `flow` = `ingestion` | `search`
+- `title`, `path` (e.g. `full_approval`, `guardrail_review`, `synthetic_provenance`,
+  `sensitive_blocked`, `no_data`, `grounded`)
+- `scenario_folder` (the `00_raw/` folder)
+- `trigger` — the controlled UI action that starts the flow (button/process, not a chatbot)
+- `kb_state` (search only) = `empty` | `populated`
+- `stages` (ordered steps, see below)
 - `final_outcome`, `required_human_review`, `raw_sources`
 
 ## Per-stage fields (`stages[]`)
 
-- `order`, `stage`, `agent`
+- `order`, `stage`, `kind` (`trigger` | `agent` | `gate` | `sink` | `output`), `agent` (nullable)
 - `raw_layer_folder` — the self-contained `00_raw/.../<stage>/` folder
-- `agent_input` — structured payload to START this agent in isolation, "as if the upstream
-  agents had already run" (the handoff contract). For `search_chat` this carries the NL `query`
-  + `retrieval_scope_entities` — the one input the loan reference schema does not model.
-- `input_entities` — normalized entities handed in from upstream (copied to `<stage>/input/`)
-- `output_entities` — normalized entities this stage would produce (copied to `<stage>/expected_output/`)
-- `expected_output` — measurable expectations (counts, required links, answer points/citations, decision)
-- `decision`, `gate` (`approved` | `denied` | `denied_pending_human_review` | `approved_with_labeling` | `null`)
+- primary payload, keyed by kind: `trigger` | `agent_input` | `gate_record` | `persisted` |
+  `response`. For an `agent` stage, `agent_input` is the structured payload to START that agent
+  in isolation "as if the upstream stages had run" (the handoff contract); for `search_chat`
+  it carries the NL `query` + `retrieval_scope_entities`.
+- `input_entities` — entities handed in from upstream (copied to `<stage>/input/`)
+- `output_entities` — entities this stage would produce (copied to `<stage>/expected_output/`)
+- `expected_output` — measurable expectations (counts, links, answer points/citations, decision)
+- `decision`, `gate` (`approved` | `denied` | `denied_pending_human_review` |
+  `approved_with_labeling` | `null`)
 """,
     }
 

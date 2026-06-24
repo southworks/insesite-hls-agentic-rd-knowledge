@@ -1,0 +1,21 @@
+{
+  "agent": "metadata_linking_agent",
+  "decision": "approve",
+  "expected_output": {
+    "associations": [
+      {
+        "geo_series": "GSE323366",
+        "sample": "SYN-LIMS-001"
+      },
+      {
+        "geo_series": "GSE323366",
+        "sample": "SYN-LIMS-010"
+      }
+    ]
+  },
+  "gate": null,
+  "output_entities": [
+    "DATASET-GSE323366"
+  ],
+  "stage": "metadata_linking"
+}
