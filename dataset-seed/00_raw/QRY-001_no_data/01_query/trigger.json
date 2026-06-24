@@ -1,8 +1,0 @@
-{
-  "action": "run_query",
-  "kb_state": "empty",
-  "note": "controlled preset query \u2014 not a free-form chatbot",
-  "query": "What are the known mechanisms of resistance to osimertinib in EGFR-mutated NSCLC, and which clinical-trial and regulatory evidence support its first-line use?",
-  "surface": "search_console",
-  "type": "ui_action"
-}

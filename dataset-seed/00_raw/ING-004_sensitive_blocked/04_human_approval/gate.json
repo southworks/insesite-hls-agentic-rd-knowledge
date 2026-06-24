@@ -1,7 +1,0 @@
-{
-  "candidate": "GSE301973",
-  "decision": "deny",
-  "reason": "patient_derived_specimens",
-  "request": "approve_candidate_for_persistence",
-  "reviewer": "Marisol Vega, Research Data Steward (fictional)"
-}

@@ -1,9 +1,0 @@
-{
-  "action": "run_query",
-  "depends_on_ingestion": "ING-001 (entities must already be persisted)",
-  "kb_state": "populated",
-  "note": "controlled preset query \u2014 not a free-form chatbot",
-  "query": "What are the known mechanisms of resistance to osimertinib in EGFR-mutated NSCLC, and which clinical-trial and regulatory evidence support its first-line use?",
-  "surface": "search_console",
-  "type": "ui_action"
-}
