@@ -42,7 +42,7 @@ Metadata & Linking                           Curation & Compliance
         │                                            ▲
         ▼                                            │
    ┌─────────────────────────────────────────────────┐
-   │             Microsoft Fabric (knowledge store)    │
+   │         Microsoft Fabric (knowledge store)      │
    └─────────────────────────────────────────────────┘
 ```
 
@@ -115,15 +115,15 @@ Every agent shares the same technical stack:
 | Orchestration| Agent Framework (Microsoft)               |
 | Model        | Cohere Command A+                         |
 | Memory       | Context across workflow steps             |
-| Integration  | Azure MCP                                  |
+| Integration  | Azure MCP                                 |
 | Retrieval    | Cohere Embed + Vector DB + Cohere Rerank  |
 
-| Agent                        | Block | Business responsibility                                                              |
-|------------------------------|-------|--------------------------------------------------------------------------------------|
-| **Ingestion & Translation**  | 1     | Connect to portals/sources; de-duplicate and normalize formats                       |
-| **Metadata & Linking**       | 1     | Extract entities and versions; link documents to datasets and studies (RAG)          |
+| Agent                        | Block | Business responsibility                                                               |
+|------------------------------|-------|---------------------------------------------------------------------------------------|
+| **Ingestion & Translation**  | 1     | Connect to portals/sources; de-duplicate and normalize formats                        |
+| **Metadata & Linking**       | 1     | Extract entities and versions; link documents to datasets and studies (RAG)           |
 | **Search & Chat**            | 2     | Retrieve with grounded citations and lineage; answer queries and draft summaries (RAG)|
-| **Curation & Compliance**    | 2     | Flag gaps and sensitive content; prompt owners and capture decisions                 |
+| **Curation & Compliance**    | 2     | Flag gaps and sensitive content; prompt owners and capture decisions                  |
 
 #### Concrete actions (per diagram)
 
