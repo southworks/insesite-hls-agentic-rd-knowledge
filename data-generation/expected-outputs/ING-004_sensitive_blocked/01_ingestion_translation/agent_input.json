@@ -1,6 +1,0 @@
-{
-  "candidate_dataset_ids": [
-    "GSE301973"
-  ],
-  "task": "ingest_candidate_dataset_metadata_only"
-}

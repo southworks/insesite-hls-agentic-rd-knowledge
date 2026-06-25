@@ -7,21 +7,18 @@ Demo-ready inputs for the HLS Agentic R&D Knowledge Mining workflow. Pick a case
 1. **Pick a case** under `cases/` or run the full narrative under `demo-flow/`
 2. **Load** `policies/hls_policies.txt` into your RAG / embed pipeline
 3. **Ingest** files from `<case>/ingest/` when the case requires upload (empty folder = no upload)
-4. **Send** the content of `user_input.txt` as the UI trigger (query or upload action)
 
-## Cases 1–4 (stress scenarios)
+## Cases 1–3 (stress scenarios)
 
 | Case | Folder | Legacy ID | Ingest | Expected outcome |
 |------|--------|-----------|--------|------------------|
-| Case 1 | `cases/case-01-no-data/` | QRY-001 | No | No grounded answer (empty KB) |
-| Case 2 | `cases/case-02-human-review/` | ING-002 | Yes — 5 OA articles | Human review needed; nothing persisted |
-| Case 3 | `cases/case-03-approval-labeling/` | ING-003 | Yes — synthetic ELN/LIMS | Approved with required labeling |
-| Case 4 | `cases/case-04-sensitive-denied/` | ING-004 | Yes — sensitive GEO record | Denied; nothing persisted |
+| Case 2 | `cases/case-01-human-review/` | ING-002 | Yes — 5 OA articles | Human review needed; nothing persisted |
+| Case 3 | `cases/case-02-approval-labeling/` | ING-003 | Yes — synthetic ELN/LIMS | Approved with required labeling |
+| Case 4 | `cases/case-03-sensitive-denied/` | ING-004 | Yes — sensitive GEO record | Denied; nothing persisted |
 
 Each case folder contains:
 
 - `README.md` — user action, ingest summary, expected outcome, legacy ID
-- `user_input.txt` — preset query or upload trigger description
 - `ingest/` — files to upload (may be empty)
 
 ## Demo flow (stateful headline demo)
