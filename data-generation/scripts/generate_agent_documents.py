@@ -9,7 +9,7 @@ evidence cards for representative source-level entities, preserving the same
 canonical facts across TXT, Markdown, HTML, and PDF.
 
 Output:
-  dataset-seed/00_raw/_corpus/{txt,md,html,pdf}/agent_inputs/...
+  data-generation/corpus/{txt,md,html,pdf}/agent_inputs/...
 
 These replicas are for extraction-consistency tests. They are not new source
 truth; every card includes raw source traces back to 00_raw/_corpus/. They live in
@@ -29,8 +29,11 @@ from pathlib import Path
 from typing import Any
 
 
-BASE = Path(__file__).resolve().parent
-RAW = BASE / "00_raw" / "_corpus"  # canonical corpus (see generate_raw_layer.py)
+SCRIPTS = Path(__file__).resolve().parent
+DATA_GEN = SCRIPTS.parent
+BASE = DATA_GEN
+CATALOG = DATA_GEN / "entity-catalog"
+RAW = DATA_GEN / "corpus"
 LEGACY_OUT = RAW / "format_replicas"
 MANIFEST = RAW / "agent_document_manifest.json"
 FORMAT_ORDER = ["txt", "md", "html", "pdf"]
@@ -327,19 +330,19 @@ def collect_docs(categories: set[str]) -> list[AgentDoc]:
         return "all" in categories or name in categories
 
     if include("research_documents"):
-        docs.extend(doc_from_research(path) for path in sorted((BASE / "01_research_documents").glob("RDOC-*.json")))
+        docs.extend(doc_from_research(path) for path in sorted((CATALOG / "01_research_documents").glob("RDOC-*.json")))
     if include("clinical_trials"):
-        docs.extend(doc_from_trial(path) for path in sorted((BASE / "02_clinical_trials").glob("TRIAL-*.json")))
+        docs.extend(doc_from_trial(path) for path in sorted((CATALOG / "02_clinical_trials").glob("TRIAL-*.json")))
     if include("experimental_datasets"):
-        docs.extend(doc_from_dataset(path) for path in sorted((BASE / "03_experimental_datasets").glob("DATASET-*.json")))
+        docs.extend(doc_from_dataset(path) for path in sorted((CATALOG / "03_experimental_datasets").glob("DATASET-*.json")))
     if include("regulatory_submissions"):
-        docs.extend(doc_from_regulatory(path) for path in sorted((BASE / "04_regulatory_submissions").glob("*.json")))
+        docs.extend(doc_from_regulatory(path) for path in sorted((CATALOG / "04_regulatory_submissions").glob("*.json")))
     if include("policy_rag"):
-        docs.extend(doc_from_policy(path) for path in sorted((BASE / "08_policy_rag").glob("HLS-*.json")))
+        docs.extend(doc_from_policy(path) for path in sorted((CATALOG / "08_policy_rag").glob("HLS-*.json")))
     if include("curation_decisions"):
-        docs.extend(doc_from_curation(path) for path in sorted((BASE / "07_curation_decisions").glob("CUR-*.json")))
+        docs.extend(doc_from_curation(path) for path in sorted((CATALOG / "07_curation_decisions").glob("CUR-*.json")))
     if include("synthetic_eln_lims"):
-        lims = sorted((BASE / "03_experimental_datasets").glob("SYN-LIMS-*.json"))
+        lims = sorted((CATALOG / "03_experimental_datasets").glob("SYN-LIMS-*.json"))
         if lims:
             docs.append(doc_from_eln_lims_digest(lims))
 

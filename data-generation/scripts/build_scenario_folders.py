@@ -6,12 +6,12 @@ Only the agents that **consume data** are materialized (ingestion & translation,
 search & chat, curation & compliance) plus the final response. The human-approval gates and
 persistence are memory stages — they live in `scenario.json` only (see scenarios.py / HANDOFF.md).
 
-The normalized entity catalog at the `dataset-seed/` root (01_research_documents ..
-07_curation_decisions) and the rollups in 09_decision_ground_truth/ are the single sources of truth;
-this script copies the relevant entities into each stage's `input/` and `expected_output/`.
+The normalized entity catalog under `data-generation/entity-catalog/` and the rollups in
+`data-generation/ground-truth/` are the single sources of truth; this script copies the relevant
+entities into each stage's `input/` and `expected_output/`.
 
-    00_raw/DEMO_SCENARIO/<n>-<ID>_<path>/        (headline stateful demo: QRY-001 -> ING-001 -> QRY-002)
-    00_raw/<ID>_<path>/                          (standalone guardrail variants: ING-002/003/004)
+    expected-outputs/DEMO_SCENARIO/<n>-<ID>_<path>/   (headline stateful demo: QRY-001 -> ING-001 -> QRY-002)
+    expected-outputs/<ID>_<path>/                     (standalone guardrail variants: ING-002/003/004)
       <NN>_<stage>/
         agent_input.json        <- the handoff contract that starts that agent in isolation
         input/                  <- upstream handoff: uploaded raw (ingestion) / entities / prompt.txt
@@ -20,7 +20,7 @@ this script copies the relevant entities into each stage's `input/` and `expecte
         response.json           <- the final returned answer (search scenarios)
       scenario.json             <- full e2e answer key (mirror of 09_decision_ground_truth/<ID>.json)
 
-Idempotent: existing 00_raw/ children (except _corpus) are removed and rebuilt. Offline (no fetch).
+Idempotent: existing expected-outputs/ scenario children are removed and rebuilt. Offline (no fetch).
 Run AFTER generate_normalized_layers.py.
 """
 
@@ -35,20 +35,22 @@ from scenarios import (
     demo_prefix,
 )
 
-BASE = Path(__file__).resolve().parent
-RAW = BASE / "00_raw"
-CORPUS = RAW / "_corpus"
-GT_DIR = BASE / "09_decision_ground_truth"
+SCRIPTS = Path(__file__).resolve().parent
+DATA_GEN = SCRIPTS.parent
+OUTPUT = DATA_GEN / "expected-outputs"
+CORPUS = DATA_GEN / "corpus"
+GT_DIR = DATA_GEN / "ground-truth" / "09_decision_ground_truth"
+CATALOG = DATA_GEN / "entity-catalog"
 
 # Root normalized entity catalog — every entity id resolves to exactly one of these folders.
 CATALOG_FOLDERS = [
-    BASE / "01_research_documents",
-    BASE / "02_clinical_trials",
-    BASE / "03_experimental_datasets",
-    BASE / "04_regulatory_submissions",
-    BASE / "05_compounds_targets",
-    BASE / "06_evidence_links",
-    BASE / "07_curation_decisions",
+    CATALOG / "01_research_documents",
+    CATALOG / "02_clinical_trials",
+    CATALOG / "03_experimental_datasets",
+    CATALOG / "04_regulatory_submissions",
+    CATALOG / "05_compounds_targets",
+    CATALOG / "06_evidence_links",
+    CATALOG / "07_curation_decisions",
 ]
 
 
@@ -151,13 +153,14 @@ def build_output_stage(stage: dict, stage_dir: Path) -> int:
 def scenario_base_dir(scenario: dict) -> Path:
     sid = scenario["scenario_id"]
     if sid in DEMO_SEQUENCE:
-        return RAW / "DEMO_SCENARIO" / f"{demo_prefix(sid)}-{scenario_folder(scenario)}"
-    return RAW / scenario_folder(scenario)
+        return OUTPUT / "DEMO_SCENARIO" / f"{demo_prefix(sid)}-{scenario_folder(scenario)}"
+    return OUTPUT / scenario_folder(scenario)
 
 
 def main() -> None:
-    for child in RAW.iterdir():
-        if child.is_dir() and child.name != "_corpus":
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+    for child in OUTPUT.iterdir():
+        if child.is_dir():
             shutil.rmtree(child)
 
     all_warnings: list[str] = []
@@ -179,13 +182,13 @@ def main() -> None:
         shutil.copy2(GT_DIR / f"{sid}.json", scenario_dir / "scenario.json")
         files += 1
 
-        rel_dir = scenario_dir.relative_to(RAW)
+        rel_dir = scenario_dir.relative_to(OUTPUT)
         flag = f"  WARN {len(warnings)}" if warnings else ""
-        print(f"00_raw/{rel_dir}: {files} files across {len(materialized_stages(scenario))} stages{flag}")
+        print(f"expected-outputs/{rel_dir}: {files} files across {len(materialized_stages(scenario))} stages{flag}")
         all_warnings += [f"{sid}: {w}" for w in warnings]
         total_files += files
 
-    print(f"\nDone — {total_files} files written under 00_raw/ ({len(SCENARIOS)} scenarios)")
+    print(f"\nDone — {total_files} files written under expected-outputs/ ({len(SCENARIOS)} scenarios)")
     if all_warnings:
         print("\nWarnings:")
         for w in all_warnings:

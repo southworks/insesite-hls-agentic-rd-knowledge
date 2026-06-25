@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate normalized JSON entity layers from dataset-seed/00_raw/.
+Generate normalized JSON entity layers from data-generation/corpus/.
 
 The Raw Layer is the baseline. This script derives compact, traceable JSON
 entities for agent demos and evaluation, following the numbered folder
@@ -24,27 +24,30 @@ from scenarios import (
 
 
 def scenario_base_path(scenario: dict) -> str:
-    """Where this scenario's folders live under 00_raw/ (DEMO bundle vs standalone)."""
+    """Where this scenario's folders live under expected-outputs/ (DEMO bundle vs standalone)."""
     sid = scenario["scenario_id"]
     if sid in DEMO_SEQUENCE:
-        return f"00_raw/DEMO_SCENARIO/{demo_prefix(sid)}-{scenario_folder(scenario)}"
-    return f"00_raw/{scenario_folder(scenario)}"
+        return f"expected-outputs/DEMO_SCENARIO/{demo_prefix(sid)}-{scenario_folder(scenario)}"
+    return f"expected-outputs/{scenario_folder(scenario)}"
 
 
-BASE = Path(__file__).resolve().parent
-RAW = BASE / "00_raw" / "_corpus"  # canonical corpus (see generate_raw_layer.py)
-CATALOG_PATH = BASE / "_source" / "source_catalog.json"
+SCRIPTS = Path(__file__).resolve().parent
+DATA_GEN = SCRIPTS.parent
+BASE = DATA_GEN
+RAW = DATA_GEN / "corpus"
+CATALOG_PATH = DATA_GEN / "source" / "_source" / "source_catalog.json"
+CATALOG = DATA_GEN / "entity-catalog"
 
 FOLDERS = {
-    "research_documents": BASE / "01_research_documents",
-    "clinical_trials": BASE / "02_clinical_trials",
-    "experimental_datasets": BASE / "03_experimental_datasets",
-    "regulatory_submissions": BASE / "04_regulatory_submissions",
-    "compounds_targets": BASE / "05_compounds_targets",
-    "evidence_links": BASE / "06_evidence_links",
-    "curation_decisions": BASE / "07_curation_decisions",
-    "policy_rag": BASE / "08_policy_rag",
-    "decision_ground_truth": BASE / "09_decision_ground_truth",
+    "research_documents": CATALOG / "01_research_documents",
+    "clinical_trials": CATALOG / "02_clinical_trials",
+    "experimental_datasets": CATALOG / "03_experimental_datasets",
+    "regulatory_submissions": CATALOG / "04_regulatory_submissions",
+    "compounds_targets": CATALOG / "05_compounds_targets",
+    "evidence_links": CATALOG / "06_evidence_links",
+    "curation_decisions": CATALOG / "07_curation_decisions",
+    "policy_rag": CATALOG / "08_policy_rag",
+    "decision_ground_truth": DATA_GEN / "ground-truth" / "09_decision_ground_truth",
 }
 
 # Demo-relevant entity allow-lists. The dataset is trimmed to ONLY the entities the demo's
@@ -961,7 +964,7 @@ def write_dataset_manifest(counts: dict[str, int]) -> None:
             "selected_geo_records": "cell-line or assay-level records only",
         },
     }
-    write_json(BASE / "dataset-manifest.json", manifest)
+    write_json(DATA_GEN / "scripts" / "dataset-manifest.json", manifest)
 
 
 def main() -> int:

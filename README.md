@@ -11,7 +11,11 @@ HLS is **two sequential phases**, each closed by a distinct human actor (see [wo
 - **Phase 1 — Ingestion & structuring** — *load* knowledge: upload documents → ingestion & translation → metadata extraction & linking → **knowledge curator approves** → persistence into the CMS/knowledge base. (Manual file upload stands in for the conceptual "Connect Portals" external connector.)
 - **Phase 2 — Search & compliance** — *query* that knowledge later: UI query → search & chat retrieval (Cohere Embed/Rerank) → curation & compliance review → **compliance owner approves** → grounded answer with citations. Runs immediately after phase 1 or deferred.
 
-The demo traverses **every** agent and both human actors, but datasets are materialized **only for the data-consuming agents** (the rest of the chain lives in each `scenario.json`). The headline demo is stateful: **search an empty KB → ingest → search again** and the grounded answer now appears. See [dataset-seed/HANDOFF.md](dataset-seed/HANDOFF.md), [dataset-seed/TEST_CASES.md](dataset-seed/TEST_CASES.md), and [dataset-seed/TESTING_GUIDE.md](dataset-seed/TESTING_GUIDE.md).
+The demo traverses **every** agent and both human actors, but datasets are materialized **only for the data-consuming agents** (the rest of the chain lives in each scenario ground-truth file). The headline demo is stateful: **search an empty KB → ingest → search again** and the grounded answer now appears.
+
+- **Demo inputs:** [`dataset-seed/README.md`](dataset-seed/README.md) — Case 1–4 + demo-flow, policies, ingest files
+- **Reference / rebuild:** [`data-generation/README.md`](data-generation/README.md) — corpus, entity catalog, scripts, ground truth
+- **Technical docs:** [`data-generation/docs/HANDOFF.md`](data-generation/docs/HANDOFF.md), [`data-generation/docs/TEST_CASES.md`](data-generation/docs/TEST_CASES.md), [`data-generation/docs/TESTING_GUIDE.md`](data-generation/docs/TESTING_GUIDE.md)
 
 ## Dataset Direction
 
@@ -28,23 +32,24 @@ The initial commit intentionally included only:
 - `README.md`
 - `.gitignore`
 
-Current dataset planning and raw-source materials include:
+Current dataset layout:
 
-- `docs/source-baseline.md`
-- `dataset-seed/_source/source_catalog.json`
-- `dataset-seed/generate_raw_layer.py`
-- `dataset-seed/generate_normalized_layers.py`
-- `dataset-seed/generate_agent_documents.py`
-- `dataset-seed/build_scenario_folders.py`
-- `dataset-seed/RAW_LAYER.md`
-- `dataset-seed/TEST_CASES.md`
-- `dataset-seed/TESTING_GUIDE.md` (high-level demo runbook: drive each scenario by injecting the per-agent folders)
-- `dataset-seed/AGENT_INPUTS.md`
-- `dataset-seed/FORMAT_DECISIONS.md`
-- `dataset-seed/scenarios.py`, `dataset-seed/HANDOFF.md`
-- `dataset-seed/00_raw/_corpus/{csv,html,json,md,pdf,txt,xml}/` (canonical) and the per-scenario, per-stage folders under `dataset-seed/00_raw/DEMO_SCENARIO/<n>-<ID>_<path>/` (headline demo) and `dataset-seed/00_raw/ING-*_<path>/` (standalone guardrail variants)
-- `dataset-seed/01_research_documents/` through `dataset-seed/09_decision_ground_truth/` (trimmed normalized entity catalog)
-- `dataset-seed/dataset-manifest.json`
+**Demo package** (`dataset-seed/`):
+
+- `README.md` — case index and quick start
+- `cases/case-01-no-data/` … `case-04-sensitive-denied/` — stress scenarios (legacy IDs in each README)
+- `demo-flow/step-01-no-data/` … `step-03-grounded-query/` — stateful headline demo
+- `policies/hls_policies.txt` — all governance rules in one file
+
+**Generation & reference** (`data-generation/`):
+
+- `corpus/` — canonical raw source files
+- `entity-catalog/` — normalized JSON entities (`01_research_documents/` … `08_policy_rag/`)
+- `ground-truth/` — e2e answer keys (`QRY-001.json`, `ING-001.json`, …)
+- `expected-outputs/` — per-stage validation artifacts (rebuilt by scripts)
+- `scripts/` — `generate_raw_layer.py`, `generate_normalized_layers.py`, `build_scenario_folders.py`, `sync_demo_ingest.py`, `scenarios.py`
+- `docs/` — HANDOFF, TEST_CASES, TESTING_GUIDE, RAW_LAYER, etc.
+- `source/` — source catalog and bronze exports
 
 ## Alignment
 

@@ -10,8 +10,8 @@ synthetic operational records:
   - Synthetic: ELN/LIMS-style records and partner repository intake logs derived
     from the public source structure. These records contain no patient data.
 
-Running the script is idempotent: it refreshes dataset-seed/00_raw from the
-catalog in dataset-seed/_source/source_catalog.json.
+Running the script is idempotent: it refreshes data-generation/corpus from the
+catalog in data-generation/source/_source/source_catalog.json.
 """
 
 from __future__ import annotations
@@ -32,12 +32,11 @@ from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 
 
-BASE = Path(__file__).resolve().parent
-CATALOG_PATH = BASE / "_source" / "source_catalog.json"
-# Canonical corpus. The Raw layer is organized by scenario / test case: this holds the
-# single source of truth (all fetched/synthesized files + raw_manifest.json), and the
-# per-scenario folders 00_raw/GT-*/ are duplicate views built by build_scenario_folders.py.
-RAW = BASE / "00_raw" / "_corpus"
+SCRIPTS = Path(__file__).resolve().parent
+DATA_GEN = SCRIPTS.parent
+CATALOG_PATH = DATA_GEN / "source" / "_source" / "source_catalog.json"
+# Canonical corpus — single source of truth for fetched/synthesized files.
+RAW = DATA_GEN / "corpus"
 
 USER_AGENT = (
     "hls-agentic-rd-knowledge-mining/0.1 "
