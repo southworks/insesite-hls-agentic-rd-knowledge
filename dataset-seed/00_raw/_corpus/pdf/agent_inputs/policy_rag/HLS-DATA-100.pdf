@@ -10,7 +10,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 4 0 obj
-<< /Length 1168 >>
+<< /Length 1184 >>
 stream
 BT
 /F1 9 Tf
@@ -28,7 +28,7 @@ T*
 T*
 (Category: policy_rag) Tj
 T*
-(Source entity: 06_policy_rag/HLS-DATA-100.json) Tj
+(Source entity: 08_policy_rag/HLS-DATA-100.json) Tj
 T*
 () Tj
 T*
@@ -68,9 +68,9 @@ T*
 T*
 (Raw source trace:) Tj
 T*
-(00_raw/json/policies/FDA_CLINICAL_TRIALS_HUMAN_SUBJECT_PROTECTION/source_record.json;) Tj
+(00_raw/_corpus/json/policies/FDA_CLINICAL_TRIALS_HUMAN_SUBJECT_PROTECTION/source_record.json;) Tj
 T*
-(00_raw/json/policies/EU_CLINICAL_TRIALS_REGULATION_536_2014/source_record.json) Tj
+(00_raw/_corpus/json/policies/EU_CLINICAL_TRIALS_REGULATION_536_2014/source_record.json) Tj
 T*
 ET
 endstream
@@ -85,9 +85,9 @@ xref
 0000000064 00000 n 
 0000000121 00000 n 
 0000000189 00000 n 
-0000001409 00000 n 
+0000001425 00000 n 
 trailer
 << /Size 6 /Root 1 0 R /Info << /Title (Patient-level data exclusion) >> >>
 startxref
-1535
+1551
 %%EOF

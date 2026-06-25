@@ -10,7 +10,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 4 0 obj
-<< /Length 2780 >>
+<< /Length 2804 >>
 stream
 BT
 /F1 9 Tf
@@ -98,11 +98,11 @@ T*
 T*
 (Privacy posture: cell-line or assay-level source selected) Tj
 T*
-(Raw source trace: 00_raw/json/datasets/geo/GSE272182/geo_esummary.json;) Tj
+(Raw source trace: 00_raw/_corpus/json/datasets/geo/GSE272182/geo_esummary.json;) Tj
 T*
-(00_raw/txt/datasets/geo/GSE272182/series_soft.txt;) Tj
+(00_raw/_corpus/txt/datasets/geo/GSE272182/series_soft.txt;) Tj
 T*
-(00_raw/json/datasets/geo/GSE272182/source_record.json) Tj
+(00_raw/_corpus/json/datasets/geo/GSE272182/source_record.json) Tj
 T*
 ET
 endstream
@@ -117,9 +117,9 @@ xref
 0000000064 00000 n 
 0000000121 00000 n 
 0000000189 00000 n 
-0000003021 00000 n 
+0000003045 00000 n 
 trailer
 << /Size 6 /Root 1 0 R /Info << /Title (N6-methyladenosine modification of cLMNB1 overcomes osimertinib resistance by destabilizing FGFR4 in non-small cell lung cancer) >> >>
 startxref
-3147
+3171
 %%EOF

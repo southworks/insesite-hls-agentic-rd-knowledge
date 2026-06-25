@@ -4,7 +4,7 @@ Regulatory evidence card
 
 Document ID: LBL-TAGRISSO-OPENFDA
 Category: regulatory_submissions
-Source entity: 05_regulatory_submissions/LBL-TAGRISSO-OPENFDA.json
+Source entity: 04_regulatory_submissions/LBL-TAGRISSO-OPENFDA.json
 
 Regulatory Identity
 -------------------
@@ -27,4 +27,4 @@ Provenance
 ----------
 Provenance: derived_from_raw_layer
 Privacy posture: 
-Raw source trace: 00_raw/json/regulatory/OPENFDA_LABEL_TAGRISSO/OPENFDA_LABEL_TAGRISSO.json
+Raw source trace: 00_raw/_corpus/json/regulatory/OPENFDA_LABEL_TAGRISSO/OPENFDA_LABEL_TAGRISSO.json

@@ -333,11 +333,11 @@ def collect_docs(categories: set[str]) -> list[AgentDoc]:
     if include("experimental_datasets"):
         docs.extend(doc_from_dataset(path) for path in sorted((BASE / "03_experimental_datasets").glob("DATASET-*.json")))
     if include("regulatory_submissions"):
-        docs.extend(doc_from_regulatory(path) for path in sorted((BASE / "05_regulatory_submissions").glob("*.json")))
+        docs.extend(doc_from_regulatory(path) for path in sorted((BASE / "04_regulatory_submissions").glob("*.json")))
     if include("policy_rag"):
-        docs.extend(doc_from_policy(path) for path in sorted((BASE / "06_policy_rag").glob("HLS-*.json")))
+        docs.extend(doc_from_policy(path) for path in sorted((BASE / "08_policy_rag").glob("HLS-*.json")))
     if include("curation_decisions"):
-        docs.extend(doc_from_curation(path) for path in sorted((BASE / "08_curation_decisions").glob("CUR-*.json")))
+        docs.extend(doc_from_curation(path) for path in sorted((BASE / "07_curation_decisions").glob("CUR-*.json")))
     if include("synthetic_eln_lims"):
         lims = sorted((BASE / "03_experimental_datasets").glob("SYN-LIMS-*.json"))
         if lims:

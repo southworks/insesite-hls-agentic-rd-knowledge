@@ -4,7 +4,7 @@ Curation and compliance decision card
 
 Document ID: CUR-EXCLUDE-PMC4771182
 Category: curation_decisions
-Source entity: 08_curation_decisions/CUR-EXCLUDE-PMC4771182.json
+Source entity: 07_curation_decisions/CUR-EXCLUDE-PMC4771182.json
 
 Curation Decision
 -----------------

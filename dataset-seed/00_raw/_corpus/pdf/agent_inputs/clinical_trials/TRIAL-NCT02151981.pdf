@@ -10,7 +10,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 4 0 obj
-<< /Length 1659 >>
+<< /Length 1683 >>
 stream
 BT
 /F1 9 Tf
@@ -88,11 +88,11 @@ T*
 T*
 (Privacy posture: aggregate clinical trial registration/results only) Tj
 T*
-(Raw source trace: 00_raw/json/trials/clinicaltrials_gov/NCT02151981/study.json;) Tj
+(Raw source trace: 00_raw/_corpus/json/trials/clinicaltrials_gov/NCT02151981/study.json;) Tj
 T*
-(00_raw/pdf/trials/clinicaltrials_gov/NCT02151981/Prot_000.pdf;) Tj
+(00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02151981/Prot_000.pdf;) Tj
 T*
-(00_raw/pdf/trials/clinicaltrials_gov/NCT02151981/SAP_001.pdf) Tj
+(00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02151981/SAP_001.pdf) Tj
 T*
 ET
 endstream
@@ -107,9 +107,9 @@ xref
 0000000064 00000 n 
 0000000121 00000 n 
 0000000189 00000 n 
-0000001900 00000 n 
+0000001924 00000 n 
 trailer
 << /Size 6 /Root 1 0 R /Info << /Title (AZD9291 \(Osimertinib\) Versus Platinum-Based Doublet-Chemotherapy in Locally Advanced or Metastatic Non-Small Cell Lung Cancer) >> >>
 startxref
-2026
+2050
 %%EOF

@@ -17,7 +17,18 @@ from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree as ET
 
-from scenarios import SCENARIOS, STAGE_FOLDERS, scenario_folder, stage_primary
+from scenarios import (
+    SCENARIOS, DEMO_SEQUENCE, scenario_folder, materialized_stages, stage_folder,
+    stage_primary, demo_prefix,
+)
+
+
+def scenario_base_path(scenario: dict) -> str:
+    """Where this scenario's folders live under 00_raw/ (DEMO bundle vs standalone)."""
+    sid = scenario["scenario_id"]
+    if sid in DEMO_SEQUENCE:
+        return f"00_raw/DEMO_SCENARIO/{demo_prefix(sid)}-{scenario_folder(scenario)}"
+    return f"00_raw/{scenario_folder(scenario)}"
 
 
 BASE = Path(__file__).resolve().parent
@@ -28,13 +39,18 @@ FOLDERS = {
     "research_documents": BASE / "01_research_documents",
     "clinical_trials": BASE / "02_clinical_trials",
     "experimental_datasets": BASE / "03_experimental_datasets",
-    "biomarkers_targets": BASE / "04_biomarkers_and_targets",
-    "regulatory_submissions": BASE / "05_regulatory_submissions",
-    "policy_rag": BASE / "06_policy_rag",
-    "evidence_links": BASE / "07_evidence_links",
-    "curation_decisions": BASE / "08_curation_decisions",
+    "regulatory_submissions": BASE / "04_regulatory_submissions",
+    "compounds_targets": BASE / "05_compounds_targets",
+    "evidence_links": BASE / "06_evidence_links",
+    "curation_decisions": BASE / "07_curation_decisions",
+    "policy_rag": BASE / "08_policy_rag",
     "decision_ground_truth": BASE / "09_decision_ground_truth",
 }
+
+# Demo-relevant entity allow-lists. The dataset is trimmed to ONLY the entities the demo's
+# data-consuming agents actually use (noise reduction); everything else stays out of the catalog.
+KEEP_TRIALS = {"NCT02296125", "NCT02151981"}            # FLAURA, AURA3 (the linked/cited trials)
+KEEP_SYNTHETIC_LIMS = {"SYN-LIMS-001", "SYN-LIMS-010"}  # the two synthetic samples used by ING-003
 
 
 def load_json(path: Path) -> Any:
@@ -162,6 +178,8 @@ def generate_clinical_trials(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     trials = []
     for item in catalog["clinical_trials"]:
         nct_id = item["nct_id"]
+        if nct_id not in KEEP_TRIALS:
+            continue
         trial_json_dir = raw_path("json", "trials", "clinicaltrials_gov", nct_id)
         study = load_json(trial_json_dir / "study.json")
         source_record = load_json(trial_json_dir / "source_record.json")
@@ -285,25 +303,14 @@ def generate_experimental_datasets(catalog: dict[str, Any]) -> tuple[list[dict[s
         datasets.append(dataset_doc)
         write_json(FOLDERS["experimental_datasets"] / f"DATASET-{accession}.json", dataset_doc)
 
-        for sample in sample_list[:20]:
-            sample_doc = {
-                "sample_id": sample.get("accession"),
-                "document_type": "assay_sample",
-                "source_system": "ncbi_geo",
-                "dataset_id": accession,
-                "sample_title": sample.get("title"),
-                "model": infer_model(sample.get("title", "")),
-                "condition": infer_condition(sample.get("title", "")),
-                "raw_sources": [rel(ds_json_dir / "geo_esummary.json")],
-                "provenance": "derived_from_raw_layer",
-                "privacy_posture": "sample title reviewed for cell-line context",
-            }
-            samples.append(sample_doc)
-            write_json(FOLDERS["experimental_datasets"] / f"SAMPLE-{sample_doc['sample_id']}.json", sample_doc)
+    # Per-sample GEO entities (SAMPLE-GSM*) are deliberately NOT materialized — the demo links at
+    # the dataset (series) level, so the individual assay samples would be pure noise.
 
     lims_path = raw_path("csv", "synthetic_eln_lims", "lims_sample_manifest.csv")
     with lims_path.open(encoding="utf-8", newline="") as f:
         for row in csv.DictReader(f):
+            if row["SAMPLE_ID"] not in KEEP_SYNTHETIC_LIMS:
+                continue
             sample_doc = {
                 "sample_id": row["SAMPLE_ID"],
                 "document_type": "synthetic_lims_sample",
@@ -374,7 +381,7 @@ def infer_assay_context(title: str, summary: str) -> list[str]:
     return contexts
 
 
-def generate_biomarkers_targets(catalog: dict[str, Any]) -> list[dict[str, Any]]:
+def generate_compounds_targets(catalog: dict[str, Any]) -> list[dict[str, Any]]:
     out = []
     chembl_dir = raw_path("json", "registries", "chembl", "CHEMBL3353410")
     compound = load_json(chembl_dir / "molecule.json")
@@ -402,7 +409,7 @@ def generate_biomarkers_targets(catalog: dict[str, Any]) -> list[dict[str, Any]]
         "provenance": "derived_from_raw_layer",
     }
     out.append(compound_doc)
-    write_json(FOLDERS["biomarkers_targets"] / "CMP-CHEMBL3353410.json", compound_doc)
+    write_json(FOLDERS["compounds_targets"] / "CMP-CHEMBL3353410.json", compound_doc)
 
     target_doc = {
         "entity_id": "TGT-CHEMBL203",
@@ -418,33 +425,10 @@ def generate_biomarkers_targets(catalog: dict[str, Any]) -> list[dict[str, Any]]
         "provenance": "derived_from_raw_layer",
     }
     out.append(target_doc)
-    write_json(FOLDERS["biomarkers_targets"] / "TGT-CHEMBL203.json", target_doc)
+    write_json(FOLDERS["compounds_targets"] / "TGT-CHEMBL203.json", target_doc)
 
-    biomarkers = [
-        ("BMK-EGFR-EX19DEL", "EGFR exon 19 deletion", "sensitizing_mutation"),
-        ("BMK-EGFR-L858R", "EGFR L858R", "sensitizing_mutation"),
-        ("BMK-EGFR-T790M", "EGFR T790M", "resistance_mutation"),
-        ("BMK-EGFR-C797S", "EGFR C797S", "resistance_mutation"),
-        ("BMK-FGFR4", "FGFR4 pathway signal", "resistance_pathway"),
-        ("BMK-GLMP", "GLMP autophagy/RhoA pathway signal", "resistance_pathway"),
-        ("BMK-PKM2", "PKM2 fatty-acid biosynthesis signal", "response_modifier"),
-    ]
-    for entity_id, name, category in biomarkers:
-        doc = {
-            "entity_id": entity_id,
-            "document_type": "biomarker",
-            "name": name,
-            "category": category,
-            "disease_context": "EGFR-mutated NSCLC",
-            "linked_target_id": "TGT-CHEMBL203" if name.startswith("EGFR") else None,
-            "linked_compound_ids": ["CMP-CHEMBL3353410"],
-            "evidence_source_types": ["clinical_trials", "research_documents", "experimental_datasets"],
-            "raw_sources": [rel(RAW / "raw_manifest.json")],
-            "provenance": "curated_from_raw_layer_evidence",
-        }
-        out.append(doc)
-        write_json(FOLDERS["biomarkers_targets"] / f"{entity_id}.json", doc)
-
+    # Individual biomarker entities (BMK-*) are not materialized — the demo's metadata & linking
+    # agent extracts the compound + target, not the biomarker catalog, so they would be noise.
     return out
 
 
@@ -493,30 +477,8 @@ def generate_regulatory_submissions() -> list[dict[str, Any]]:
     out.append(label_doc)
     write_json(FOLDERS["regulatory_submissions"] / "LBL-TAGRISSO-OPENFDA.json", label_doc)
 
-    source_records = [
-        raw_path("json", "regulatory", "DRUGSATFDA_NDA208065_APPROVAL_LETTER", "source_record.json"),
-        raw_path("json", "regulatory", "DRUGSATFDA_NDA208065_SUMMARY_REVIEW", "source_record.json"),
-        raw_path("json", "regulatory", "DRUGSATFDA_NDA208065_OVERVIEW", "source_record.json"),
-        raw_path("json", "regulatory", "EMA_TAGRISSO_EPAR", "source_record.json"),
-    ]
-    for source_record_path in source_records:
-        source_record = load_json(source_record_path)
-        source_id = source_record["source_id"]
-        raw_files = [normalize_raw_ref(source_record["local_path"])]
-        doc = {
-            "document_id": f"REGDOC-{source_id}",
-            "document_type": "regulatory_source_document",
-            "source_system": infer_regulatory_system(source_id),
-            "source_id": source_id,
-            "url": source_record.get("url"),
-            "application_number": "NDA208065" if "NDA208065" in source_id else None,
-            "compound_id": "CMP-CHEMBL3353410",
-            "raw_sources": raw_files + [rel(source_record_path)],
-            "provenance": "derived_from_raw_layer",
-        }
-        out.append(doc)
-        write_json(FOLDERS["regulatory_submissions"] / f"REGDOC-{source_id}.json", doc)
-
+    # Regulatory source documents (REGDOC-*: approval letters, reviews, EPAR) are not materialized —
+    # the demo links the application + label only, so the extra source docs would be noise.
     return out
 
 
@@ -646,51 +608,8 @@ def generate_evidence_links(
         links.append(doc)
         write_json(FOLDERS["evidence_links"] / f"{link_id}.json", doc)
 
-    for trial in trials:
-        add(
-            f"LINK-{trial['trial_id']}-CMP-CHEMBL3353410",
-            f"TRIAL-{trial['trial_id']}",
-            "CMP-CHEMBL3353410",
-            "evaluates_intervention",
-            "Selected trial evaluates osimertinib/AZD9291 or an osimertinib-containing regimen.",
-            trial["raw_sources"],
-        )
-
-    for doc in research_docs:
-        pmcid = doc["source_identifiers"]["pmcid"]
-        add(
-            f"LINK-{pmcid}-TGT-CHEMBL203",
-            doc["document_id"],
-            "TGT-CHEMBL203",
-            "discusses_target_or_pathway",
-            "Research document belongs to the EGFR-mutated NSCLC/osimertinib source baseline.",
-            doc["raw_sources"][:2],
-        )
-
-    dataset_links = {
-        "GSE323366": "LINK-GSE323366-CMP-CHEMBL3353410",
-        "GSE323365": "LINK-GSE323365-TGT-CHEMBL203",
-        "GSE272182": "LINK-GSE272182-BMK-EGFR-T790M",
-        "GSE300311": "LINK-GSE300311-BMK-PKM2",
-        "GSE298111": "LINK-GSE298111-BMK-GLMP",
-    }
-    for dataset in datasets:
-        target = {
-            "GSE323366": "CMP-CHEMBL3353410",
-            "GSE323365": "TGT-CHEMBL203",
-            "GSE272182": "BMK-EGFR-T790M",
-            "GSE300311": "BMK-PKM2",
-            "GSE298111": "BMK-GLMP",
-        }[dataset["dataset_id"]]
-        add(
-            dataset_links[dataset["dataset_id"]],
-            f"DATASET-{dataset['dataset_id']}",
-            target,
-            "provides_experimental_evidence",
-            "Dataset was selected for cell-line or assay-level evidence in the osimertinib/EGFR baseline.",
-            dataset["raw_sources"],
-        )
-
+    # Only the two links the metadata & linking agent produces in the demo are materialized
+    # (FLAURA -> NDA208065 -> Tagrisso label). Per-trial/-article/-dataset links are noise here.
     add(
         "LINK-REG-NDA208065-LBL-TAGRISSO-OPENFDA",
         "REG-NDA208065",
@@ -731,28 +650,9 @@ def generate_curation_decisions(catalog: dict[str, Any]) -> list[dict[str, Any]]
         decisions.append(doc)
         write_json(FOLDERS["curation_decisions"] / f"{decision_id}.json", doc)
 
-    for article in catalog["pmc_open_access_articles"]:
-        add(
-            f"CUR-{article['pmcid']}",
-            article["pmcid"],
-            "pmc_open_access_article",
-            "approve",
-            "PMC OA license matched expected reuse posture and article is not a case-report source.",
-            ["HLS-LIC-200", "HLS-DATA-100"],
-            [rel(raw_path("xml", "articles", "pmc_oa", article["pmcid"], "pmc_oa_license.xml"))],
-        )
-
-    for dataset in catalog["geo_cell_line_datasets"]:
-        add(
-            f"CUR-{dataset['accession']}",
-            dataset["accession"],
-            "geo_dataset",
-            "approve",
-            "Selected GEO record uses cell-line or assay-level source material.",
-            ["HLS-GEO-400", "HLS-DATA-100"],
-            [rel(raw_path("txt", "datasets", "geo", dataset["accession"], "series_soft.txt"))],
-        )
-
+    # Only the deny/exclude decisions are materialized — they are the guardrail evidence the
+    # ING-002/ING-004 scenarios reference. Per-source "approve" decisions are implicit (the entity
+    # exists) and would be noise.
     for excluded in catalog["excluded_sources"]:
         add(
             f"CUR-EXCLUDE-{excluded['source_id']}",
@@ -763,26 +663,17 @@ def generate_curation_decisions(catalog: dict[str, Any]) -> list[dict[str, Any]]
             ["HLS-DATA-100", "HLS-GEO-400" if excluded["source_id"].startswith("GSE") else "HLS-LIC-200"],
             [rel(CATALOG_PATH)],
         )
-
-    add(
-        "CUR-SYNTHETIC-ELN-LIMS",
-        "synthetic_eln_lims",
-        "synthetic_operational_record",
-        "approve",
-        "Synthetic records are clearly labeled and use only fictional staff names.",
-        ["HLS-DATA-110"],
-        [rel(raw_path("txt", "synthetic_eln_lims", "lims_quality_control_report.txt"))],
-    )
     return decisions
 
 
 def generate_ground_truth() -> list[dict[str, Any]]:
     """Emit one e2e ground-truth rollup per scenario (ING-XXX.json / QRY-XXX.json).
 
-    HLS is two isolated flows. Each rollup describes one full path through ONE flow: the UI
-    trigger, the ordered stages (each with its start-from-any-point primary payload, the
-    entities handed in, the entities/decision produced, and the HITL gate), and the final
-    outcome. The scenario set is defined once in `scenarios.py`.
+    The rollup is the full **answer key**: the controlled UI trigger and EVERY ordered stage the
+    demo traverses — including the agents we materialize datasets for AND the memory stages we do
+    not (the human-approval gates and persistence). Only the data-consuming agents + the response
+    output carry a `raw_layer_folder`; gate/sink stages are `materialized: false` and live here only.
+    The scenario set is defined once in `scenarios.py`.
     """
     gt_dir = FOLDERS["decision_ground_truth"]
     # Drop legacy/previous cases so the folder holds only the current rollups + SCHEMA.md.
@@ -792,33 +683,39 @@ def generate_ground_truth() -> list[dict[str, Any]]:
 
     rollups: list[dict[str, Any]] = []
     for scenario in SCENARIOS:
-        folder = scenario_folder(scenario)
+        base = scenario_base_path(scenario)
+        materialized = materialized_stages(scenario)
         stages = []
         for order, stage in enumerate(scenario["stages"], start=1):
             _filename, key, content = stage_primary(stage)
-            stages.append({
+            is_materialized = stage in materialized
+            entry = {
                 "order": order,
                 "stage": stage["stage"],
                 "kind": stage["kind"],
                 "agent": stage.get("agent"),
-                "raw_layer_folder": f"00_raw/{folder}/{STAGE_FOLDERS[stage['stage']]}/",
+                "actor": stage.get("actor"),
+                "materialized": is_materialized,
+                "raw_layer_folder": f"{base}/{stage_folder(scenario, stage)}/" if is_materialized else None,
                 key: content,
                 "input_entities": stage.get("input_entities", []),
                 "output_entities": stage.get("output_entities", []),
                 "expected_output": stage.get("expected_output"),
                 "decision": stage.get("decision"),
                 "gate": stage.get("gate"),
-            })
+            }
+            stages.append(entry)
         rollup = {
             "scenario_id": scenario["scenario_id"],
             "document_type": "decision_ground_truth",
-            "scenario_kind": "e2e_flow_path",
+            "scenario_kind": "e2e_phase_path",
             "flow": scenario["flow"],
+            "phase": scenario["phase"],
             "document_date": "2026-06-24",
             "source_system": "hls_knowledge_mining_ground_truth",
             "title": scenario["title"],
             "path": scenario["path"],
-            "scenario_folder": folder,
+            "scenario_folder": base,
             "trigger": scenario["trigger"],
             "stages": stages,
             "final_outcome": scenario["final_outcome"],
@@ -882,48 +779,31 @@ Clinical trial entities derived from ClinicalTrials.gov study JSON and protocol/
 """,
         "experimental_datasets": """# 03 Experimental Datasets Schema
 
-Experimental dataset and sample entities derived from GEO and synthetic LIMS raw files.
+Experimental dataset entities derived from GEO, plus the synthetic LIMS samples used by the
+synthetic-provenance scenario. Per-sample GEO entities (`SAMPLE-GSM*`) are intentionally not
+materialized — the demo links at the dataset (series) level.
 
 ## Entity types
 
 - `experimental_dataset`
-- `assay_sample`
 - `synthetic_lims_sample`
 
 ## Required fields
 
 - dataset entities: `dataset_id`, `title`, `taxon`, `sample_count`, `sample_accessions`, `raw_sources`
-- sample entities: `sample_id`, `dataset_id` or `source_geo_series`, `model`, `condition`, `raw_sources`
+- synthetic sample entities: `sample_id`, `source_geo_series`, `model`, `condition`, `raw_sources`
 - all entities: `document_type`, `source_system`, `provenance`, `privacy_posture`
 """,
-        "biomarkers_targets": """# 04 Biomarkers and Targets Schema
+        "regulatory_submissions": """# 04 Regulatory Submissions Schema
 
-Compound, target, and biomarker entities derived from ChEMBL plus curated raw-layer evidence.
-
-## Entity types
-
-- `compound`
-- `molecular_target`
-- `biomarker`
-
-## Required fields
-
-- `entity_id`
-- `document_type`
-- `preferred_name` or `name`
-- `linked_compound_ids` where applicable
-- `raw_sources`
-- `provenance`
-""",
-        "regulatory_submissions": """# 05 Regulatory Submissions Schema
-
-Regulatory application, label, and source-document entities derived from openFDA, Drugs@FDA, and EMA raw files.
+Regulatory application and product-label entities derived from openFDA and Drugs@FDA raw files.
+Source documents (`REGDOC-*`: approval letters, reviews, EPAR) are not materialized — the demo
+links the application + label only.
 
 ## Entity types
 
 - `regulatory_application`
 - `product_label`
-- `regulatory_source_document`
 
 ## Required fields
 
@@ -931,11 +811,29 @@ Regulatory application, label, and source-document entities derived from openFDA
 - `document_type`
 - `source_system`
 - `application_number` where applicable
-- `compound_id` or product identifiers where applicable
 - `raw_sources`
 - `provenance`
 """,
-        "policy_rag": """# 06 Policy RAG Schema
+        "compounds_targets": """# 05 Compounds and Targets Schema
+
+Compound and molecular-target entities derived from ChEMBL — the entities the metadata & linking
+agent extracts from the ingested evidence. Biomarker entities (`BMK-*`) are not materialized.
+
+## Entity types
+
+- `compound`
+- `molecular_target`
+
+## Required fields
+
+- `entity_id`
+- `document_type`
+- `preferred_name`
+- `linked_compounds` / `target_chembl_id` where applicable
+- `raw_sources`
+- `provenance`
+""",
+        "policy_rag": """# 08 Policy RAG Schema
 
 Policy rule JSON entities used by retrieval and compliance agents.
 
@@ -952,7 +850,7 @@ Policy rule JSON entities used by retrieval and compliance agents.
 - `raw_sources`
 - `provenance`
 """,
-        "evidence_links": """# 07 Evidence Links Schema
+        "evidence_links": """# 06 Evidence Links Schema
 
 Curated links between normalized entities, each backed by Raw Layer evidence.
 
@@ -968,9 +866,10 @@ Curated links between normalized entities, each backed by Raw Layer evidence.
 - `raw_sources`
 - `provenance`
 """,
-        "curation_decisions": """# 08 Curation Decisions Schema
+        "curation_decisions": """# 07 Curation Decisions Schema
 
-Allow/deny/review decisions for source inclusion and compliance guardrails.
+Deny/exclude decisions for source inclusion and compliance guardrails (the guardrail evidence the
+ING-002/ING-004 scenarios reference). Per-source "approve" decisions are implicit.
 
 ## Required fields
 
@@ -989,38 +888,42 @@ Allow/deny/review decisions for source inclusion and compliance guardrails.
 """,
         "decision_ground_truth": """# 09 Decision Ground Truth Schema
 
-End-to-end ground truth for HLS's **two isolated flows** — one rollup per scenario:
+End-to-end ground truth for HLS's **two sequential phases** — one rollup per scenario, the full
+answer key the demo validates against:
 
-- `ING-XXX.json` — INGESTION: upload -> ingestion/translation -> metadata linking ->
-  human approval -> persistence into the CMS/knowledge base.
-- `QRY-XXX.json` — SEARCH: UI query -> search/chat retrieval -> curation/compliance review
-  of the result -> response. Runs later, against already-persisted knowledge.
+- `ING-XXX.json` — PHASE 1 (ingestion & structuring): ingestion/translation -> metadata linking
+  -> [knowledge curator approves] -> persistence into the CMS/knowledge base.
+- `QRY-XXX.json` — PHASE 2 (search & compliance): search/chat -> curation/compliance ->
+  [compliance owner approves] -> response. Runs immediately after phase 1 or deferred.
 
-The flows are decoupled in time (no single orchestrator over all agents). Defined once in
-`scenarios.py`; built into `00_raw/{ING,QRY}-XXX_<path>/` by `build_scenario_folders.py`.
+The demo traverses every agent and both human actors, but datasets are materialized only for the
+data-consuming agents (+ the response output). Defined once in `scenarios.py`; built into
+`00_raw/DEMO_SCENARIO/<n>-<ID>_<path>/` and `00_raw/<ID>_<path>/` by `build_scenario_folders.py`.
 
 ## Scenario-level fields
 
 - `scenario_id` (e.g. `ING-001`, `QRY-001`)
 - `document_type` = `decision_ground_truth`
-- `scenario_kind` = `e2e_flow_path`
-- `flow` = `ingestion` | `search`
+- `scenario_kind` = `e2e_phase_path`
+- `flow` = `ingestion` | `search`,  `phase` = `1` | `2`
 - `title`, `path` (e.g. `full_approval`, `guardrail_review`, `synthetic_provenance`,
   `sensitive_blocked`, `no_data`, `grounded`)
-- `scenario_folder` (the `00_raw/` folder)
-- `trigger` — the controlled UI action that starts the flow (button/process, not a chatbot)
+- `scenario_folder` (the `00_raw/...` base folder)
+- `trigger` — the controlled UI action that starts the phase (button/process, not a chatbot)
 - `kb_state` (search only) = `empty` | `populated`
-- `stages` (ordered steps, see below)
+- `stages` (every ordered step, see below)
 - `final_outcome`, `required_human_review`, `raw_sources`
 
 ## Per-stage fields (`stages[]`)
 
-- `order`, `stage`, `kind` (`trigger` | `agent` | `gate` | `sink` | `output`), `agent` (nullable)
-- `raw_layer_folder` — the self-contained `00_raw/.../<stage>/` folder
-- primary payload, keyed by kind: `trigger` | `agent_input` | `gate_record` | `persisted` |
-  `response`. For an `agent` stage, `agent_input` is the structured payload to START that agent
-  in isolation "as if the upstream stages had run" (the handoff contract); for `search_chat`
-  it carries the NL `query` + `retrieval_scope_entities`.
+- `order`, `stage`, `kind` (`agent` | `output` | `gate` | `sink`), `agent` / `actor` (nullable)
+- `materialized` — `true` for data-consuming agents + the response output (they get a folder);
+  `false` for the human-approval gates and persistence (memory only — no folder)
+- `raw_layer_folder` — the self-contained `00_raw/.../<NN>_<stage>/` folder (materialized stages only)
+- primary payload, keyed by kind: `agent_input` (agent) | `response` (output) |
+  `gate_record` (gate) | `persisted` (sink). For an `agent` stage, `agent_input` is the structured
+  payload to START that agent in isolation "as if the upstream stages had run" (the handoff
+  contract); for `search_chat` it carries the NL `query` + `retrieval_scope_entities`.
 - `input_entities` — entities handed in from upstream (copied to `<stage>/input/`)
 - `output_entities` — entities this stage would produce (copied to `<stage>/expected_output/`)
 - `expected_output` — measurable expectations (counts, links, answer points/citations, decision)
@@ -1044,11 +947,11 @@ def write_dataset_manifest(counts: dict[str, int]) -> None:
             {"folder": "01_research_documents", "entity_count": counts["research_documents"]},
             {"folder": "02_clinical_trials", "entity_count": counts["clinical_trials"]},
             {"folder": "03_experimental_datasets", "entity_count": counts["experimental_datasets"]},
-            {"folder": "04_biomarkers_and_targets", "entity_count": counts["biomarkers_targets"]},
-            {"folder": "05_regulatory_submissions", "entity_count": counts["regulatory_submissions"]},
-            {"folder": "06_policy_rag", "entity_count": counts["policy_rag"]},
-            {"folder": "07_evidence_links", "entity_count": counts["evidence_links"]},
-            {"folder": "08_curation_decisions", "entity_count": counts["curation_decisions"]},
+            {"folder": "04_regulatory_submissions", "entity_count": counts["regulatory_submissions"]},
+            {"folder": "05_compounds_targets", "entity_count": counts["compounds_targets"]},
+            {"folder": "06_evidence_links", "entity_count": counts["evidence_links"]},
+            {"folder": "07_curation_decisions", "entity_count": counts["curation_decisions"]},
+            {"folder": "08_policy_rag", "entity_count": counts["policy_rag"]},
             {"folder": "09_decision_ground_truth", "entity_count": counts["decision_ground_truth"]},
         ],
         "privacy_posture": {
@@ -1070,7 +973,7 @@ def main() -> int:
     research_docs = generate_research_documents(catalog)
     trials = generate_clinical_trials(catalog)
     datasets, samples = generate_experimental_datasets(catalog)
-    biomarkers = generate_biomarkers_targets(catalog)
+    compounds_targets = generate_compounds_targets(catalog)
     regulatory = generate_regulatory_submissions()
     policies = generate_policy_rag()
     links = generate_evidence_links(research_docs, trials, datasets)
@@ -1082,7 +985,7 @@ def main() -> int:
         "research_documents": len(research_docs),
         "clinical_trials": len(trials),
         "experimental_datasets": len(datasets) + len(samples),
-        "biomarkers_targets": len(biomarkers),
+        "compounds_targets": len(compounds_targets),
         "regulatory_submissions": len(regulatory),
         "policy_rag": len(policies),
         "evidence_links": len(links),

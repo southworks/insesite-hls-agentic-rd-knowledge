@@ -26,4 +26,4 @@ Provenance
 ----------
 Provenance: derived_from_raw_layer
 Privacy posture: no patient-level source selected for normalized entity
-Raw source trace: 00_raw/xml/articles/pmc_oa/PMC13129538/article.xml; 00_raw/json/articles/pmc_oa/PMC13129538/europe_pmc_metadata.json; 00_raw/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml
+Raw source trace: 00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/article.xml; 00_raw/_corpus/json/articles/pmc_oa/PMC13129538/europe_pmc_metadata.json; 00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml

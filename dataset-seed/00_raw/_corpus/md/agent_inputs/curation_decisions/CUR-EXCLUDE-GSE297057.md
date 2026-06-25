@@ -4,7 +4,7 @@ Curation and compliance decision card
 
 - Document ID: `CUR-EXCLUDE-GSE297057`
 - Category: `curation_decisions`
-- Source entity: `08_curation_decisions/CUR-EXCLUDE-GSE297057.json`
+- Source entity: `07_curation_decisions/CUR-EXCLUDE-GSE297057.json`
 
 ## Curation Decision
 

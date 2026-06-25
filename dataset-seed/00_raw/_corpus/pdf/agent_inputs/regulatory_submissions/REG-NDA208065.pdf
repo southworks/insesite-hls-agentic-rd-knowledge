@@ -10,7 +10,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 4 0 obj
-<< /Length 1563 >>
+<< /Length 1571 >>
 stream
 BT
 /F1 9 Tf
@@ -28,7 +28,7 @@ T*
 T*
 (Category: regulatory_submissions) Tj
 T*
-(Source entity: 05_regulatory_submissions/REG-NDA208065.json) Tj
+(Source entity: 04_regulatory_submissions/REG-NDA208065.json) Tj
 T*
 () Tj
 T*
@@ -88,7 +88,7 @@ T*
 T*
 (Raw source trace:) Tj
 T*
-(00_raw/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/OPENFDA_DRUGSFDA_NDA208065.json) Tj
+(00_raw/_corpus/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/OPENFDA_DRUGSFDA_NDA208065.json) Tj
 T*
 ET
 endstream
@@ -103,9 +103,9 @@ xref
 0000000064 00000 n 
 0000000121 00000 n 
 0000000189 00000 n 
-0000001804 00000 n 
+0000001812 00000 n 
 trailer
 << /Size 6 /Root 1 0 R /Info << /Title (REG-NDA208065) >> >>
 startxref
-1930
+1938
 %%EOF

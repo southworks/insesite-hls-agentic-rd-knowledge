@@ -6,7 +6,7 @@
     "required_human_review": false,
     "sensitive_content_found": false
   },
-  "gate": "approved",
+  "gate": null,
   "output_entities": [],
   "stage": "curation_compliance"
 }

@@ -30,4 +30,4 @@ Experimental dataset evidence card
 | --- | --- |
 | Provenance | derived_from_raw_layer |
 | Privacy posture | cell-line or assay-level source selected |
-| Raw source trace | 00_raw/json/datasets/geo/GSE272182/geo_esummary.json; 00_raw/txt/datasets/geo/GSE272182/series_soft.txt; 00_raw/json/datasets/geo/GSE272182/source_record.json |
+| Raw source trace | 00_raw/_corpus/json/datasets/geo/GSE272182/geo_esummary.json; 00_raw/_corpus/txt/datasets/geo/GSE272182/series_soft.txt; 00_raw/_corpus/json/datasets/geo/GSE272182/source_record.json |

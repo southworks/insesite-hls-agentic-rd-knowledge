@@ -4,7 +4,7 @@
   "expected_output": {
     "flagged_candidate": "GSE301973",
     "normalized_count": 0,
-    "note": "metadata only \u2014 deferred to human approval"
+    "note": "metadata only \u2014 deferred to the knowledge curator"
   },
   "gate": null,
   "output_entities": [],

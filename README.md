@@ -6,12 +6,12 @@ Dataset and solution accelerator workspace for an HLS agentic R&D knowledge mini
 
 This repository defines a compliance-safe dataset for an agentic research knowledge hub. The dataset starts from a raw layer of public or simulated R&D knowledge artifacts and produces downstream entities that represent how agents ingest, normalize, link, retrieve, curate, and govern research content.
 
-HLS is **two separate processes, decoupled in time** (not one continuous flow with a single orchestrator). Each is started by a controlled UI action, not a free-form chatbot:
+HLS is **two sequential phases**, each closed by a distinct human actor (see [workflow-summary.md](workflow-summary.md)). Each is started by a controlled UI action, not a free-form chatbot:
 
-- **Ingestion flow** — *load* knowledge: upload documents → ingestion & translation → metadata extraction & linking → human approval → persistence into the CMS/knowledge base. (Manual file upload stands in for the conceptual "Connect Portals" external connector.)
-- **Search flow** — *query* that knowledge later: UI query → search & chat retrieval (Cohere Embed/Rerank) → curation & compliance review of the result → grounded answer with citations.
+- **Phase 1 — Ingestion & structuring** — *load* knowledge: upload documents → ingestion & translation → metadata extraction & linking → **knowledge curator approves** → persistence into the CMS/knowledge base. (Manual file upload stands in for the conceptual "Connect Portals" external connector.)
+- **Phase 2 — Search & compliance** — *query* that knowledge later: UI query → search & chat retrieval (Cohere Embed/Rerank) → curation & compliance review → **compliance owner approves** → grounded answer with citations. Runs immediately after phase 1 or deferred.
 
-The headline demo is stateful: **search an empty KB → ingest → search again** and the grounded answer now appears. See [dataset-seed/HANDOFF.md](dataset-seed/HANDOFF.md), [dataset-seed/TEST_CASES.md](dataset-seed/TEST_CASES.md), and [dataset-seed/TESTING_GUIDE.md](dataset-seed/TESTING_GUIDE.md).
+The demo traverses **every** agent and both human actors, but datasets are materialized **only for the data-consuming agents** (the rest of the chain lives in each `scenario.json`). The headline demo is stateful: **search an empty KB → ingest → search again** and the grounded answer now appears. See [dataset-seed/HANDOFF.md](dataset-seed/HANDOFF.md), [dataset-seed/TEST_CASES.md](dataset-seed/TEST_CASES.md), and [dataset-seed/TESTING_GUIDE.md](dataset-seed/TESTING_GUIDE.md).
 
 ## Dataset Direction
 
@@ -42,8 +42,8 @@ Current dataset planning and raw-source materials include:
 - `dataset-seed/AGENT_INPUTS.md`
 - `dataset-seed/FORMAT_DECISIONS.md`
 - `dataset-seed/scenarios.py`, `dataset-seed/HANDOFF.md`
-- `dataset-seed/00_raw/_corpus/{csv,html,json,md,pdf,txt,xml}/` (canonical) and `dataset-seed/00_raw/{ING,QRY}-*_<path>/` (per-scenario, per-stage flow folders)
-- `dataset-seed/01_*` through `dataset-seed/09_*`
+- `dataset-seed/00_raw/_corpus/{csv,html,json,md,pdf,txt,xml}/` (canonical) and the per-scenario, per-stage folders under `dataset-seed/00_raw/DEMO_SCENARIO/<n>-<ID>_<path>/` (headline demo) and `dataset-seed/00_raw/ING-*_<path>/` (standalone guardrail variants)
+- `dataset-seed/01_research_documents/` through `dataset-seed/09_decision_ground_truth/` (trimmed normalized entity catalog)
 - `dataset-seed/dataset-manifest.json`
 
 ## Alignment

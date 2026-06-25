@@ -10,7 +10,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 4 0 obj
-<< /Length 2004 >>
+<< /Length 2028 >>
 stream
 BT
 /F1 9 Tf
@@ -84,11 +84,11 @@ T*
 T*
 (Privacy posture: cell-line or assay-level source selected) Tj
 T*
-(Raw source trace: 00_raw/json/datasets/geo/GSE298111/geo_esummary.json;) Tj
+(Raw source trace: 00_raw/_corpus/json/datasets/geo/GSE298111/geo_esummary.json;) Tj
 T*
-(00_raw/txt/datasets/geo/GSE298111/series_soft.txt;) Tj
+(00_raw/_corpus/txt/datasets/geo/GSE298111/series_soft.txt;) Tj
 T*
-(00_raw/json/datasets/geo/GSE298111/source_record.json) Tj
+(00_raw/_corpus/json/datasets/geo/GSE298111/source_record.json) Tj
 T*
 ET
 endstream
@@ -103,9 +103,9 @@ xref
 0000000064 00000 n 
 0000000121 00000 n 
 0000000189 00000 n 
-0000002245 00000 n 
+0000002269 00000 n 
 trailer
 << /Size 6 /Root 1 0 R /Info << /Title (GLMP promotes EGFR-TKI resistance by activating autophagy and RhoA pathway in non-small cell lung cancer) >> >>
 startxref
-2371
+2395
 %%EOF

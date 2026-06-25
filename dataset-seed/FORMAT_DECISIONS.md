@@ -71,9 +71,9 @@ The script reads normalized entities generated from the Raw Layer:
 - `01_research_documents`
 - `02_clinical_trials`
 - `03_experimental_datasets`
-- `05_regulatory_submissions`
-- `06_policy_rag`
-- `08_curation_decisions`
+- `04_regulatory_submissions`
+- `07_curation_decisions`
+- `08_policy_rag`
 
 It also creates one synthetic ELN/LIMS digest from `SYN-LIMS-*` records.
 

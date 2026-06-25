@@ -10,7 +10,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 4 0 obj
-<< /Length 1670 >>
+<< /Length 1125 >>
 stream
 BT
 /F1 9 Tf
@@ -40,7 +40,7 @@ T*
 T*
 (Source system: synthetic_eln_lims) Tj
 T*
-(Sample count: 10) Tj
+(Sample count: 2) Tj
 T*
 (Purpose: Cross-format validation of lab-style operational records derived from public source) Tj
 T*
@@ -54,22 +54,6 @@ T*
 T*
 (SYN-LIMS-001: PC9 | DMSO | RNA-seq | GSE323366) Tj
 T*
-(SYN-LIMS-002: PC9 | DMSO | RNA-seq | GSE323366) Tj
-T*
-(SYN-LIMS-003: PC9 | osimertinib 0.1 uM | RNA-seq | GSE323366) Tj
-T*
-(SYN-LIMS-004: PC9 | osimertinib 0.1 uM | RNA-seq | GSE323366) Tj
-T*
-(SYN-LIMS-005: H1650 | osimertinib 0.1 uM | RNA-seq | GSE323366) Tj
-T*
-(SYN-LIMS-006: PC9-Cas9 | osimertinib 0.1 uM | CRISPR dependency screen | GSE323365) Tj
-T*
-(SYN-LIMS-007: PC9 | sensitive | RNA-seq | GSE272182) Tj
-T*
-(SYN-LIMS-008: PC9 | resistant | RNA-seq | GSE272182) Tj
-T*
-(SYN-LIMS-009: PC9 sgCtrl | osimertinib | chromatin/profile assay | GSE300311) Tj
-T*
 (SYN-LIMS-010: PC9OR si-GLMP | si-GLMP | RNA-seq | GSE298111) Tj
 T*
 () Tj
@@ -82,9 +66,9 @@ T*
 T*
 (Privacy posture: fictional/synthetic operational record; no patient data) Tj
 T*
-(Raw source trace: 00_raw/csv/synthetic_eln_lims/lims_sample_manifest.csv;) Tj
+(Raw source trace: 00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv;) Tj
 T*
-(00_raw/txt/synthetic_eln_lims/eln_experiment_notebook.txt) Tj
+(00_raw/_corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt) Tj
 T*
 ET
 endstream
@@ -99,9 +83,9 @@ xref
 0000000064 00000 n 
 0000000121 00000 n 
 0000000189 00000 n 
-0000001911 00000 n 
+0000001366 00000 n 
 trailer
 << /Size 6 /Root 1 0 R /Info << /Title (Synthetic ELN/LIMS Digest) >> >>
 startxref
-2037
+1492
 %%EOF

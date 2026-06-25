@@ -10,7 +10,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 4 0 obj
-<< /Length 1146 >>
+<< /Length 1170 >>
 stream
 BT
 /F1 9 Tf
@@ -28,7 +28,7 @@ T*
 T*
 (Category: policy_rag) Tj
 T*
-(Source entity: 06_policy_rag/HLS-REG-500.json) Tj
+(Source entity: 08_policy_rag/HLS-REG-500.json) Tj
 T*
 () Tj
 T*
@@ -62,11 +62,11 @@ T*
 T*
 (Privacy posture:) Tj
 T*
-(Raw source trace: 00_raw/json/regulatory/OPENFDA_LABEL_TAGRISSO/source_record.json;) Tj
+(Raw source trace: 00_raw/_corpus/json/regulatory/OPENFDA_LABEL_TAGRISSO/source_record.json;) Tj
 T*
-(00_raw/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/source_record.json;) Tj
+(00_raw/_corpus/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/source_record.json;) Tj
 T*
-(00_raw/json/regulatory/EMA_TAGRISSO_EPAR/source_record.json) Tj
+(00_raw/_corpus/json/regulatory/EMA_TAGRISSO_EPAR/source_record.json) Tj
 T*
 ET
 endstream
@@ -81,9 +81,9 @@ xref
 0000000064 00000 n 
 0000000121 00000 n 
 0000000189 00000 n 
-0000001387 00000 n 
+0000001411 00000 n 
 trailer
 << /Size 6 /Root 1 0 R /Info << /Title (Public regulatory source use) >> >>
 startxref
-1513
+1537
 %%EOF

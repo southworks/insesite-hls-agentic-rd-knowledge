@@ -1,36 +1,27 @@
 #!/usr/bin/env python3
 """
-Build the per-scenario, per-agent Raw Layer folders for the HLS dataset seed.
+Build the per-scenario Raw Layer folders for the HLS knowledge-mining dataset seed.
 
-HLS is **two isolated flows** (no single orchestrator), decoupled in time:
+Only the agents that **consume data** are materialized (ingestion & translation, metadata & linking,
+search & chat, curation & compliance) plus the final response. The human-approval gates and
+persistence are memory stages — they live in `scenario.json` only (see scenarios.py / HANDOFF.md).
 
-    INGESTION: upload -> ingestion/translation -> metadata linking -> human approval -> persistence
-    SEARCH:    query  -> search/chat -> curation/compliance review -> response
+The normalized entity catalog at the `dataset-seed/` root (01_research_documents ..
+07_curation_decisions) and the rollups in 09_decision_ground_truth/ are the single sources of truth;
+this script copies the relevant entities into each stage's `input/` and `expected_output/`.
 
-The scenario set is defined once in `scenarios.py` (imported here and by
-generate_normalized_layers.py). The canonical corpus in 00_raw/_corpus/ (produced by
-generate_raw_layer.py) is the single source of truth. This script creates, per scenario, one
-folder with a sub-folder per stage:
+    00_raw/DEMO_SCENARIO/<n>-<ID>_<path>/        (headline stateful demo: QRY-001 -> ING-001 -> QRY-002)
+    00_raw/<ID>_<path>/                          (standalone guardrail variants: ING-002/003/004)
+      <NN>_<stage>/
+        agent_input.json        <- the handoff contract that starts that agent in isolation
+        input/                  <- upstream handoff: uploaded raw (ingestion) / entities / prompt.txt
+        expected_output/        <- entities this stage produces + _expected_output.json (validation)
+      <NN>_response/
+        response.json           <- the final returned answer (search scenarios)
+      scenario.json             <- full e2e answer key (mirror of 09_decision_ground_truth/<ID>.json)
 
-    00_raw/ING-XXX_<path>/                  00_raw/QRY-XXX_<path>/
-      01_upload/         trigger.json         01_query/          trigger.json
-      02_ingestion_translation/              02_search_chat/
-        agent_input.json                       agent_input.json
-        input/  expected_output/               input/  expected_output/
-      03_metadata_linking/  (agent)          03_curation_compliance/ (agent)
-      04_human_approval/    gate.json        04_response/       response.json
-      05_persistence/       persisted.json
-      scenario.json   <- mirror of 09_decision_ground_truth/<ID>.json
-
-Each stage's primary file is named by its kind (trigger.json | agent_input.json | gate.json |
-persisted.json | response.json). Only `agent` stages carry input/ + expected_output/.
-
-Because HLS is entity-based, raw files and normalized entities are intentionally duplicated
-into every stage/scenario that uses them; the canonical copies in _corpus/ and the normalized
-01_*..08_* layers remain the source referenced by raw_manifest.json.
-
-Idempotent: existing 00_raw/{ING,QRY}-*/ folders are removed and rebuilt. Offline (no fetch).
-Run AFTER generate_normalized_layers.py (it copies normalized entity JSON into the folders).
+Idempotent: existing 00_raw/ children (except _corpus) are removed and rebuilt. Offline (no fetch).
+Run AFTER generate_normalized_layers.py.
 """
 
 from __future__ import annotations
@@ -39,131 +30,166 @@ import json
 import shutil
 from pathlib import Path
 
-from scenarios import SCENARIOS, scenario_folder, stage_folder, stage_primary
+from scenarios import (
+    SCENARIOS, DEMO_SEQUENCE, scenario_folder, materialized_stages, stage_folder,
+    demo_prefix,
+)
 
 BASE = Path(__file__).resolve().parent
 RAW = BASE / "00_raw"
-CORPUS_PREFIX = "00_raw/_corpus/"
+CORPUS = RAW / "_corpus"
 GT_DIR = BASE / "09_decision_ground_truth"
 
-ENTITY_LAYERS = [
-    "01_research_documents", "02_clinical_trials", "03_experimental_datasets",
-    "04_biomarkers_and_targets", "05_regulatory_submissions", "06_policy_rag",
-    "07_evidence_links", "08_curation_decisions",
+# Root normalized entity catalog — every entity id resolves to exactly one of these folders.
+CATALOG_FOLDERS = [
+    BASE / "01_research_documents",
+    BASE / "02_clinical_trials",
+    BASE / "03_experimental_datasets",
+    BASE / "04_regulatory_submissions",
+    BASE / "05_compounds_targets",
+    BASE / "06_evidence_links",
+    BASE / "07_curation_decisions",
 ]
 
 
-def entity_index() -> dict[str, Path]:
+def build_entity_index() -> dict[str, Path]:
+    """entity_id -> root catalog json path (RDOC-..., TRIAL-..., DATASET-..., CUR-EXCLUDE-..., ...)."""
     index: dict[str, Path] = {}
-    for layer in ENTITY_LAYERS:
-        for jf in (BASE / layer).glob("*.json"):
-            index[jf.stem] = jf
+    for folder in CATALOG_FOLDERS:
+        for fp in sorted(folder.glob("*.json")):
+            index[fp.stem] = fp
     return index
 
 
-def raw_sources_for(entity_file: Path) -> list[str]:
-    data = json.loads(entity_file.read_text(encoding="utf-8"))
-    return [s for s in data.get("raw_sources", []) if s.startswith(CORPUS_PREFIX)]
+ENTITY_INDEX = build_entity_index()
 
 
-def copy_raw(rel: str, dest_dir: Path, warnings: list[str], scenario_id: str) -> int:
-    src = BASE / rel
+def _write_json(path: Path, data: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _copy_corpus_ref(ref: str, input_dir: Path, warnings: list) -> int:
+    """Copy a `00_raw/_corpus/<...>` file into input/, preserving the path after `_corpus/`."""
+    rel = ref.split("_corpus/", 1)[-1] if "_corpus/" in ref else ref
+    src = CORPUS / rel
     if not src.is_file():
-        warnings.append(f"  WARNING [{scenario_id}] missing raw source: {rel}")
+        warnings.append(f"missing corpus file: {ref}")
         return 0
-    sub = rel[len(CORPUS_PREFIX):] if rel.startswith(CORPUS_PREFIX) else Path(rel).name
-    dest = dest_dir / sub
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src, dest)
+    dst = input_dir / rel
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
     return 1
 
 
-def copy_entity(entity_id: str, dest_dir: Path, index: dict[str, Path], warnings: list[str], scenario_id: str) -> int:
-    entity_file = index.get(entity_id)
-    if entity_file is None:
-        warnings.append(f"  WARNING [{scenario_id}] unresolved entity: {entity_id}")
+def _copy_entity(entity_id: str, dest_dir: Path, warnings: list) -> int:
+    src = ENTITY_INDEX.get(entity_id)
+    if src is None:
+        warnings.append(f"unresolved entity: {entity_id}")
         return 0
     dest_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(entity_file, dest_dir / entity_file.name)
+    shutil.copy2(src, dest_dir / src.name)
     return 1
 
 
-def build_stage(scenario: dict, stage: dict, scenario_dir: Path, index: dict[str, Path],
-                warnings: list[str]) -> int:
-    scenario_id = scenario["scenario_id"]
-    stage_dir = scenario_dir / stage_folder(stage)
-    stage_dir.mkdir(parents=True, exist_ok=True)
+def build_agent_stage(scenario: dict, stage: dict, stage_dir: Path, warnings: list) -> int:
+    """Materialize a data-consuming agent stage: agent_input.json + input/ + expected_output/."""
     files = 0
+    _write_json(stage_dir / "agent_input.json", stage["agent_input"])
+    files += 1
 
-    # Primary file, named by stage kind (trigger.json | agent_input.json | gate.json | ...).
-    filename, _key, content = stage_primary(stage)
-    (stage_dir / filename).write_text(
-        json.dumps(content, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    # --- input/ : the upstream handoff this agent starts from ---
+    input_dir = stage_dir / "input"
+    input_dir.mkdir(parents=True, exist_ok=True)
 
-    # input/ — documents/entities the stage starts from.
-    input_raw = list(stage.get("input_raw", []))
-    for eid in stage.get("input_entities_raw", []):          # raw behind uploaded entities
-        ef = index.get(eid)
-        if ef is not None:
-            input_raw += raw_sources_for(ef)
-    if stage.get("input_from_output_raw"):                   # raw the agent ingests behind its output
-        for eid in stage.get("output_entities", []):
-            ef = index.get(eid)
-            if ef is not None:
-                input_raw += raw_sources_for(ef)
-    input_entities = stage.get("input_entities", [])
-    # Agent stages always get an input/ (possibly empty, e.g. a query against an empty KB).
-    if input_raw or input_entities or stage["kind"] == "agent":
-        input_dir = stage_dir / "input"
-        input_dir.mkdir(parents=True, exist_ok=True)
-        for rel in sorted(set(input_raw)):
-            files += copy_raw(rel, input_dir, warnings, scenario_id)
-        for eid in input_entities:
-            files += copy_entity(eid, input_dir, index, warnings, scenario_id)
+    # uploaded raw articles, behind the accepted entities (ingestion via upload)
+    for entity_id in stage.get("input_entities_raw", []):
+        src = ENTITY_INDEX.get(entity_id)
+        if src is None:
+            warnings.append(f"unresolved entity (raw): {entity_id}")
+            continue
+        for ref in json.loads(src.read_text(encoding="utf-8")).get("raw_sources", []):
+            if "_corpus/" in ref:
+                files += _copy_corpus_ref(ref, input_dir, warnings)
 
-    # expected_output/ — only agent stages produce a measurable expectation + output entities.
-    if stage["kind"] == "agent":
-        output_dir = stage_dir / "expected_output"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        for eid in stage.get("output_entities", []):
-            files += copy_entity(eid, output_dir, index, warnings, scenario_id)
-        (output_dir / "_expected_output.json").write_text(
-            json.dumps({
-                "stage": stage["stage"], "agent": stage.get("agent"), "decision": stage.get("decision"),
-                "gate": stage.get("gate"), "output_entities": stage.get("output_entities", []),
-                "expected_output": stage.get("expected_output"),
-            }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    # explicit corpus files (synthetic ELN/LIMS, curation-decision txt)
+    for ref in stage.get("input_raw", []):
+        files += _copy_corpus_ref(ref, input_dir, warnings)
+
+    # entity handoff from upstream (RDOCs, SYN-LIMS, retrieved KB entities, citations)
+    for entity_id in stage.get("input_entities", []):
+        files += _copy_entity(entity_id, input_dir, warnings)
+
+    # the controlled query, as a prompt file (search & chat)
+    if stage.get("prompt"):
+        (input_dir / "prompt.txt").write_text(stage["prompt"].strip() + "\n", encoding="utf-8")
+        files += 1
+
+    # --- expected_output/ : what this agent would produce ---
+    output_dir = stage_dir / "expected_output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for entity_id in stage.get("output_entities", []):
+        files += _copy_entity(entity_id, output_dir, warnings)
+    _write_json(output_dir / "_expected_output.json", {
+        "stage": stage["stage"],
+        "agent": stage.get("agent"),
+        "decision": stage.get("decision"),
+        "gate": stage.get("gate"),
+        "output_entities": stage.get("output_entities", []),
+        "expected_output": stage.get("expected_output"),
+    })
+    files += 1
     return files
 
 
-def main() -> None:
-    index = entity_index()
+def build_output_stage(stage: dict, stage_dir: Path) -> int:
+    """Materialize the response output stage: response.json only."""
+    _write_json(stage_dir / "response.json", stage["response"])
+    return 1
 
-    # Clear existing scenario folders (everything in 00_raw/ except _corpus).
+
+def scenario_base_dir(scenario: dict) -> Path:
+    sid = scenario["scenario_id"]
+    if sid in DEMO_SEQUENCE:
+        return RAW / "DEMO_SCENARIO" / f"{demo_prefix(sid)}-{scenario_folder(scenario)}"
+    return RAW / scenario_folder(scenario)
+
+
+def main() -> None:
     for child in RAW.iterdir():
         if child.is_dir() and child.name != "_corpus":
             shutil.rmtree(child)
 
+    all_warnings: list[str] = []
     total_files = 0
-    warnings: list[str] = []
     for scenario in SCENARIOS:
-        scenario_dir = RAW / scenario_folder(scenario)
+        sid = scenario["scenario_id"]
+        scenario_dir = scenario_base_dir(scenario)
+        warnings: list[str] = []
         files = 0
-        for stage in scenario["stages"]:
-            files += build_stage(scenario, stage, scenario_dir, index, warnings)
 
-        # scenario.json — mirror of the 09 rollup, for a self-contained demo folder.
-        gt_file = GT_DIR / f"{scenario['scenario_id']}.json"
-        if gt_file.is_file():
-            shutil.copy2(gt_file, scenario_dir / "scenario.json")
+        for stage in materialized_stages(scenario):
+            stage_dir = scenario_dir / stage_folder(scenario, stage)
+            stage_dir.mkdir(parents=True, exist_ok=True)
+            if stage["kind"] == "agent":
+                files += build_agent_stage(scenario, stage, stage_dir, warnings)
+            elif stage["kind"] == "output":
+                files += build_output_stage(stage, stage_dir)
 
+        shutil.copy2(GT_DIR / f"{sid}.json", scenario_dir / "scenario.json")
+        files += 1
+
+        rel_dir = scenario_dir.relative_to(RAW)
+        flag = f"  WARN {len(warnings)}" if warnings else ""
+        print(f"00_raw/{rel_dir}: {files} files across {len(materialized_stages(scenario))} stages{flag}")
+        all_warnings += [f"{sid}: {w}" for w in warnings]
         total_files += files
-        print(f"{scenario_folder(scenario)}: {files} files across {len(scenario['stages'])} stages")
 
-    for w in warnings:
-        print(w)
-    print(f"\nDone — {total_files} files duplicated into per-scenario / per-agent folders "
-          f"under {RAW.relative_to(BASE.parent)}/ ({len(SCENARIOS)} scenarios)")
+    print(f"\nDone — {total_files} files written under 00_raw/ ({len(SCENARIOS)} scenarios)")
+    if all_warnings:
+        print("\nWarnings:")
+        for w in all_warnings:
+            print(f"  - {w}")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ Policy RAG evidence card
 
 - Document ID: `HLS-DATA-110`
 - Category: `policy_rag`
-- Source entity: `06_policy_rag/HLS-DATA-110.json`
+- Source entity: `08_policy_rag/HLS-DATA-110.json`
 
 ## Policy Rule
 
@@ -24,4 +24,4 @@ Policy RAG evidence card
 | --- | --- |
 | Provenance | curated_from_raw_layer_policy_sources |
 | Privacy posture |  |
-| Raw source trace | 00_raw/json/policies/AACT_HOME/source_record.json; 00_raw/json/policies/CLINICALTRIALS_GOV_DATA_API/source_record.json |
+| Raw source trace | 00_raw/_corpus/json/policies/AACT_HOME/source_record.json; 00_raw/_corpus/json/policies/CLINICALTRIALS_GOV_DATA_API/source_record.json |

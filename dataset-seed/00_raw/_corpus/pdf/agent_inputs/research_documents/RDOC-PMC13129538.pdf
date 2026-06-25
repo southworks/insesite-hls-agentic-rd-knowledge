@@ -10,7 +10,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 4 0 obj
-<< /Length 2740 >>
+<< /Length 2764 >>
 stream
 BT
 /F1 9 Tf
@@ -102,11 +102,11 @@ T*
 T*
 (Privacy posture: no patient-level source selected for normalized entity) Tj
 T*
-(Raw source trace: 00_raw/xml/articles/pmc_oa/PMC13129538/article.xml;) Tj
+(Raw source trace: 00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/article.xml;) Tj
 T*
-(00_raw/json/articles/pmc_oa/PMC13129538/europe_pmc_metadata.json;) Tj
+(00_raw/_corpus/json/articles/pmc_oa/PMC13129538/europe_pmc_metadata.json;) Tj
 T*
-(00_raw/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml) Tj
+(00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml) Tj
 T*
 ET
 endstream
@@ -121,9 +121,9 @@ xref
 0000000064 00000 n 
 0000000121 00000 n 
 0000000189 00000 n 
-0000002981 00000 n 
+0000003005 00000 n 
 trailer
 << /Size 6 /Root 1 0 R /Info << /Title (The evolving landscape of first-line and subsequent therapies in &lt;i&gt;EGFR&lt;/i&gt;-mutated NSCLC: efficacy, resistance, and tolerability.) >> >>
 startxref
-3107
+3131
 %%EOF

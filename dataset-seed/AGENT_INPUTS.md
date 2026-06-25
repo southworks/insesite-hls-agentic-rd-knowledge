@@ -27,17 +27,19 @@ the structure used by the FSI and retail scenario repos:
 
 ## Category Mapping
 
+The entity catalog is trimmed to only the demo-relevant entities, so the card set is trimmed too:
+
 | Entity folder | Replicated documents | Output category |
 | --- | ---: | --- |
 | `01_research_documents/` | 5 | `research_documents` |
-| `02_clinical_trials/` | 4 | `clinical_trials` |
+| `02_clinical_trials/` | 2 | `clinical_trials` |
 | `03_experimental_datasets/DATASET-*` | 5 | `experimental_datasets` |
-| `05_regulatory_submissions/` | 6 | `regulatory_submissions` |
-| `06_policy_rag/` | 6 | `policy_rag` |
-| `08_curation_decisions/` | 14 | `curation_decisions` |
+| `04_regulatory_submissions/` | 2 | `regulatory_submissions` |
+| `08_policy_rag/` | 6 | `policy_rag` |
+| `07_curation_decisions/` | 3 | `curation_decisions` |
 | synthetic ELN/LIMS digest | 1 | `synthetic_eln_lims` |
 
-Total: **41 evidence cards x 4 formats = 164 replica files**, plus
+Total: **24 evidence cards x 4 formats = 96 replica files**, plus
 `agent_document_manifest.json`.
 
 ## Generate
@@ -89,11 +91,11 @@ Expected stable fields include:
 ## Relationship To Raw And Normalized Layers
 
 ```text
-00_raw/ public/synthetic source files
+00_raw/_corpus/ public/synthetic source files
   -> generate_normalized_layers.py
-  -> 01_* ... 09_* normalized JSON entities
+  -> 01_* ... 09_* trimmed normalized JSON entities
   -> generate_agent_documents.py
-  -> 00_raw/{txt,md,html,pdf}/agent_inputs
+  -> 00_raw/_corpus/{txt,md,html,pdf}/agent_inputs
 ```
 
 The format replicas are not a new source of truth. They are test fixtures for

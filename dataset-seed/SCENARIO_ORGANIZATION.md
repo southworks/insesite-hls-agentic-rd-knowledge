@@ -24,34 +24,35 @@ here — while keeping one canonical corpus as the single source of truth.
 
 ## Decision
 
-HLS is **two separate processes, decoupled in time** (no single orchestrator) — see the
-interpretation correction in [HANDOFF.md](HANDOFF.md). So the scenarios split into two families:
-**ingestion** (`ING-*`, load knowledge) and **search** (`QRY-*`, query it later). Each scenario
-folder has a sub-folder per stage so any step can be started in isolation (see
-[TEST_CASES.md](TEST_CASES.md)).
+HLS is **two sequential phases**, each closed by a distinct human actor (see
+[HANDOFF.md](HANDOFF.md) and `../workflow-summary.md`): **phase 1 — ingestion** (`ING-*`, load
+knowledge) and **phase 2 — search** (`QRY-*`, query it later). The demo traverses *every* agent and
+both human actors, but only the **data-consuming** agents (+ the response) get a materialized,
+self-contained folder; the human approvals and persistence are memory stages in `scenario.json`.
 
 ```
 00_raw/
   _corpus/                          ← CANONICAL: all source files + raw_manifest.json (single source of truth)
-  ING-001_full_approval/            ← ingestion: clean upload, approved, persisted
-  ING-002_guardrail_review/         ← ingestion: deny/exclude → human review (nothing persisted)
-  ING-003_synthetic_provenance/     ← ingestion: approve_with_required_labeling
-  ING-004_sensitive_blocked/        ← ingestion: blocked at human-approval gate
-  QRY-001_no_data/                  ← search: empty KB → no grounded answer
-  QRY-002_grounded/                 ← search: populated KB → grounded answer with citations
+  DEMO_SCENARIO/                    ← headline stateful demo, numbered in run order:
+    1-QRY-001_no_data/                  search empty KB → no grounded answer
+    2-ING-001_full_approval/            ingest: clean upload, curator approves, persisted
+    3-QRY-002_grounded/                 search populated KB → grounded answer with citations
+  ING-002_guardrail_review/         ← standalone: deny/exclude → curator review (nothing persisted)
+  ING-003_synthetic_provenance/     ← standalone: approve_with_required_labeling
+  ING-004_sensitive_blocked/        ← standalone: blocked at the curator gate
 
-00_raw/ING-001_full_approval/                 00_raw/QRY-002_grounded/
-  01_upload/         trigger.json               01_query/          trigger.json
-  02_ingestion_translation/  (agent stage)      02_search_chat/          (agent stage)
-  03_metadata_linking/       (agent stage)      03_curation_compliance/  (agent stage)
-  04_human_approval/  gate.json                 04_response/       response.json
-  05_persistence/     persisted.json            scenario.json
-  scenario.json   ← mirror of 09_decision_ground_truth/<ID>.json
+00_raw/DEMO_SCENARIO/2-ING-001_full_approval/   00_raw/DEMO_SCENARIO/3-QRY-002_grounded/
+  01_ingestion_translation/  (agent stage)        01_search_chat/          (agent stage)
+  02_metadata_linking/       (agent stage)        02_curation_compliance/  (agent stage)
+  scenario.json                                   03_response/  response.json
+  # curator approval + persistence:               scenario.json
+  #   memory stages in scenario.json              # compliance approval: memory stage
+  ← scenario.json mirrors 09_decision_ground_truth/<ID>.json
 ```
 
-- `raw_manifest.json` and every normalized entity's `raw_sources` point into `_corpus/` (kept the
-  single source of truth).
-- The `ING-*/` and `QRY-*/` folders are rebuilt offline and deterministically by
+- `raw_manifest.json` and every normalized entity's `raw_sources` point into `_corpus/`; the root
+  catalog `01_*..07_*` is the canonical entity set (both single sources of truth).
+- The scenario folders are rebuilt offline and deterministically by
   [`build_scenario_folders.py`](build_scenario_folders.py) from [`scenarios.py`](scenarios.py)
   (each agent stage's `input` = upstream docs/entities, `expected_output` = what it would produce).
 - Cross-cutting multi-format `agent_inputs/` replicas stay in `_corpus/` (not per-scenario).
@@ -61,28 +62,29 @@ plain-language [TESTING_GUIDE.md](TESTING_GUIDE.md).
 
 ## Demo flow stories
 
-Two flows, run at different times. The **Narrative** is a real-life, conversational walk-through of
-how the data moves step → step; the bullets above it are the concrete demo handles.
+Two phases, run at different times (immediate or deferred). The **Narrative** is a real-life,
+conversational walk-through of how the data moves step → step; the bullets above it are the concrete
+demo handles. The headline three are bundled under `00_raw/DEMO_SCENARIO/` in run order.
 
 ### ⭐ The headline demo — "search empty → ingest → search again"
 
 Run three scenarios in sequence to show the knowledge base go from empty to answering:
 
-1. **`QRY-001_no_data`** — ask the osimertinib question against an **empty** KB → *"no grounded
-   information yet."*
-2. **`ING-001_full_approval`** — upload + ingest the five articles → **persisted** into the KB.
-3. **`QRY-002_grounded`** — ask the **same** question → a grounded answer with citations now appears.
+1. **`DEMO_SCENARIO/1-QRY-001_no_data`** — ask the osimertinib question against an **empty** KB →
+   *"no grounded information yet."*
+2. **`DEMO_SCENARIO/2-ING-001_full_approval`** — upload + ingest the five articles → **persisted** into the KB.
+3. **`DEMO_SCENARIO/3-QRY-002_grounded`** — ask the **same** question → a grounded answer with citations now appears.
 
 Same question, two results — because data was loaded in between. That contrast is the demo.
 
 ---
 
-## Ingestion flow stories
+## Phase 1 — Ingestion stories
 
-### Story A — "Full approval" (`ING-001_full_approval`)
+### Story A — "Full approval" (`2-ING-001_full_approval`)
 
-- **Start anywhere:** point a step at `00_raw/ING-001_full_approval/<stage>/` — e.g.
-  `02_ingestion_translation/input/` holds the five uploaded open-access articles as raw `xml/`+`json/`.
+- **Start anywhere:** point a step at `00_raw/DEMO_SCENARIO/2-ING-001_full_approval/<stage>/` — e.g.
+  `01_ingestion_translation/input/` holds the five uploaded open-access articles as raw `xml/`+`json/`.
 - **Flow:** upload → ingestion accepts 5 OA articles → linking connects FLAURA ↔ `NDA208065` ↔ label
   → human approves → entities persisted into the KB.
 - **Expected:** `09_decision_ground_truth/ING-001.json` — `final_outcome: approved_persisted`.
@@ -121,8 +123,8 @@ and persistence waits for human judgment.
 
 ### Story C — "Synthetic provenance → approve with labeling" (`ING-003_synthetic_provenance`)
 
-- **Start here:** `00_raw/ING-003_synthetic_provenance/01_upload/` — synthetic ELN/LIMS sample
-  manifest, notebook, and QC report derived from public GEO structure.
+- **Start here:** `00_raw/ING-003_synthetic_provenance/01_ingestion_translation/input/` — synthetic
+  ELN/LIMS sample manifest, notebook, and QC report derived from public GEO structure.
 - **Flow:** ingestion normalizes the synthetic records (stamping provenance) → linking associates
   each sample to its public GEO series → human approves *with required labeling* → persisted.
 - **Expected:** `09_decision_ground_truth/ING-003.json` — `final_outcome:
@@ -157,12 +159,12 @@ nothing to link — a clean no-op. At the **human-approval gate** the reviewer *
 candidate; it never becomes part of the knowledge base. The mirror image of Story A: unsafe data is
 stopped cold and the trail of *why* is captured at every step.
 
-## Search flow stories
+## Phase 2 — Search stories
 
-### Story E — "Empty knowledge base" (`QRY-001_no_data`)
+### Story E — "Empty knowledge base" (`1-QRY-001_no_data`)
 
-- **Start here:** `00_raw/QRY-001_no_data/` — the osimertinib query against an **empty** KB
-  (`02_search_chat/input/` is empty).
+- **Start here:** `00_raw/DEMO_SCENARIO/1-QRY-001_no_data/` — the osimertinib query against an
+  **empty** KB (`01_search_chat/input/` holds only `prompt.txt`; no entities).
 - **Flow:** query → search finds nothing to ground on → compliance confirms a safe "no data" reply →
   response returned.
 - **Expected:** `09_decision_ground_truth/QRY-001.json` — `final_outcome: no_grounded_answer`,
@@ -176,10 +178,10 @@ and returns `no_grounded_answer`. The **curation & compliance agent** reviews th
 confirms the safe, honest response is to say *"no grounded information is available yet."* The system
 refuses to invent an answer it can't cite.
 
-### Story F — "Populated knowledge base" (`QRY-002_grounded`)
+### Story F — "Populated knowledge base" (`3-QRY-002_grounded`)
 
-- **Start here:** `00_raw/QRY-002_grounded/` — the **same** query, now against a **populated** KB
-  (`02_search_chat/input/` holds the persisted article, trial, dataset, label).
+- **Start here:** `00_raw/DEMO_SCENARIO/3-QRY-002_grounded/` — the **same** query, now against a
+  **populated** KB (`01_search_chat/input/` holds `prompt.txt` + the persisted article, trial, dataset, label).
 - **Flow:** query → search retrieves the persisted evidence and drafts an answer with citations →
   compliance reviews it clean → response returned.
 - **Expected:** `09_decision_ground_truth/QRY-002.json` — `final_outcome: answer_with_citations`,
@@ -199,7 +201,7 @@ simply queried knowledge that was already there.
 ```bash
 cd dataset-seed
 python3 generate_raw_layer.py          # fetch/synthesize -> 00_raw/_corpus/  (needs network)
-python3 generate_normalized_layers.py  # normalized entities + 09 ING/QRY rollups (reads scenarios.py)
+python3 generate_normalized_layers.py  # trimmed root catalog + 09 ING/QRY rollups (reads scenarios.py)
 python3 generate_agent_documents.py    # multi-format replicas in _corpus/
-python3 build_scenario_folders.py      # (offline) rebuild 00_raw/{ING,QRY}-*/ from _corpus/ + entities
+python3 build_scenario_folders.py      # (offline) rebuild 00_raw/DEMO_SCENARIO/ + ING-* from catalog + _corpus/
 ```

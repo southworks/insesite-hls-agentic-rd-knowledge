@@ -10,7 +10,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 4 0 obj
-<< /Length 2632 >>
+<< /Length 2656 >>
 stream
 BT
 /F1 9 Tf
@@ -98,11 +98,11 @@ T*
 T*
 (Privacy posture: no patient-level source selected for normalized entity) Tj
 T*
-(Raw source trace: 00_raw/xml/articles/pmc_oa/PMC13070087/article.xml;) Tj
+(Raw source trace: 00_raw/_corpus/xml/articles/pmc_oa/PMC13070087/article.xml;) Tj
 T*
-(00_raw/json/articles/pmc_oa/PMC13070087/europe_pmc_metadata.json;) Tj
+(00_raw/_corpus/json/articles/pmc_oa/PMC13070087/europe_pmc_metadata.json;) Tj
 T*
-(00_raw/xml/articles/pmc_oa/PMC13070087/pmc_oa_license.xml) Tj
+(00_raw/_corpus/xml/articles/pmc_oa/PMC13070087/pmc_oa_license.xml) Tj
 T*
 ET
 endstream
@@ -117,9 +117,9 @@ xref
 0000000064 00000 n 
 0000000121 00000 n 
 0000000189 00000 n 
-0000002873 00000 n 
+0000002897 00000 n 
 trailer
 << /Size 6 /Root 1 0 R /Info << /Title (Updates in the Management of EGFR-Mutated Non-small Cell Lung Cancer \(NSCLC\).) >> >>
 startxref
-2999
+3023
 %%EOF

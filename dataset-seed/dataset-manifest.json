@@ -7,32 +7,32 @@
       "folder": "01_research_documents"
     },
     {
-      "entity_count": 4,
+      "entity_count": 2,
       "folder": "02_clinical_trials"
     },
     {
-      "entity_count": 63,
+      "entity_count": 7,
       "folder": "03_experimental_datasets"
     },
     {
-      "entity_count": 9,
-      "folder": "04_biomarkers_and_targets"
+      "entity_count": 2,
+      "folder": "04_regulatory_submissions"
+    },
+    {
+      "entity_count": 2,
+      "folder": "05_compounds_targets"
+    },
+    {
+      "entity_count": 2,
+      "folder": "06_evidence_links"
+    },
+    {
+      "entity_count": 3,
+      "folder": "07_curation_decisions"
     },
     {
       "entity_count": 6,
-      "folder": "05_regulatory_submissions"
-    },
-    {
-      "entity_count": 6,
-      "folder": "06_policy_rag"
-    },
-    {
-      "entity_count": 16,
-      "folder": "07_evidence_links"
-    },
-    {
-      "entity_count": 14,
-      "folder": "08_curation_decisions"
+      "folder": "08_policy_rag"
     },
     {
       "entity_count": 6,

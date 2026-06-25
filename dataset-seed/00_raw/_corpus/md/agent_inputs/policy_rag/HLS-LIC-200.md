@@ -4,7 +4,7 @@ Policy RAG evidence card
 
 - Document ID: `HLS-LIC-200`
 - Category: `policy_rag`
-- Source entity: `06_policy_rag/HLS-LIC-200.json`
+- Source entity: `08_policy_rag/HLS-LIC-200.json`
 
 ## Policy Rule
 
@@ -24,4 +24,4 @@ Policy RAG evidence card
 | --- | --- |
 | Provenance | curated_from_raw_layer_policy_sources |
 | Privacy posture |  |
-| Raw source trace | 00_raw/raw_manifest.json; 00_raw/raw_manifest.json |
+| Raw source trace | 00_raw/_corpus/raw_manifest.json; 00_raw/_corpus/raw_manifest.json |

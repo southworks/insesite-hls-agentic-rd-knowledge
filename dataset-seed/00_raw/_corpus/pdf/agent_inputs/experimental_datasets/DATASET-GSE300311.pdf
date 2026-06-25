@@ -10,7 +10,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 4 0 obj
-<< /Length 2932 >>
+<< /Length 2956 >>
 stream
 BT
 /F1 9 Tf
@@ -104,11 +104,11 @@ T*
 T*
 (Privacy posture: cell-line or assay-level source selected) Tj
 T*
-(Raw source trace: 00_raw/json/datasets/geo/GSE300311/geo_esummary.json;) Tj
+(Raw source trace: 00_raw/_corpus/json/datasets/geo/GSE300311/geo_esummary.json;) Tj
 T*
-(00_raw/txt/datasets/geo/GSE300311/series_soft.txt;) Tj
+(00_raw/_corpus/txt/datasets/geo/GSE300311/series_soft.txt;) Tj
 T*
-(00_raw/json/datasets/geo/GSE300311/source_record.json) Tj
+(00_raw/_corpus/json/datasets/geo/GSE300311/source_record.json) Tj
 T*
 ET
 endstream
@@ -123,9 +123,9 @@ xref
 0000000064 00000 n 
 0000000121 00000 n 
 0000000189 00000 n 
-0000003173 00000 n 
+0000003197 00000 n 
 trailer
 << /Size 6 /Root 1 0 R /Info << /Title (PKM2-deficiency induced fatty acid biosynthesis activation limits the response of non-small cell lung cancer to Osimertinib) >> >>
 startxref
-3299
+3323
 %%EOF

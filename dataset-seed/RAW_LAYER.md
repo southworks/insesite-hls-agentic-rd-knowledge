@@ -65,38 +65,43 @@ dataset-seed/
 |   |   |   `-- <fmt>/agent_inputs/<ENTITY_CATEGORY>/<DOCUMENT_ID>.<fmt>   <- multi-format replicas
 |   |   |-- agent_document_manifest.json
 |   |   `-- raw_manifest.json
-|   |-- ING-001_full_approval/    <- ingestion-flow scenarios (per-stage e2e folders, see below)
-|   |-- ING-002_guardrail_review/
+|   |-- DEMO_SCENARIO/            <- headline stateful demo, numbered in run order:
+|   |   |-- 1-QRY-001_no_data/        search an empty KB
+|   |   |-- 2-ING-001_full_approval/  ingest
+|   |   `-- 3-QRY-002_grounded/       search again (answer appears)
+|   |-- ING-002_guardrail_review/ <- standalone phase-1 guardrail variants
 |   |-- ING-003_synthetic_provenance/
-|   |-- ING-004_sensitive_blocked/
-|   |-- QRY-001_no_data/          <- search-flow scenarios
-|   `-- QRY-002_grounded/
+|   `-- ING-004_sensitive_blocked/
+|-- 01_research_documents/ .. 09_decision_ground_truth/   <- trimmed normalized entity catalog
 |-- scenarios.py                  <- single source of truth for the ING-* / QRY-* scenarios
 |-- generate_raw_layer.py         <- fetches/synthesizes the corpus into 00_raw/_corpus/
-|-- build_scenario_folders.py     <- (offline) builds the ING-*/QRY-* folders from _corpus/ + entities
+|-- build_scenario_folders.py     <- (offline) builds the scenario folders from the catalog + _corpus/
 `-- generate_agent_documents.py   <- writes the multi-format replicas into _corpus/
 ```
 
-HLS is **two isolated flows** (see [HANDOFF.md](HANDOFF.md)). Each scenario folder is one flow path
-with a sub-folder per stage; each stage's primary file is named by its kind:
+HLS is **two sequential phases** (see [HANDOFF.md](HANDOFF.md)). The demo traverses every agent and
+both human actors, but only the **data-consuming** agents (+ the response) get a materialized folder;
+each is numbered in run order:
 
 ```text
-00_raw/ING-001_full_approval/                 00_raw/QRY-002_grounded/
-  01_upload/         trigger.json               01_query/          trigger.json
-  02_ingestion_translation/  (agent)            02_search_chat/          (agent)
-  03_metadata_linking/       (agent)            03_curation_compliance/  (agent)
-  04_human_approval/  gate.json                 04_response/       response.json
-  05_persistence/     persisted.json            scenario.json
-  scenario.json   <- mirror of 09_decision_ground_truth/<ID>.json
+00_raw/.../2-ING-001_full_approval/           00_raw/.../3-QRY-002_grounded/
+  01_ingestion_translation/  (agent)            01_search_chat/          (agent)
+  02_metadata_linking/       (agent)            02_curation_compliance/  (agent)
+  scenario.json                                 03_response/  response.json
+                                                scenario.json
+  # curator approval + persistence:             # compliance approval:
+  #   memory stages in scenario.json            #   memory stage in scenario.json
 ```
 
-An *agent* stage has `agent_input.json` + `input/` + `expected_output/`; other stages have a single
-primary file.
+An *agent* stage has `agent_input.json` + `input/` + `expected_output/`; the *response* stage has
+`response.json`. The human approvals and persistence carry **no folder** — they are the
+`materialized: false` entries in `scenario.json` → `stages[]` (mirror of
+`09_decision_ground_truth/<ID>.json`).
 
-**Single source of truth:** only `00_raw/_corpus/` is canonical - `raw_manifest.json` and every
-normalized entity's `raw_sources` point there. The `ING-*/` and `QRY-*/` folders are deliberate
-duplicates so each stage of each scenario can be started in isolation from one self-contained
-directory; they are rebuilt offline by `build_scenario_folders.py` from [`scenarios.py`](scenarios.py).
+**Single source of truth:** `00_raw/_corpus/` is the canonical raw corpus (`raw_manifest.json` and
+every normalized entity's `raw_sources` point there); the root catalog `01_*..07_*` is the canonical
+entity set. The scenario folders are deliberate duplicates so each stage can be started in isolation;
+they are rebuilt offline by `build_scenario_folders.py` from [`scenarios.py`](scenarios.py).
 See [TEST_CASES.md](TEST_CASES.md), [TESTING_GUIDE.md](TESTING_GUIDE.md), and [HANDOFF.md](HANDOFF.md).
 
 Current generated public/synthetic source artifact summary:
@@ -144,11 +149,13 @@ See [AGENT_INPUTS.md](AGENT_INPUTS.md) and
 
 ## Test Cases
 
-HLS is two isolated flows. The scenario rollups live in `09_decision_ground_truth/ING-*.json`
-(ingestion) and `09_decision_ground_truth/QRY-*.json` (search), each a full flow path built into
-`00_raw/<ID>_<path>/`. Use [TEST_CASES.md](TEST_CASES.md), [TESTING_GUIDE.md](TESTING_GUIDE.md) and
-[HANDOFF.md](HANDOFF.md) to understand each scenario's stages and trace each stage's
-`output_entities` back to concrete files under `00_raw/`.
+HLS is two sequential phases. The scenario rollups live in `09_decision_ground_truth/ING-*.json`
+(phase 1, ingestion) and `09_decision_ground_truth/QRY-*.json` (phase 2, search), each a full e2e
+answer key. The data-consuming stages are built into `00_raw/DEMO_SCENARIO/<n>-<ID>_<path>/` (the
+headline demo) and `00_raw/<ID>_<path>/` (the standalone guardrail variants). Use
+[TEST_CASES.md](TEST_CASES.md), [TESTING_GUIDE.md](TESTING_GUIDE.md) and [HANDOFF.md](HANDOFF.md) to
+understand each scenario's stages and trace each stage's `output_entities` back to concrete files
+under `00_raw/`.
 
 ## Generation Script
 
@@ -175,9 +182,9 @@ Recommended full regeneration order:
 ```bash
 cd dataset-seed
 python3 generate_raw_layer.py          # fetch/synthesize -> 00_raw/_corpus/
-python3 generate_normalized_layers.py  # normalized entities from _corpus/
+python3 generate_normalized_layers.py  # trimmed root catalog + 09 rollups from _corpus/
 python3 generate_agent_documents.py    # multi-format replicas in _corpus/
-python3 build_scenario_folders.py      # (offline) rebuild 00_raw/{ING,QRY}-*/ from _corpus/ + entities
+python3 build_scenario_folders.py      # (offline) rebuild 00_raw/DEMO_SCENARIO/ + ING-* from catalog + _corpus/
 ```
 
 `build_scenario_folders.py` is offline and deterministic - re-run it any time the
@@ -285,17 +292,19 @@ The normalized entity folders are derived from `00_raw/` by
 existing repos:
 
 ```text
-00_raw/
-  -> 01_research_documents/
-  -> 02_trial_protocols/
-  -> 03_experimental_datasets/
-  -> 04_biomarkers_and_targets/
-  -> 05_regulatory_submissions/
-  -> 06_policy_rag/
-  -> 07_evidence_links/
-  -> 08_curation_decisions/
-  -> 09_decision_ground_truth/
+00_raw/_corpus/
+  -> 01_research_documents/     (RDOC-* — 5)
+  -> 02_clinical_trials/        (TRIAL-* — 2: FLAURA, AURA3)
+  -> 03_experimental_datasets/  (DATASET-GSE* — 5, + SYN-LIMS-* — 2)
+  -> 04_regulatory_submissions/ (REG-NDA208065, LBL-TAGRISSO-OPENFDA)
+  -> 05_compounds_targets/      (CMP-CHEMBL3353410, TGT-CHEMBL203)
+  -> 06_evidence_links/         (LINK-* — 2)
+  -> 07_curation_decisions/     (CUR-EXCLUDE-* — 3)
+  -> 08_policy_rag/             (HLS-* — 6)
+  -> 09_decision_ground_truth/  (ING-*/QRY-* rollups — 6)
 ```
 
-Each normalized folder includes a `SCHEMA.md`. The rollup manifest is
-`dataset-manifest.json`.
+The catalog is **trimmed to only the entities the demo's data-consuming agents use** (noise
+reduction): no per-sample GEO entities (`SAMPLE-GSM*`), no biomarker catalog (`BMK-*`), no extra
+trials, links, or regulatory source documents. Each normalized folder includes a `SCHEMA.md`. The
+rollup manifest is `dataset-manifest.json`.
