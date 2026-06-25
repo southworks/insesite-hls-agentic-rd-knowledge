@@ -4,35 +4,35 @@ Everything needed to **build, validate, and rebuild** the HLS dataset — not co
 
 ## Layout
 
-| Path | Contents |
-|------|----------|
-| `corpus/` | Canonical raw source files (articles, trials, GEO, policies, synthetic ELN/LIMS) |
-| `entity-catalog/` | Normalized JSON entities (`01_research_documents/` … `08_policy_rag/`) |
-| `ground-truth/` | Full e2e answer keys per legacy scenario ID (`QRY-001.json`, `ING-002.json`, …) |
-| `expected-outputs/` | Per-stage `input/`, `expected_output/`, `scenario.json` (rebuilt by scripts) |
-| `source/` | Source catalog, bronze exports, scenario helpers |
-| `scripts/` | Python generators and rebuild tools |
-| `docs/` | HANDOFF, TEST_CASES, RAW_LAYER, TESTING_GUIDE, etc. |
+```
+data-generation/
+  corpus/                    canonical raw source files + source_catalog.json
+  ground-truth/              optional e2e answer keys (QRY-001.json, ING-002.json, …)
+  scripts/                   Python generators and build_case_folders.py
+  docs/                      HANDOFF, TEST_CASES, RAW_LAYER, TESTING_GUIDE, etc.
+```
 
-## Regenerate reference artifacts
+## Regenerate demo cases
 
 From `data-generation/scripts/`:
 
 ```bash
-# Full rebuild (offline, no network for scenario folders):
-python3 generate_normalized_layers.py   # entity catalog + ground truth
-python3 build_scenario_folders.py       # expected-outputs/ per legacy ID
-
-# Optional — refresh corpus from public sources (needs network):
-python3 generate_raw_layer.py
-
-# Sync demo ingest/ folders after rebuilding expected-outputs:
-python3 sync_demo_ingest.py
+python3 generate_raw_layer.py       # corpus/ (needs network on first run)
+python3 build_case_folders.py       # dataset-seed/cases/*/ingest/ + prompts/
 ```
+
+Optional:
+
+```bash
+python3 generate_agent_documents.py        # pdf/txt/md/html agent_inputs in corpus/
+python3 generate_normalized_layers.py      # ground-truth/ only (validation answer keys)
+```
+
+No `entity-catalog/`, `expected-outputs/`, or `source/` are produced — demo data lands directly in `dataset-seed/cases/`.
 
 ## Legacy scenario IDs
 
-Scripts and ground truth use the original IDs: `QRY-001`, `ING-001`, `QRY-002`, `ING-002`, `ING-003`, `ING-004`. Demo-facing folder names (Case 1–4, demo-flow) live only under `dataset-seed/`.
+Scripts and ground truth use the original IDs: `QRY-001`, `ING-001`, `QRY-002`, `ING-002`, `ING-003`, `ING-004`. Demo-facing folder names (Case 1–4) live only under `dataset-seed/`.
 
 ## Demo package
 

@@ -6,10 +6,10 @@
   "path": "full_approval",
   "phase": 1,
   "raw_sources": [
-    "00_raw/_corpus/raw_manifest.json"
+    "corpus/raw_manifest.json"
   ],
   "required_human_review": false,
-  "scenario_folder": "00_raw/DEMO_SCENARIO/2-ING-001_full_approval",
+  "scenario_folder": "dataset-seed/cases/case-04-demo",
   "scenario_id": "ING-001",
   "scenario_kind": "e2e_phase_path",
   "source_system": "hls_knowledge_mining_ground_truth",
@@ -18,7 +18,7 @@
       "actor": null,
       "agent": "ingestion_translation_agent",
       "agent_input": {
-        "portal_source_manifest": "00_raw/_corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
+        "portal_source_manifest": "corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
         "task": "ingest_and_license_check_uploaded_articles",
         "uploaded_pmcids": [
           "PMC6889286",
@@ -45,7 +45,7 @@
         "RDOC-PMC13129538",
         "RDOC-PMC13143971"
       ],
-      "raw_layer_folder": "00_raw/DEMO_SCENARIO/2-ING-001_full_approval/01_ingestion_translation/",
+      "raw_layer_folder": null,
       "stage": "ingestion_translation"
     },
     {
@@ -94,7 +94,7 @@
         "CMP-CHEMBL3353410",
         "TGT-CHEMBL203"
       ],
-      "raw_layer_folder": "00_raw/DEMO_SCENARIO/2-ING-001_full_approval/02_metadata_linking/",
+      "raw_layer_folder": null,
       "stage": "metadata_linking"
     },
     {
@@ -167,7 +167,7 @@
     "action": "upload_and_ingest",
     "external_connector_conceptual": "Connect Portals — uploaded files stand in for data that could come from external medical portals",
     "note": "controlled button/process trigger — not a free-form chatbot",
-    "portal_source_manifest": "00_raw/_corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
+    "portal_source_manifest": "corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
     "request_id": "ING-001-REQ",
     "surface": "ingestion_console",
     "type": "ui_action",

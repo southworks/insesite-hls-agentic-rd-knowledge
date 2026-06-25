@@ -11,7 +11,7 @@ synthetic operational records:
     from the public source structure. These records contain no patient data.
 
 Running the script is idempotent: it refreshes data-generation/corpus from the
-catalog in data-generation/source/_source/source_catalog.json.
+catalog in data-generation/corpus/source_catalog.json.
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ from urllib.request import Request, urlopen
 
 SCRIPTS = Path(__file__).resolve().parent
 DATA_GEN = SCRIPTS.parent
-CATALOG_PATH = DATA_GEN / "source" / "_source" / "source_catalog.json"
+CATALOG_PATH = DATA_GEN / "corpus" / "source_catalog.json"
 # Canonical corpus — single source of truth for fetched/synthesized files.
 RAW = DATA_GEN / "corpus"
 
@@ -49,9 +49,12 @@ def load_catalog() -> dict[str, Any]:
 
 
 def reset_raw() -> None:
+    catalog_backup = CATALOG_PATH.read_bytes() if CATALOG_PATH.is_file() else None
     if RAW.exists():
         shutil.rmtree(RAW)
     RAW.mkdir(parents=True, exist_ok=True)
+    if catalog_backup is not None:
+        CATALOG_PATH.write_bytes(catalog_backup)
 
 
 def request_bytes(url: str, retries: int = 3) -> bytes:

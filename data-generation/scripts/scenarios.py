@@ -17,26 +17,17 @@ query an EMPTY KB (no answer) -> ingest -> query the POPULATED KB (grounded answ
 
 ## What we materialize (and what we don't)
 
-The demo *traverses every agent and both human actors*, but we only generate datasets for the
-agents/actions that actually **consume data** — exactly the inesite pattern:
+The demo *traverses every agent and both human actors*, but only **demo upload payloads** are
+materialized under `dataset-seed/cases/` — exactly the inesite pattern:
 
-  - Data-consuming agents (RAG / upload):  ingestion_translation, metadata_linking,
-    search_chat, curation_compliance  -> materialized as 00_raw/.../<NN>_<stage>/ folders with
-    `agent_input.json` + `input/` + `expected_output/`.
-  - The `response` output is materialized as an output-only folder (`response.json`).
-  - The human-approval gates and persistence are **memory stages**: they appear in the full
-    `scenario.json` answer key (`stages[]`) but get NO raw-layer folder — the orchestrator
-    carries them in workflow memory.
+  - Ingestion scenarios -> flat files in `<case>/ingest/` (built by `build_case_folders.py`).
+  - Search scenarios in the headline demo -> query text in `case-04-demo/prompts/`.
+  - Human-approval gates and persistence are **memory stages** in ground-truth rollups only.
 
-The normalized entity catalog at the `dataset-seed/` root (01_research_documents ..
-09_decision_ground_truth) is the single source of truth for the entities; build_scenario_folders.py
-copies the relevant ones into each stage's `input/` and `expected_output/`.
+Generators import this module so rollups and demo folders stay aligned:
 
-Both generators import this module so the 09 rollups and the per-scenario Raw-Layer folders
-stay aligned:
-
-  - generate_normalized_layers.py  -> 09_decision_ground_truth/{ING,QRY}-XXX.json
-  - build_scenario_folders.py      -> 00_raw/DEMO_SCENARIO/<n>-<ID>_<path>/ + 00_raw/<ID>_<path>/
+  - generate_normalized_layers.py  -> ground-truth/{ING,QRY}-XXX.json
+  - build_case_folders.py          -> dataset-seed/cases/*/ingest/ + prompts/
 
 Trackable prefixes: ING-### (ingestion phase) and QRY-### (query/search phase), like APP-XXX in loan.
 
@@ -53,7 +44,7 @@ Trackable prefixes: ING-### (ingestion phase) and QRY-### (query/search phase), 
 
 from __future__ import annotations
 
-# Stage kinds that get a materialized 00_raw/.../<NN>_<stage>/ folder.
+# Stage kinds that historically had per-stage folders (now demo-first; kept for ground-truth metadata).
 MATERIALIZED_KINDS = {"agent", "output"}
 
 # kind -> (primary filename, payload key on the stage dict). Memory kinds (gate/sink) keep their
@@ -66,14 +57,25 @@ STAGE_PRIMARY = {
 }
 
 # The DEMO_SCENARIO bundle (stateful headline demo) and the standalone guardrail variants.
-DEMO_SEQUENCE = ["QRY-001", "ING-001", "QRY-002"]   # numbered 1-, 2-, 3- under 00_raw/DEMO_SCENARIO/
-STANDALONE_SCENARIOS = ["ING-002", "ING-003", "ING-004"]  # at 00_raw/<ID>_<path>/
+DEMO_SEQUENCE = ["QRY-001", "ING-001", "QRY-002"]
+STANDALONE_SCENARIOS = ["ING-002", "ING-003", "ING-004"]
 
-PORTAL_MANIFEST = "00_raw/_corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv"
+DEMO_CASE = "case-04-demo"
+CASE_FOLDERS: dict[str, str] = {
+    "ING-002": "case-01-human-review",
+    "ING-003": "case-02-approval-labeling",
+    "ING-004": "case-03-sensitive-denied",
+}
+DEMO_PROMPT_FILES: dict[str, str] = {
+    "QRY-001": "01-no-data-prompt.txt",
+    "QRY-002": "03-grounded-query-prompt.txt",
+}
+
+PORTAL_MANIFEST = "corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv"
 SYNTHETIC_RAW = [
-    "00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv",
-    "00_raw/_corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt",
-    "00_raw/_corpus/txt/synthetic_eln_lims/lims_quality_control_report.txt",
+    "corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv",
+    "corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt",
+    "corpus/txt/synthetic_eln_lims/lims_quality_control_report.txt",
 ]
 
 # Controlled UI triggers (button/process), NOT free-form chatbots.
@@ -265,7 +267,7 @@ INGESTION_SCENARIOS: list[dict] = [
                 "stage": "ingestion_translation", "kind": "agent", "agent": "ingestion_translation_agent",
                 "agent_input": {"task": "ingest_candidate_dataset_metadata_only",
                                 "candidate_dataset_ids": ["GSE301973"]},
-                "input_raw": ["00_raw/_corpus/txt/agent_inputs/curation_decisions/CUR-EXCLUDE-GSE301973.txt"],
+                "input_raw": ["corpus/txt/agent_inputs/curation_decisions/CUR-EXCLUDE-GSE301973.txt"],
                 "output_entities": [],
                 "expected_output": {"normalized_count": 0, "flagged_candidate": "GSE301973",
                                     "note": "metadata only — deferred to the knowledge curator"},
@@ -410,3 +412,8 @@ def stage_primary(stage: dict) -> tuple[str | None, str, object]:
 def demo_prefix(scenario_id: str) -> int:
     """1-based position of a scenario in the headline DEMO_SCENARIO sequence."""
     return DEMO_SEQUENCE.index(scenario_id) + 1
+
+
+def case_folder(scenario: dict) -> str:
+    """Demo folder name under dataset-seed/cases/."""
+    return CASE_FOLDERS[scenario["scenario_id"]]

@@ -6,10 +6,10 @@
   "path": "synthetic_provenance",
   "phase": 1,
   "raw_sources": [
-    "00_raw/_corpus/raw_manifest.json"
+    "corpus/raw_manifest.json"
   ],
   "required_human_review": false,
-  "scenario_folder": "00_raw/ING-003_synthetic_provenance",
+  "scenario_folder": "dataset-seed/cases/case-02-approval-labeling",
   "scenario_id": "ING-003",
   "scenario_kind": "e2e_phase_path",
   "source_system": "hls_knowledge_mining_ground_truth",
@@ -20,9 +20,9 @@
       "agent_input": {
         "task": "ingest_synthetic_eln_lims",
         "uploaded_files": [
-          "00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv",
-          "00_raw/_corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt",
-          "00_raw/_corpus/txt/synthetic_eln_lims/lims_quality_control_report.txt"
+          "corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv",
+          "corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt",
+          "corpus/txt/synthetic_eln_lims/lims_quality_control_report.txt"
         ]
       },
       "decision": "approve",
@@ -39,7 +39,7 @@
         "SYN-LIMS-001",
         "SYN-LIMS-010"
       ],
-      "raw_layer_folder": "00_raw/ING-003_synthetic_provenance/01_ingestion_translation/",
+      "raw_layer_folder": null,
       "stage": "ingestion_translation"
     },
     {
@@ -79,7 +79,7 @@
       "output_entities": [
         "DATASET-GSE323366"
       ],
-      "raw_layer_folder": "00_raw/ING-003_synthetic_provenance/02_metadata_linking/",
+      "raw_layer_folder": null,
       "stage": "metadata_linking"
     },
     {
@@ -145,9 +145,9 @@
     "surface": "ingestion_console",
     "type": "ui_action",
     "uploaded_files": [
-      "00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv",
-      "00_raw/_corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt",
-      "00_raw/_corpus/txt/synthetic_eln_lims/lims_quality_control_report.txt"
+      "corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv",
+      "corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt",
+      "corpus/txt/synthetic_eln_lims/lims_quality_control_report.txt"
     ]
   }
 }

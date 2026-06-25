@@ -4,7 +4,7 @@ Research article evidence card
 
 Document ID: RDOC-PMC13070087
 Category: research_documents
-Source entity: entity-catalog/01_research_documents/RDOC-PMC13070087.json
+Source entity: entity/RDOC-PMC13070087.json
 
 Article Identity
 ----------------
@@ -26,4 +26,4 @@ Provenance
 ----------
 Provenance: derived_from_raw_layer
 Privacy posture: no patient-level source selected for normalized entity
-Raw source trace: 00_raw/_corpus/xml/articles/pmc_oa/PMC13070087/article.xml
+Raw source trace: corpus/xml/articles/pmc_oa/PMC13070087/article.xml

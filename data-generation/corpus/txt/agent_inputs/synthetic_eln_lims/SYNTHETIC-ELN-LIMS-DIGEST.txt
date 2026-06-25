@@ -4,7 +4,7 @@ Synthetic operational evidence card
 
 Document ID: SYNTHETIC-ELN-LIMS-DIGEST
 Category: synthetic_eln_lims
-Source entity: 03_experimental_datasets/SYN-LIMS-*.json
+Source entity: entity/SYN-LIMS-*.json
 
 Synthetic ELN/LIMS Digest
 -------------------------
@@ -22,4 +22,4 @@ Provenance
 ----------
 Provenance: synthetic_from_public_structure
 Privacy posture: fictional/synthetic operational record; no patient data
-Raw source trace: 00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv; 00_raw/_corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt
+Raw source trace: corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv; corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt

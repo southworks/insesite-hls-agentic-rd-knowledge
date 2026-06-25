@@ -4,7 +4,7 @@ Clinical trial evidence card
 
 Document ID: TRIAL-NCT02151981
 Category: clinical_trials
-Source entity: 02_clinical_trials/TRIAL-NCT02151981.json
+Source entity: entity/TRIAL-NCT02151981.json
 
 Trial Identity
 --------------
@@ -32,4 +32,4 @@ Provenance
 ----------
 Provenance: derived_from_raw_layer
 Privacy posture: aggregate clinical trial registration/results only
-Raw source trace: 00_raw/_corpus/json/trials/clinicaltrials_gov/NCT02151981/study.json; 00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02151981/Prot_000.pdf; 00_raw/_corpus/pdf/trials/clinicaltrials_gov/NCT02151981/SAP_001.pdf
+Raw source trace: corpus/json/trials/clinicaltrials_gov/NCT02151981/study.json; corpus/pdf/trials/clinicaltrials_gov/NCT02151981/Prot_000.pdf; corpus/pdf/trials/clinicaltrials_gov/NCT02151981/SAP_001.pdf

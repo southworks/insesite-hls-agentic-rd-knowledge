@@ -6,10 +6,10 @@
   "path": "sensitive_blocked",
   "phase": 1,
   "raw_sources": [
-    "00_raw/_corpus/raw_manifest.json"
+    "corpus/raw_manifest.json"
   ],
   "required_human_review": true,
-  "scenario_folder": "00_raw/ING-004_sensitive_blocked",
+  "scenario_folder": "dataset-seed/cases/case-03-sensitive-denied",
   "scenario_id": "ING-004",
   "scenario_kind": "e2e_phase_path",
   "source_system": "hls_knowledge_mining_ground_truth",
@@ -35,7 +35,7 @@
       "materialized": true,
       "order": 1,
       "output_entities": [],
-      "raw_layer_folder": "00_raw/ING-004_sensitive_blocked/01_ingestion_translation/",
+      "raw_layer_folder": null,
       "stage": "ingestion_translation"
     },
     {
@@ -56,7 +56,7 @@
       "materialized": true,
       "order": 2,
       "output_entities": [],
-      "raw_layer_folder": "00_raw/ING-004_sensitive_blocked/02_metadata_linking/",
+      "raw_layer_folder": null,
       "stage": "metadata_linking"
     },
     {

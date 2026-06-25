@@ -4,7 +4,7 @@ Policy RAG evidence card
 
 Document ID: HLS-REG-500
 Category: policy_rag
-Source entity: 08_policy_rag/HLS-REG-500.json
+Source entity: entity/HLS-REG-500.json
 
 Policy Rule
 -----------
@@ -20,4 +20,4 @@ Provenance
 ----------
 Provenance: curated_from_raw_layer_policy_sources
 Privacy posture: 
-Raw source trace: 00_raw/_corpus/json/regulatory/OPENFDA_LABEL_TAGRISSO/source_record.json; 00_raw/_corpus/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/source_record.json; 00_raw/_corpus/json/regulatory/EMA_TAGRISSO_EPAR/source_record.json
+Raw source trace: corpus/json/regulatory/OPENFDA_LABEL_TAGRISSO/source_record.json; corpus/json/regulatory/OPENFDA_DRUGSFDA_NDA208065/source_record.json; corpus/json/regulatory/EMA_TAGRISSO_EPAR/source_record.json

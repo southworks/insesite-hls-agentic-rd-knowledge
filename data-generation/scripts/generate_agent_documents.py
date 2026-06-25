@@ -12,8 +12,8 @@ Output:
   data-generation/corpus/{txt,md,html,pdf}/agent_inputs/...
 
 These replicas are for extraction-consistency tests. They are not new source
-truth; every card includes raw source traces back to 00_raw/_corpus/. They live in
-the canonical corpus (cross-cutting consistency assets), not the per-scenario GT-* folders.
+truth; every card includes raw source traces back to corpus/. They live in
+the canonical corpus (cross-cutting consistency assets), not per-scenario demo folders.
 """
 
 from __future__ import annotations
@@ -29,10 +29,11 @@ from pathlib import Path
 from typing import Any
 
 
+from generate_normalized_layers import CATALOG_PATH, build_entity_index, load_json
+
 SCRIPTS = Path(__file__).resolve().parent
 DATA_GEN = SCRIPTS.parent
 BASE = DATA_GEN
-CATALOG = DATA_GEN / "entity-catalog"
 RAW = DATA_GEN / "corpus"
 LEGACY_OUT = RAW / "format_replicas"
 MANIFEST = RAW / "agent_document_manifest.json"
@@ -112,8 +113,7 @@ def add_common_sections(entity: dict[str, Any], sections: list[tuple[str, list[t
     return sections
 
 
-def doc_from_research(path: Path) -> AgentDoc:
-    e = load_json(path)
+def doc_from_research(e: dict[str, Any]) -> AgentDoc:
     sections = [
         (
             "Article Identity",
@@ -136,11 +136,10 @@ def doc_from_research(path: Path) -> AgentDoc:
             ],
         ),
     ]
-    return AgentDoc(e["document_id"], "research_documents", e["title"], "Research article evidence card", add_common_sections(e, sections), rel(path))
+    return AgentDoc(e["document_id"], "research_documents", e["title"], "Research article evidence card", add_common_sections(e, sections), f"entity/{e['document_id']}.json")
 
 
-def doc_from_trial(path: Path) -> AgentDoc:
-    e = load_json(path)
+def doc_from_trial(e: dict[str, Any]) -> AgentDoc:
     sections = [
         (
             "Trial Identity",
@@ -171,11 +170,10 @@ def doc_from_trial(path: Path) -> AgentDoc:
             ],
         ),
     ]
-    return AgentDoc(f"TRIAL-{e['trial_id']}", "clinical_trials", e.get("brief_title", e["trial_id"]), "Clinical trial evidence card", add_common_sections(e, sections), rel(path))
+    return AgentDoc(f"TRIAL-{e['trial_id']}", "clinical_trials", e.get("brief_title", e["trial_id"]), "Clinical trial evidence card", add_common_sections(e, sections), f"entity/TRIAL-{e['trial_id']}.json")
 
 
-def doc_from_dataset(path: Path) -> AgentDoc:
-    e = load_json(path)
+def doc_from_dataset(e: dict[str, Any]) -> AgentDoc:
     sections = [
         (
             "Dataset Identity",
@@ -196,11 +194,10 @@ def doc_from_dataset(path: Path) -> AgentDoc:
             ],
         ),
     ]
-    return AgentDoc(f"DATASET-{e['dataset_id']}", "experimental_datasets", e.get("title", e["dataset_id"]), "Experimental dataset evidence card", add_common_sections(e, sections), rel(path))
+    return AgentDoc(f"DATASET-{e['dataset_id']}", "experimental_datasets", e.get("title", e["dataset_id"]), "Experimental dataset evidence card", add_common_sections(e, sections), f"entity/DATASET-{e['dataset_id']}.json")
 
 
-def doc_from_regulatory(path: Path) -> AgentDoc:
-    e = load_json(path)
+def doc_from_regulatory(e: dict[str, Any]) -> AgentDoc:
     document_id = e["document_id"]
     sections = [
         (
@@ -240,11 +237,10 @@ def doc_from_regulatory(path: Path) -> AgentDoc:
                 ],
             )
         )
-    return AgentDoc(document_id, "regulatory_submissions", document_id, "Regulatory evidence card", add_common_sections(e, sections), rel(path))
+    return AgentDoc(document_id, "regulatory_submissions", document_id, "Regulatory evidence card", add_common_sections(e, sections), f"entity/{document_id}.json")
 
 
-def doc_from_policy(path: Path) -> AgentDoc:
-    e = load_json(path)
+def doc_from_policy(e: dict[str, Any]) -> AgentDoc:
     sections = [
         (
             "Policy Rule",
@@ -259,11 +255,10 @@ def doc_from_policy(path: Path) -> AgentDoc:
             ],
         )
     ]
-    return AgentDoc(e["policy_id"], "policy_rag", e.get("title", e["policy_id"]), "Policy RAG evidence card", add_common_sections(e, sections), rel(path))
+    return AgentDoc(e["policy_id"], "policy_rag", e.get("title", e["policy_id"]), "Policy RAG evidence card", add_common_sections(e, sections), f"entity/{e['policy_id']}.json")
 
 
-def doc_from_curation(path: Path) -> AgentDoc:
-    e = load_json(path)
+def doc_from_curation(e: dict[str, Any]) -> AgentDoc:
     sections = [
         (
             "Curation Decision",
@@ -280,11 +275,10 @@ def doc_from_curation(path: Path) -> AgentDoc:
             ],
         )
     ]
-    return AgentDoc(e["decision_id"], "curation_decisions", e["decision_id"], "Curation and compliance decision card", add_common_sections(e, sections), rel(path))
+    return AgentDoc(e["decision_id"], "curation_decisions", e["decision_id"], "Curation and compliance decision card", add_common_sections(e, sections), f"entity/{e['decision_id']}.json")
 
 
-def doc_from_eln_lims_digest(paths: list[Path]) -> AgentDoc:
-    samples = [load_json(path) for path in paths]
+def doc_from_eln_lims_digest(samples: list[dict[str, Any]]) -> AgentDoc:
     rows = []
     for sample in samples:
         rows.append(
@@ -297,8 +291,8 @@ def doc_from_eln_lims_digest(paths: list[Path]) -> AgentDoc:
         "provenance": "synthetic_from_public_structure",
         "privacy_posture": "fictional/synthetic operational record; no patient data",
         "raw_sources": [
-            "00_raw/_corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv",
-            "00_raw/_corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt",
+            "corpus/csv/synthetic_eln_lims/lims_sample_manifest.csv",
+            "corpus/txt/synthetic_eln_lims/eln_experiment_notebook.txt",
         ],
     }
     sections = [
@@ -319,32 +313,34 @@ def doc_from_eln_lims_digest(paths: list[Path]) -> AgentDoc:
         "Synthetic ELN/LIMS Digest",
         "Synthetic operational evidence card",
         add_common_sections(entity, sections),
-        "03_experimental_datasets/SYN-LIMS-*.json",
+        "entity/SYN-LIMS-*.json",
     )
 
 
 def collect_docs(categories: set[str]) -> list[AgentDoc]:
+    catalog = load_json(CATALOG_PATH)
+    index = build_entity_index(catalog)
     docs: list[AgentDoc] = []
 
     def include(name: str) -> bool:
         return "all" in categories or name in categories
 
     if include("research_documents"):
-        docs.extend(doc_from_research(path) for path in sorted((CATALOG / "01_research_documents").glob("RDOC-*.json")))
+        docs.extend(doc_from_research(e) for e in sorted(index.values(), key=lambda x: x.get("document_id", "")) if e.get("document_type") == "research_document")
     if include("clinical_trials"):
-        docs.extend(doc_from_trial(path) for path in sorted((CATALOG / "02_clinical_trials").glob("TRIAL-*.json")))
+        docs.extend(doc_from_trial(e) for e in index.values() if e.get("document_type") == "clinical_trial")
     if include("experimental_datasets"):
-        docs.extend(doc_from_dataset(path) for path in sorted((CATALOG / "03_experimental_datasets").glob("DATASET-*.json")))
+        docs.extend(doc_from_dataset(e) for e in index.values() if e.get("document_type") == "experimental_dataset")
     if include("regulatory_submissions"):
-        docs.extend(doc_from_regulatory(path) for path in sorted((CATALOG / "04_regulatory_submissions").glob("*.json")))
+        docs.extend(doc_from_regulatory(e) for e in index.values() if e.get("document_type") in {"regulatory_application", "product_label"})
     if include("policy_rag"):
-        docs.extend(doc_from_policy(path) for path in sorted((CATALOG / "08_policy_rag").glob("HLS-*.json")))
+        docs.extend(doc_from_policy(e) for e in index.values() if e.get("document_type") == "policy_rag_rule")
     if include("curation_decisions"):
-        docs.extend(doc_from_curation(path) for path in sorted((CATALOG / "07_curation_decisions").glob("CUR-*.json")))
+        docs.extend(doc_from_curation(e) for e in index.values() if e.get("document_type") == "curation_decision")
     if include("synthetic_eln_lims"):
-        lims = sorted((CATALOG / "03_experimental_datasets").glob("SYN-LIMS-*.json"))
+        lims = [e for e in index.values() if e.get("document_type") == "synthetic_lims_sample"]
         if lims:
-            docs.append(doc_from_eln_lims_digest(lims))
+            docs.append(doc_from_eln_lims_digest(sorted(lims, key=lambda x: x["sample_id"])))
 
     return docs
 
@@ -519,7 +515,7 @@ def write_manifest(docs: list[AgentDoc], formats: set[str], file_entries: dict[s
         "formats": [fmt for fmt in FORMAT_ORDER if fmt in formats],
         "purpose": "Cross-format extraction consistency validation for HLS agent inputs.",
         "generation_policy": {
-            "source_truth": "Normalized JSON entities derived from 00_raw/",
+            "source_truth": "Normalized JSON entities derived from corpus/",
             "no_new_facts": True,
             "image_formats": "Not generated in HLS because public/source documents are digital; scanned patient/lab images would be misleading.",
         },

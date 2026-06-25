@@ -6,10 +6,10 @@
   "path": "guardrail_review",
   "phase": 1,
   "raw_sources": [
-    "00_raw/_corpus/raw_manifest.json"
+    "corpus/raw_manifest.json"
   ],
   "required_human_review": true,
-  "scenario_folder": "00_raw/ING-002_guardrail_review",
+  "scenario_folder": "dataset-seed/cases/case-01-human-review",
   "scenario_id": "ING-002",
   "scenario_kind": "e2e_phase_path",
   "source_system": "hls_knowledge_mining_ground_truth",
@@ -23,7 +23,7 @@
           "expected": "deny",
           "pmcid": "PMC4771182"
         },
-        "portal_source_manifest": "00_raw/_corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
+        "portal_source_manifest": "corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
         "task": "ingest_and_license_check_uploaded_articles",
         "uploaded_pmcids": [
           "PMC6889286",
@@ -55,7 +55,7 @@
         "RDOC-PMC13143971",
         "CUR-EXCLUDE-PMC4771182"
       ],
-      "raw_layer_folder": "00_raw/ING-002_guardrail_review/01_ingestion_translation/",
+      "raw_layer_folder": null,
       "stage": "ingestion_translation"
     },
     {
@@ -111,7 +111,7 @@
         "CUR-EXCLUDE-GSE297057",
         "CUR-EXCLUDE-GSE301973"
       ],
-      "raw_layer_folder": "00_raw/ING-002_guardrail_review/02_metadata_linking/",
+      "raw_layer_folder": null,
       "stage": "metadata_linking"
     },
     {
@@ -176,7 +176,7 @@
     ],
     "external_connector_conceptual": "Connect Portals — uploaded files stand in for data that could come from external medical portals",
     "note": "controlled button/process trigger — not a free-form chatbot",
-    "portal_source_manifest": "00_raw/_corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
+    "portal_source_manifest": "corpus/csv/partner_vendor_repositories/partner_vendor_repository_index.csv",
     "request_id": "ING-002-REQ",
     "surface": "ingestion_console",
     "type": "ui_action",

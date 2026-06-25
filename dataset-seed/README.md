@@ -12,24 +12,24 @@ Demo-ready inputs for the HLS Agentic R&D Knowledge Mining workflow. Pick a case
 
 | Case | Folder | Legacy ID | Ingest | Expected outcome |
 |------|--------|-----------|--------|------------------|
-| Case 2 | `cases/case-01-human-review/` | ING-002 | Yes — 5 OA articles | Human review needed; nothing persisted |
-| Case 3 | `cases/case-02-approval-labeling/` | ING-003 | Yes — synthetic ELN/LIMS | Approved with required labeling |
-| Case 4 | `cases/case-03-sensitive-denied/` | ING-004 | Yes — sensitive GEO record | Denied; nothing persisted |
+| Case 1 | `cases/case-01-human-review/` | ING-002 | Yes — 5 OA articles | Human review needed; nothing persisted |
+| Case 2 | `cases/case-02-approval-labeling/` | ING-003 | Yes — synthetic ELN/LIMS | Approved with required labeling |
+| Case 3 | `cases/case-03-sensitive-denied/` | ING-004 | Yes — sensitive GEO record | Denied; nothing persisted |
 
 Each case folder contains:
 
 - `README.md` — user action, ingest summary, expected outcome, legacy ID
-- `ingest/` — flat files to upload (may be empty)
+- `ingest/` — flat files to upload
 
 ## Demo flow (stateful headline demo)
 
 Run **in order** — see [`cases/case-04-demo/README.md`](cases/case-04-demo/README.md):
 
-| Step | Folder | Legacy ID | Expected outcome |
-|------|--------|-----------|------------------|
-| 1 | `cases/case-04-demo/step-01-no-data/` | QRY-001 | No grounded answer |
-| 2 | `cases/case-04-demo/step-02-full-approval/` | ING-001 | Clean ingest; curator approves; KB populated |
-| 3 | `cases/case-04-demo/step-03-grounded-query/` | QRY-002 | Grounded answer with citations |
+| Step | Legacy ID | Action | Location |
+|------|-----------|--------|----------|
+| 1 | QRY-001 | Query empty KB | `cases/case-04-demo/prompts/01-no-data-prompt.txt` |
+| 2 | ING-001 | Upload & ingest clean OA articles | `cases/case-04-demo/ingest/` |
+| 3 | QRY-002 | Same query — grounded answer with citations | `cases/case-04-demo/prompts/03-grounded-query-prompt.txt` |
 
 ## Policies
 
@@ -37,8 +37,8 @@ All governance rules for the demo are in [`policies/hls_policies.txt`](policies/
 
 ## Reference material
 
-Generation scripts, corpus, entity catalogs, expected outputs, and ground truth live in [`../data-generation/`](../data-generation/). Legacy scenario IDs (`ING-*`, `QRY-*`) are preserved there for validation and rebuild.
+Generation scripts, corpus, and ground truth live in [`../data-generation/`](../data-generation/). Legacy scenario IDs (`ING-*`, `QRY-*`) are preserved there for validation and rebuild.
 
 ## Team note (structural change)
 
-Demo folders were renamed from mixed `ING-*` / `QRY-*` / `DEMO_SCENARIO/` paths to **Case 1–4** + **demo-flow**. Backend was not modified in this repo — update any hardcoded paths that pointed at `dataset-seed/00_raw/` or old scenario folder names.
+Demo folders use **Case 1–4** naming under `cases/`. Rebuild with `data-generation/scripts/build_case_folders.py` after refreshing the corpus.

@@ -4,7 +4,7 @@ Experimental dataset evidence card
 
 Document ID: DATASET-GSE323366
 Category: experimental_datasets
-Source entity: 03_experimental_datasets/DATASET-GSE323366.json
+Source entity: entity/DATASET-GSE323366.json
 
 Dataset Identity
 ----------------
@@ -24,4 +24,4 @@ Provenance
 ----------
 Provenance: derived_from_raw_layer
 Privacy posture: cell-line or assay-level source selected
-Raw source trace: 00_raw/_corpus/json/datasets/geo/GSE323366/geo_esummary.json; 00_raw/_corpus/txt/datasets/geo/GSE323366/series_soft.txt; 00_raw/_corpus/json/datasets/geo/GSE323366/source_record.json
+Raw source trace: corpus/json/datasets/geo/GSE323366/geo_esummary.json; corpus/txt/datasets/geo/GSE323366/series_soft.txt; corpus/json/datasets/geo/GSE323366/source_record.json

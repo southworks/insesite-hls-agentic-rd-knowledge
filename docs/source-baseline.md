@@ -138,24 +138,21 @@ Synthetic records must not claim to be original public records. They should carr
 
 ## Implemented Source-to-Raw Mapping
 
-The first Raw Layer is implemented under `dataset-seed/00_raw/`.
+The Raw Layer is implemented under `data-generation/corpus/`.
 
 ```text
-dataset-seed/
-  _source/
+data-generation/
+  corpus/
     source_catalog.json
-  generate_raw_layer.py
-  RAW_LAYER.md
-  00_raw/
-    articles/              # PMC OA XML + metadata + license records
-    trials/                # ClinicalTrials.gov JSON + protocol/SAP PDFs
-    datasets/              # GEO metadata + SOFT text
-    registries/            # ChEMBL compound/target/mechanism JSON
-    regulatory/            # openFDA, Drugs@FDA, EMA public regulatory docs
-    policies/              # FDA/EU/ClinicalTrials.gov/AACT policy and source docs
-    synthetic_eln_lims/    # generated records derived from source structures
-    partner_vendor_repositories/
+    xml/articles/pmc_oa/...
+    json/trials/...
+    json/datasets/geo/...
+    csv|txt/synthetic_eln_lims/...
     raw_manifest.json
+  scripts/
+    generate_raw_layer.py
+  docs/
+    RAW_LAYER.md
 ```
 
 The Raw Layer should preserve source identifiers in file names and metadata so downstream entities can trace evidence back to source:
@@ -181,17 +178,7 @@ The Raw Layer should preserve source identifiers in file names and metadata so d
 
 The `dataset-seed` entity layers derived from the Raw Layer are:
 
-- `01_research_documents`
-- `02_clinical_trials`
-- `03_experimental_datasets`
-- `04_biomarkers_and_targets`
-- `05_regulatory_submissions`
-- `06_policy_rag`
-- `07_evidence_links`
-- `08_curation_decisions`
-- `09_decision_ground_truth`
-
-Each folder includes JSON entities plus a `SCHEMA.md`.
+Ground-truth rollups (optional validation) live in `data-generation/ground-truth/` (`ING-*.json`, `QRY-*.json`) with `SCHEMA.md`. Normalized entities are built in memory during generation — not written to numbered catalog folders.
 
 ## Baseline Quality Checks
 

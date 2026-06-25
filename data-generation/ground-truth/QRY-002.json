@@ -7,10 +7,10 @@
   "path": "grounded",
   "phase": 2,
   "raw_sources": [
-    "00_raw/_corpus/raw_manifest.json"
+    "corpus/raw_manifest.json"
   ],
   "required_human_review": false,
-  "scenario_folder": "00_raw/DEMO_SCENARIO/3-QRY-002_grounded",
+  "scenario_folder": "dataset-seed/cases/case-04-demo",
   "scenario_id": "QRY-002",
   "scenario_kind": "e2e_phase_path",
   "source_system": "hls_knowledge_mining_ground_truth",
@@ -56,7 +56,7 @@
       "materialized": true,
       "order": 1,
       "output_entities": [],
-      "raw_layer_folder": "00_raw/DEMO_SCENARIO/3-QRY-002_grounded/01_search_chat/",
+      "raw_layer_folder": null,
       "stage": "search_chat"
     },
     {
@@ -90,7 +90,7 @@
       "materialized": true,
       "order": 2,
       "output_entities": [],
-      "raw_layer_folder": "00_raw/DEMO_SCENARIO/3-QRY-002_grounded/02_curation_compliance/",
+      "raw_layer_folder": null,
       "stage": "curation_compliance"
     },
     {
@@ -132,7 +132,7 @@
       "materialized": true,
       "order": 4,
       "output_entities": [],
-      "raw_layer_folder": "00_raw/DEMO_SCENARIO/3-QRY-002_grounded/03_response/",
+      "raw_layer_folder": null,
       "response": {
         "citations": [
           "RDOC-PMC6889286",
