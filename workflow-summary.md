@@ -129,7 +129,7 @@ Every agent shares the same technical stack:
 | Orchestration| Agent Framework (Microsoft)               |
 | Model        | Cohere Command A+                         |
 | Memory       | Context across workflow steps             |
-| Integration  | Azure MCP                                  |
+| Integration  | Azure MCP                                 |
 | Retrieval    | Cohere Embed + Vector DB + Cohere Rerank  |
 
 | Agent                        | Block | Business responsibility                                                              |
