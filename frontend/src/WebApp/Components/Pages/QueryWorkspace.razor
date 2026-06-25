@@ -6,6 +6,7 @@
 @inject KnowledgeSessionStore SessionStore
 @inject DatasetSeedCatalogService Catalog
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 @implements IAsyncDisposable
 
 <PageTransitionLoader Visible="_navigating" Blocking="true" Message="Returning to portfolio…" />
@@ -37,32 +38,40 @@ else
                                     Title="Search & Chat"
                                     StatusLabel="@GetChatStatus()"
                                     StatusCssClass="@GetChatStatusCss()">
-                <ChatTranscript Messages="WorkspaceState.Session?.Messages ?? []" />
-                <div class="card query-input-card">
-                    <label for="research-question" class="form-label">Research question</label>
-                    <textarea id="research-question" class="form-control" rows="3"
-                              value="@WorkspaceState.Question"
-                              @oninput="OnQuestionChanged"
-                              disabled="@(!WorkspaceState.CanSendMessage)"></textarea>
-                    <div class="form-actions">
-                        <LoadingButton IsLoading="WorkspaceState.IsBusy || WorkspaceState.IsChatPolling"
-                                       Disabled="!WorkspaceState.CanSendMessage || string.IsNullOrWhiteSpace(WorkspaceState.Question)"
-                                       OnClick="SendMessageAsync">
-                            Send
-                        </LoadingButton>
+                <div class="search-chat-layout">
+                    <div class="chat-zone">
+                        <div class="chat-transcript-scroll" @ref="_chatScrollRef">
+                            <ChatTranscript Messages="WorkspaceState.Session?.Messages ?? []" />
+                        </div>
+                        <div class="query-input-card">
+                            <label for="research-question" class="form-label">Research question</label>
+                            <textarea id="research-question" class="form-control" rows="3"
+                                      value="@WorkspaceState.Question"
+                                      @oninput="OnQuestionChanged"
+                                      disabled="@(!WorkspaceState.CanSendMessage)"></textarea>
+                            <div class="form-actions">
+                                <LoadingButton IsLoading="WorkspaceState.IsBusy || WorkspaceState.IsChatPolling"
+                                               Disabled="!WorkspaceState.CanSendMessage || string.IsNullOrWhiteSpace(WorkspaceState.Question)"
+                                               OnClick="SendMessageAsync">
+                                    Send
+                                </LoadingButton>
+                            </div>
+                            <p class="meta-line muted">Queries run against knowledge in the Vector DB — no fresh ingestion required. Ask follow-up questions; responses accumulate for curation.</p>
+                        </div>
                     </div>
-                    <p class="meta-line muted">Queries run against knowledge in the Vector DB — no fresh ingestion required. Ask follow-up questions; responses accumulate for curation.</p>
-                </div>
-                <div class="curate-action-bar">
-                    <p class="meta-line muted">
-                        When you're satisfied with the conversation, Curate sends all responses above to Curation &amp; Compliance for review.
-                    </p>
-                    <div class="form-actions">
-                        <LoadingButton IsLoading="WorkspaceState.IsBusy"
-                                       Disabled="!WorkspaceState.CanStartCuration"
-                                       OnClick="StartCurationAsync">
-                            Curate
-                        </LoadingButton>
+                    <div class="curate-zone">
+                        <div class="curate-action-bar">
+                            <p class="meta-line muted">
+                                When you're satisfied with the conversation, Curate sends all responses above to Curation &amp; Compliance for review.
+                            </p>
+                            <div class="form-actions">
+                                <LoadingButton IsLoading="WorkspaceState.IsBusy"
+                                               Disabled="!WorkspaceState.CanStartCuration"
+                                               OnClick="StartCurationAsync">
+                                    Curate
+                                </LoadingButton>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </CollapsiblePageSection>
@@ -123,6 +132,8 @@ else
     private bool _navigating;
     private string? _sessionTitle;
     private StudySummary? _studySummary;
+    private ElementReference _chatScrollRef;
+    private int _lastMessageCount = -1;
 
     protected override async Task OnInitializedAsync()
     {
@@ -136,9 +147,20 @@ else
     {
         if (WorkspaceState.SessionId != SessionId || WorkspaceState.ExecutionId != ExecutionId)
         {
+            _lastMessageCount = -1;
             SectionState.ResetForResource(GetResourceKey());
             ResolveSessionMeta();
             await ReloadAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var messageCount = WorkspaceState.Session?.Messages.Count ?? 0;
+        if (messageCount != _lastMessageCount)
+        {
+            _lastMessageCount = messageCount;
+            await JS.InvokeVoidAsync("scrollElementToBottom", _chatScrollRef);
         }
     }
 
