@@ -62,6 +62,12 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
                     StartPolling();
                 }
             }
+            else
+            {
+                StopPolling();
+                Progress = null;
+                PollingStatusMessage = null;
+            }
         }
         catch (Exception ex)
         {

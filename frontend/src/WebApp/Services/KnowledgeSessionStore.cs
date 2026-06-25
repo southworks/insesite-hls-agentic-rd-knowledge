@@ -35,7 +35,9 @@ public sealed class KnowledgeSessionStore
             Block = WorkflowBlock.Ingestion,
             Title = title,
             StudyId = studyId,
-            ScenarioId = scenarioId
+            ScenarioId = scenarioId,
+            ExecutionId = null,
+            Status = WorkflowStatus.Pending
         };
         _sessions[session.SessionId] = session;
         return session;
@@ -50,7 +52,9 @@ public sealed class KnowledgeSessionStore
             Title = title,
             StudyId = studyScope,
             ScenarioId = scenarioId,
-            SampleQuestion = question
+            SampleQuestion = question,
+            ExecutionId = null,
+            Status = WorkflowStatus.Pending
         };
         _sessions[session.SessionId] = session;
         return session;

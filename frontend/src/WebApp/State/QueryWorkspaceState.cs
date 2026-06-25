@@ -66,6 +66,12 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
                     StartPolling();
                 }
             }
+            else
+            {
+                StopPolling();
+                Progress = null;
+                PollingStatusMessage = null;
+            }
         }
         catch (Exception ex)
         {
