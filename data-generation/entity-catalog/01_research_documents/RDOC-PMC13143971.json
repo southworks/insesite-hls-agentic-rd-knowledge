@@ -22,9 +22,7 @@
   "provenance": "derived_from_raw_layer",
   "publication_date": "2026-04-22",
   "raw_sources": [
-    "00_raw/_corpus/xml/articles/pmc_oa/PMC13143971/article.xml",
-    "00_raw/_corpus/json/articles/pmc_oa/PMC13143971/europe_pmc_metadata.json",
-    "00_raw/_corpus/xml/articles/pmc_oa/PMC13143971/pmc_oa_license.xml"
+    "00_raw/_corpus/xml/articles/pmc_oa/PMC13143971/article.xml"
   ],
   "source_identifiers": {
     "doi": "10.3389/fphar.2026.1795614",
@@ -33,5 +31,5 @@
   },
   "source_system": "pmc_open_access",
   "therapeutic_area": "EGFR-mutated non-small cell lung cancer",
-  "title": "Non-small cell lung cancer after EGFR-TKI resistance: from drug resistance mechanisms to precision interventions."
+  "title": "Non-small cell lung cancer after EGFR-TKI resistance: from drug resistance mechanisms to precision interventions"
 }

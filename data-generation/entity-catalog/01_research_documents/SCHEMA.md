@@ -1,7 +1,7 @@
 # 01 Research Documents Schema
 
-Normalized research article entities derived from `00_raw/_corpus/xml/articles/pmc_oa/`
-and `00_raw/_corpus/json/articles/pmc_oa/`.
+Normalized research article entities derived from self-contained JATS XML under
+`00_raw/_corpus/xml/articles/pmc_oa/`.
 
 ## Required fields
 

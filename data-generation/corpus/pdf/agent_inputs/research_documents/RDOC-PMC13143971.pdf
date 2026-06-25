@@ -10,7 +10,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 4 0 obj
-<< /Length 2802 >>
+<< /Length 2658 >>
 stream
 BT
 /F1 9 Tf
@@ -18,7 +18,7 @@ BT
 48 760 Td
 (Non-small cell lung cancer after EGFR-TKI resistance: from drug resistance mechanisms to) Tj
 T*
-(precision interventions.) Tj
+(precision interventions) Tj
 T*
 (================================================================================) Tj
 T*
@@ -30,7 +30,7 @@ T*
 T*
 (Category: research_documents) Tj
 T*
-(Source entity: 01_research_documents/RDOC-PMC13143971.json) Tj
+(Source entity: entity-catalog/01_research_documents/RDOC-PMC13143971.json) Tj
 T*
 () Tj
 T*
@@ -46,7 +46,7 @@ T*
 T*
 (Title: Non-small cell lung cancer after EGFR-TKI resistance: from drug resistance mechanisms) Tj
 T*
-(to precision interventions.) Tj
+(to precision interventions) Tj
 T*
 (Journal: Front Pharmacol) Tj
 T*
@@ -104,11 +104,7 @@ T*
 T*
 (Privacy posture: no patient-level source selected for normalized entity) Tj
 T*
-(Raw source trace: 00_raw/_corpus/xml/articles/pmc_oa/PMC13143971/article.xml;) Tj
-T*
-(00_raw/_corpus/json/articles/pmc_oa/PMC13143971/europe_pmc_metadata.json;) Tj
-T*
-(00_raw/_corpus/xml/articles/pmc_oa/PMC13143971/pmc_oa_license.xml) Tj
+(Raw source trace: 00_raw/_corpus/xml/articles/pmc_oa/PMC13143971/article.xml) Tj
 T*
 ET
 endstream
@@ -123,9 +119,9 @@ xref
 0000000064 00000 n 
 0000000121 00000 n 
 0000000189 00000 n 
-0000003043 00000 n 
+0000002899 00000 n 
 trailer
-<< /Size 6 /Root 1 0 R /Info << /Title (Non-small cell lung cancer after EGFR-TKI resistance: from drug resistance mechanisms to precision interventions.) >> >>
+<< /Size 6 /Root 1 0 R /Info << /Title (Non-small cell lung cancer after EGFR-TKI resistance: from drug resistance mechanisms to precision interventions) >> >>
 startxref
-3169
+3025
 %%EOF

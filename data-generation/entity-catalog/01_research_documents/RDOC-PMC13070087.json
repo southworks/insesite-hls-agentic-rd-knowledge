@@ -19,9 +19,7 @@
   "provenance": "derived_from_raw_layer",
   "publication_date": "2026-04-11",
   "raw_sources": [
-    "00_raw/_corpus/xml/articles/pmc_oa/PMC13070087/article.xml",
-    "00_raw/_corpus/json/articles/pmc_oa/PMC13070087/europe_pmc_metadata.json",
-    "00_raw/_corpus/xml/articles/pmc_oa/PMC13070087/pmc_oa_license.xml"
+    "00_raw/_corpus/xml/articles/pmc_oa/PMC13070087/article.xml"
   ],
   "source_identifiers": {
     "doi": "10.1007/s11912-026-01751-0",
@@ -30,5 +28,5 @@
   },
   "source_system": "pmc_open_access",
   "therapeutic_area": "EGFR-mutated non-small cell lung cancer",
-  "title": "Updates in the Management of EGFR-Mutated Non-small Cell Lung Cancer (NSCLC)."
+  "title": "Updates in the Management of EGFR-Mutated Non-small Cell Lung Cancer (NSCLC)"
 }

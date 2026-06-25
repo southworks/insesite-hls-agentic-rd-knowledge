@@ -4,7 +4,7 @@ Demo-ready inputs for the HLS Agentic R&D Knowledge Mining workflow. Pick a case
 
 ## Quick start
 
-1. **Pick a case** under `cases/` or run the full narrative under `demo-flow/`
+1. **Pick a case** under `cases/` or run the full narrative under `cases/case-04-demo/`
 2. **Load** `policies/hls_policies.txt` into your RAG / embed pipeline
 3. **Ingest** files from `<case>/ingest/` when the case requires upload (empty folder = no upload)
 
@@ -19,17 +19,17 @@ Demo-ready inputs for the HLS Agentic R&D Knowledge Mining workflow. Pick a case
 Each case folder contains:
 
 - `README.md` — user action, ingest summary, expected outcome, legacy ID
-- `ingest/` — files to upload (may be empty)
+- `ingest/` — flat files to upload (may be empty)
 
 ## Demo flow (stateful headline demo)
 
-Run **in order** — see [`demo-flow/README.md`](demo-flow/README.md):
+Run **in order** — see [`cases/case-04-demo/README.md`](cases/case-04-demo/README.md):
 
 | Step | Folder | Legacy ID | Expected outcome |
 |------|--------|-----------|------------------|
-| 1 | `demo-flow/step-01-no-data/` → same as Case 1 | QRY-001 | No grounded answer |
-| 2 | `demo-flow/step-02-full-approval/` | ING-001 | Clean ingest; curator approves; KB populated |
-| 3 | `demo-flow/step-03-grounded-query/` | QRY-002 | Grounded answer with citations |
+| 1 | `cases/case-04-demo/step-01-no-data/` | QRY-001 | No grounded answer |
+| 2 | `cases/case-04-demo/step-02-full-approval/` | ING-001 | Clean ingest; curator approves; KB populated |
+| 3 | `cases/case-04-demo/step-03-grounded-query/` | QRY-002 | Grounded answer with citations |
 
 ## Policies
 

@@ -1,18 +1,18 @@
-The evolving landscape of first-line and subsequent therapies in &lt;i&gt;EGFR&lt;/i&gt;-mutated NSCLC: efficacy, resistance, and tolerability.
+The evolving landscape of first-line and subsequent therapies in EGFR-mutated NSCLC: efficacy, resistance, and tolerability
 ================================================================================
 Research article evidence card
 
 Document ID: RDOC-PMC13129538
 Category: research_documents
-Source entity: 01_research_documents/RDOC-PMC13129538.json
+Source entity: entity-catalog/01_research_documents/RDOC-PMC13129538.json
 
 Article Identity
 ----------------
 Document ID: RDOC-PMC13129538
 PMCID: PMC13129538
 PMID: 42079860
-Title: The evolving landscape of first-line and subsequent therapies in &lt;i&gt;EGFR&lt;/i&gt;-mutated NSCLC: efficacy, resistance, and tolerability.
-Journal: Explor Target Antitumor Ther
+Title: The evolving landscape of first-line and subsequent therapies in EGFR-mutated NSCLC: efficacy, resistance, and tolerability
+Journal: Exploration of Targeted Anti-tumor Therapy
 Publication date: 2026-04-27
 License: CC BY
 
@@ -26,4 +26,4 @@ Provenance
 ----------
 Provenance: derived_from_raw_layer
 Privacy posture: no patient-level source selected for normalized entity
-Raw source trace: 00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/article.xml; 00_raw/_corpus/json/articles/pmc_oa/PMC13129538/europe_pmc_metadata.json; 00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/pmc_oa_license.xml
+Raw source trace: 00_raw/_corpus/xml/articles/pmc_oa/PMC13129538/article.xml

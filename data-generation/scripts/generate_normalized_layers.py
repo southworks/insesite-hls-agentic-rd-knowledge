@@ -130,11 +130,92 @@ def all_xml(root: ET.Element, name: str) -> list[ET.Element]:
     return [elem for elem in root.iter() if local_name(elem.tag) == name]
 
 
+def child_xml(elem: ET.Element | None, name: str) -> ET.Element | None:
+    if elem is None:
+        return None
+    for child in elem:
+        if local_name(child.tag) == name:
+            return child
+    return None
+
+
+def article_id(root: ET.Element, id_type: str) -> str | None:
+    for elem in all_xml(root, "article-id"):
+        if elem.get("pub-id-type") == id_type:
+            return xml_text(elem)
+    return None
+
+
+def article_pub_date(root: ET.Element) -> str | None:
+    dates = all_xml(root, "pub-date")
+    preferred = ["epub", "ppub", "collection"]
+    for pub_type in preferred:
+        for elem in dates:
+            if elem.get("pub-type") == pub_type:
+                date = format_jats_date(elem)
+                if date:
+                    return date
+    for elem in dates:
+        date = format_jats_date(elem)
+        if date:
+            return date
+    return None
+
+
+def article_journal(root: ET.Element) -> str:
+    for elem in all_xml(root, "journal-id"):
+        if elem.get("journal-id-type") == "iso-abbrev":
+            journal = xml_text(elem)
+            if journal:
+                return journal
+    return xml_text(first_xml(root, "journal-title"))
+
+
+def format_jats_date(elem: ET.Element) -> str | None:
+    year = xml_text(child_xml(elem, "year"))
+    if not year:
+        return None
+    month = xml_text(child_xml(elem, "month"))
+    day = xml_text(child_xml(elem, "day"))
+    if month and day:
+        return f"{year}-{int(month):02d}-{int(day):02d}"
+    if month:
+        return f"{year}-{int(month):02d}"
+    return year
+
+
+def article_authors(root: ET.Element) -> str:
+    names: list[str] = []
+    for contrib in all_xml(root, "contrib"):
+        if contrib.get("contrib-type") != "author":
+            continue
+        name = child_xml(contrib, "name")
+        surname = xml_text(child_xml(name, "surname"))
+        given = xml_text(child_xml(name, "given-names"))
+        if surname and given:
+            initials = "".join(part[0] for part in given.replace("-", " ").split() if part)
+            names.append(f"{surname} {initials}")
+        elif surname or given:
+            names.append(surname or given)
+    return ", ".join(names) + "." if names else ""
+
+
+def article_license(root: ET.Element) -> str:
+    for meta in all_xml(root, "custom-meta"):
+        if xml_text(child_xml(meta, "meta-name")) == "pmc-license-ref":
+            value = xml_text(child_xml(meta, "meta-value"))
+            if value:
+                return value
+
+    license_elem = first_xml(root, "license")
+    license_text = xml_text(license_elem).lower()
+    if "creativecommons.org/licenses/by/" in license_text:
+        return "CC BY"
+    return xml_text(license_elem) or "unknown"
+
+
 def parse_pmc_article(pmcid: str) -> dict[str, Any]:
-    article_json_dir = raw_path("json", "articles", "pmc_oa", pmcid)
     article_xml_dir = raw_path("xml", "articles", "pmc_oa", pmcid)
-    metadata = load_json(article_json_dir / "europe_pmc_metadata.json")["resultList"]["result"][0]
-    source_record = load_json(article_json_dir / "source_record.json")
     root = ET.parse(article_xml_dir / "article.xml").getroot()
 
     abstract = compact_text(xml_text(first_xml(root, "abstract")), 1600)
@@ -145,23 +226,21 @@ def parse_pmc_article(pmcid: str) -> dict[str, Any]:
         "document_type": "research_document",
         "source_system": "pmc_open_access",
         "source_identifiers": {
-            "pmcid": metadata.get("pmcid", pmcid),
-            "pmid": metadata.get("pmid"),
-            "doi": metadata.get("doi"),
+            "pmcid": article_id(root, "pmcid") or pmcid,
+            "pmid": article_id(root, "pmid"),
+            "doi": article_id(root, "doi"),
         },
-        "title": metadata.get("title") or xml_text(first_xml(root, "article-title")),
-        "journal": metadata.get("journalTitle"),
-        "publication_date": metadata.get("firstPublicationDate"),
-        "authors": metadata.get("authorString"),
-        "license": source_record.get("license"),
+        "title": xml_text(first_xml(root, "article-title")),
+        "journal": article_journal(root),
+        "publication_date": article_pub_date(root),
+        "authors": article_authors(root),
+        "license": article_license(root),
         "abstract": abstract,
         "keywords": keywords,
         "therapeutic_area": "EGFR-mutated non-small cell lung cancer",
         "primary_entities": ["osimertinib", "EGFR", "NSCLC"],
         "raw_sources": [
-            rel(article_xml_dir / "article.xml"),
-            rel(article_json_dir / "europe_pmc_metadata.json"),
-            rel(article_xml_dir / "pmc_oa_license.xml"),
+            normalize_raw_ref(f"00_raw/xml/articles/pmc_oa/{pmcid}/article.xml"),
         ],
         "provenance": "derived_from_raw_layer",
         "privacy_posture": "no patient-level source selected for normalized entity",
@@ -737,8 +816,8 @@ def write_schemas() -> None:
     schemas = {
         "research_documents": """# 01 Research Documents Schema
 
-Normalized research article entities derived from `00_raw/_corpus/xml/articles/pmc_oa/`
-and `00_raw/_corpus/json/articles/pmc_oa/`.
+Normalized research article entities derived from self-contained JATS XML under
+`00_raw/_corpus/xml/articles/pmc_oa/`.
 
 ## Required fields
 

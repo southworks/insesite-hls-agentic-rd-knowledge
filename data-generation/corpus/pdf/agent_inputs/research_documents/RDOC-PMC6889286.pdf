@@ -10,15 +10,15 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Courier >>
 endobj
 4 0 obj
-<< /Length 2596 >>
+<< /Length 2710 >>
 stream
 BT
 /F1 9 Tf
 11 TL
 48 760 Td
-(Resistance mechanisms to osimertinib in EGFR-mutated non-small cell lung cancer.) Tj
+(Resistance mechanisms to osimertinib in EGFR-mutated non-small cell lung cancer) Tj
 T*
-(================================================================================) Tj
+(===============================================================================) Tj
 T*
 (Research article evidence card) Tj
 T*
@@ -28,7 +28,7 @@ T*
 T*
 (Category: research_documents) Tj
 T*
-(Source entity: 01_research_documents/RDOC-PMC6889286.json) Tj
+(Source entity: entity-catalog/01_research_documents/RDOC-PMC6889286.json) Tj
 T*
 () Tj
 T*
@@ -42,13 +42,17 @@ T*
 T*
 (PMID: 31564718) Tj
 T*
-(Title: Resistance mechanisms to osimertinib in EGFR-mutated non-small cell lung cancer.) Tj
+(Title: Resistance mechanisms to osimertinib in EGFR-mutated non-small cell lung cancer) Tj
 T*
-(Journal: Br J Cancer) Tj
+(Journal: British Journal of Cancer) Tj
 T*
 (Publication date: 2019-09-30) Tj
 T*
-(License: CC BY) Tj
+(License: Note: This work is published under the standard license to publish agreement. After) Tj
+T*
+(12 months the work will become freely available and the license terms will switch to a) Tj
+T*
+(Creative Commons Attribution 4.0 International \(CC BY 4.0\).) Tj
 T*
 () Tj
 T*
@@ -98,11 +102,7 @@ T*
 T*
 (Privacy posture: no patient-level source selected for normalized entity) Tj
 T*
-(Raw source trace: 00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/article.xml;) Tj
-T*
-(00_raw/_corpus/json/articles/pmc_oa/PMC6889286/europe_pmc_metadata.json;) Tj
-T*
-(00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/pmc_oa_license.xml) Tj
+(Raw source trace: 00_raw/_corpus/xml/articles/pmc_oa/PMC6889286/article.xml) Tj
 T*
 ET
 endstream
@@ -117,9 +117,9 @@ xref
 0000000064 00000 n 
 0000000121 00000 n 
 0000000189 00000 n 
-0000002837 00000 n 
+0000002951 00000 n 
 trailer
-<< /Size 6 /Root 1 0 R /Info << /Title (Resistance mechanisms to osimertinib in EGFR-mutated non-small cell lung cancer.) >> >>
+<< /Size 6 /Root 1 0 R /Info << /Title (Resistance mechanisms to osimertinib in EGFR-mutated non-small cell lung cancer) >> >>
 startxref
-2963
+3077
 %%EOF
