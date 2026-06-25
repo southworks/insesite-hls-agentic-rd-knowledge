@@ -1,0 +1,17 @@
+{
+  "scenarioId": "query-endpoint-lineage",
+  "block": "Query",
+  "title": "Cross-study endpoint lineage query",
+  "description": "Query accumulated Fabric knowledge to find protocols sharing the same primary endpoint as ABC-2024, with grounded citations and EU regional policy compliance review.",
+  "studyId": "abc-2024",
+  "sampleQuestion": "Which protocols share the same primary endpoint as ABC-2024?",
+  "outcomeHint": "Review",
+  "study": {
+    "studyId": "abc-2024",
+    "title": "Phase II efficacy study ABC-2024",
+    "compound": "CMP-1042",
+    "phase": "Phase II",
+    "primaryEndpoint": "Change from baseline in HbA1c at Week 24",
+    "sourceSystems": ["Microsoft Fabric", "R&D CMS"]
+  }
+}

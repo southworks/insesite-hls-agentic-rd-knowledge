@@ -1,0 +1,186 @@
+@page "/query/{SessionId}"
+@page "/query/{SessionId}/{ExecutionId}"
+@rendermode InteractiveServer
+@inject QueryWorkspaceState WorkspaceState
+@inject WorkspaceSectionState SectionState
+@inject KnowledgeSessionStore SessionStore
+@inject DatasetSeedCatalogService Catalog
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<PageTransitionLoader Visible="_navigating" Blocking="true" Message="Returning to portfolio…" />
+
+<div class="workspace-header">
+    <a href="/" class="back-link" @onclick="GoHome" @onclick:preventDefault>← Portfolio</a>
+    <PageMasthead Kicker="Block 2 — Querying"
+                  Title="@(_sessionTitle ?? SessionId)"
+                  Subtitle="Search & Chat → Curation & Compliance → human approval (reads from Fabric)">
+        <LoadingButton IsLoading="WorkspaceState.IsBusy"
+                       Disabled="!WorkspaceState.CanStartWorkflow || string.IsNullOrWhiteSpace(WorkspaceState.Question)"
+                       OnClick="StartWorkflowAsync">
+            Start query workflow
+        </LoadingButton>
+    </PageMasthead>
+</div>
+
+@if (WorkspaceState.IsBusy && WorkspaceState.Progress is null)
+{
+    <LoadingBlock Message="Loading query workspace…" />
+}
+else if (!string.IsNullOrWhiteSpace(WorkspaceState.Error))
+{
+    <ErrorState Message="@WorkspaceState.Error" OnRetry="ReloadAsync" />
+}
+else
+{
+    <WorkflowStatusBanner QueryProgress="WorkspaceState.Progress" IsPolling="WorkspaceState.IsPolling" />
+
+    <div class="workspace-grid">
+        <div class="workspace-main">
+            <div class="card query-input-card">
+                <label for="research-question" class="form-label">Research question</label>
+                <textarea id="research-question" class="form-control" rows="3"
+                          value="@WorkspaceState.Question"
+                          @oninput="OnQuestionChanged"
+                          disabled="@(!WorkspaceState.CanStartWorkflow)"></textarea>
+                <p class="meta-line muted">Queries run against knowledge already in Microsoft Fabric — no fresh ingestion required.</p>
+            </div>
+
+            <CollapsiblePageSection SectionId="@WorkspaceSections.StageSearchChat"
+                                    Title="Search & Chat"
+                                    StatusLabel="@GetStageStatus(QueryStage.SearchChat)"
+                                    StatusCssClass="@GetStageCss(QueryStage.SearchChat)">
+                <SearchChatPanel Result="WorkspaceState.Progress?.SearchChat" />
+                <RetrievalSummaryCard Events="WorkspaceState.Progress?.RetrievalTrace" />
+            </CollapsiblePageSection>
+
+            <CollapsiblePageSection SectionId="@WorkspaceSections.StageCurationCompliance"
+                                    Title="Curation & Compliance"
+                                    StatusLabel="@GetStageStatus(QueryStage.CurationCompliance)"
+                                    StatusCssClass="@GetStageCss(QueryStage.CurationCompliance)">
+                <CurationCompliancePanel Result="WorkspaceState.Progress?.CurationCompliance" />
+            </CollapsiblePageSection>
+
+            <CollapsiblePageSection SectionId="@WorkspaceSections.StageQueryHitl"
+                                    Title="Human approval — Block 2"
+                                    StatusLabel="@GetHitlStatus()"
+                                    StatusCssClass="@(WorkspaceState.CanSubmitDecision ? "status-warning" : "status-neutral")">
+                <HumanReviewPanel Title="Approve query results and compliance findings"
+                                  Description="Review grounded answers and curation/compliance findings before finalization."
+                                  Decision="WorkspaceState.Progress?.HumanDecision"
+                                  CanSubmit="WorkspaceState.CanSubmitDecision"
+                                  IsBusy="WorkspaceState.IsBusy"
+                                  OnSubmit="SubmitDecisionAsync" />
+            </CollapsiblePageSection>
+        </div>
+
+        <aside class="workspace-side">
+            <StudySummaryCard Study="_studySummary" />
+            <div class="card fabric-note">
+                <p>Reading from <strong>Microsoft Fabric</strong>. This block is independent of Block 1 ingestion runs.</p>
+            </div>
+            @if (WorkspaceState.Progress is not null)
+            {
+                <WorkflowTimeline Steps="BackendWorkflowMapper.BuildQueryTimeline(WorkspaceState.Progress)" />
+            }
+            @if (!string.IsNullOrWhiteSpace(WorkspaceState.StudyScope))
+            {
+                <div class="card">
+                    <h3 class="card-title">Study scope</h3>
+                    <p>@WorkspaceState.StudyScope</p>
+                </div>
+            }
+        </aside>
+    </div>
+}
+
+@code {
+    [Parameter] public string SessionId { get; set; } = string.Empty;
+    [Parameter] public string? ExecutionId { get; set; }
+
+    private bool _navigating;
+    private string? _sessionTitle;
+    private StudySummary? _studySummary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        WorkspaceState.OnChange += StateHasChanged;
+        SectionState.ResetForResource(SessionId);
+        ResolveSessionMeta();
+        await ReloadAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (WorkspaceState.SessionId != SessionId || WorkspaceState.ExecutionId != ExecutionId)
+        {
+            SectionState.ResetForResource(SessionId);
+            ResolveSessionMeta();
+            await ReloadAsync();
+        }
+    }
+
+    private void ResolveSessionMeta()
+    {
+        var session = SessionStore.GetSession(SessionId);
+        _sessionTitle = session?.Title ?? SessionId;
+        if (session is not null)
+        {
+            _studySummary = Catalog.GetScenarioByStudyId(session.StudyId, WorkflowBlock.Query)?.Study
+                ?? new StudySummary(session.StudyId, session.Title, "—", "—", "—", ["Microsoft Fabric"]);
+        }
+    }
+
+    private async Task ReloadAsync() => await WorkspaceState.LoadAsync(SessionId, ExecutionId);
+
+    private async Task StartWorkflowAsync()
+    {
+        await WorkspaceState.StartWorkflowAsync();
+        if (!string.IsNullOrWhiteSpace(WorkspaceState.ExecutionId))
+        {
+            Navigation.NavigateTo($"/query/{SessionId}/{WorkspaceState.ExecutionId}", replace: true);
+        }
+    }
+
+    private async Task SubmitDecisionAsync((bool Approved, string? Notes) decision) =>
+        await WorkspaceState.SubmitDecisionAsync(decision.Approved, decision.Notes);
+
+    private void OnQuestionChanged(ChangeEventArgs e) =>
+        WorkspaceState.SetQuestion(e.Value?.ToString() ?? string.Empty);
+
+    private string? GetStageStatus(QueryStage stage)
+    {
+        var current = WorkspaceState.Progress?.CurrentStage;
+        if (current is null) return null;
+        if (current > stage || current == QueryStage.Completed) return "Completed";
+        if (current == stage) return WorkspaceState.Progress?.Status == WorkflowStatus.Running ? "In progress" : null;
+        return "Pending";
+    }
+
+    private string GetStageCss(QueryStage stage)
+    {
+        var label = GetStageStatus(stage);
+        return label switch
+        {
+            "Completed" => "status-success",
+            "In progress" => "status-info",
+            _ => "status-neutral"
+        };
+    }
+
+    private string? GetHitlStatus() => WorkspaceState.CanSubmitDecision ? "Action required" : WorkspaceState.Progress?.HumanDecision is not null ? "Decided" : null;
+
+    private async Task GoHome()
+    {
+        _navigating = true;
+        Navigation.NavigateTo("/");
+        await Task.Delay(300);
+        _navigating = false;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        WorkspaceState.OnChange -= StateHasChanged;
+        await WorkspaceState.DisposeAsync();
+    }
+}

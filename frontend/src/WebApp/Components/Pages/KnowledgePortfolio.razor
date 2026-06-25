@@ -1,0 +1,119 @@
+@page "/"
+@rendermode InteractiveServer
+@inject KnowledgePortfolioState PortfolioState
+@inject KnowledgeSessionStore SessionStore
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<PageTransitionLoader Visible="_navigating" Blocking="true" Message="Opening workspace…" />
+
+<PageMasthead Kicker="HLS Agentic R&amp;D Knowledge Mining"
+              Title="Knowledge Portfolio"
+              Subtitle="Two independent workflows — ingestion populates Microsoft Fabric; querying reads accumulated knowledge at any time." />
+
+@if (PortfolioState.IsLoading)
+{
+    <LoadingBlock Message="Loading portfolio…" />
+}
+else if (!string.IsNullOrWhiteSpace(PortfolioState.Error))
+{
+    <ErrorState Message="@PortfolioState.Error" OnRetry="LoadAsync" />
+}
+else
+{
+    <PageSection Title="Knowledge store" Subtitle="Shared bridge between Block 1 and Block 2">
+        <FabricStoreSummaryCard Summary="PortfolioState.FabricSummary" />
+    </PageSection>
+
+    <PageSection Title="Block 1 — Ingestion scenarios" Subtitle="Ingestion & Translation → Metadata & Linking → human approval → Fabric">
+        <div class="picker-grid">
+            <ScenarioPickerPanel Scenarios="PortfolioState.IngestionScenarios"
+                                 SelectedScenarioId="_selectedIngestionId"
+                                 SelectedScenarioIdChanged="id => _selectedIngestionId = id" />
+            <ScenarioPreviewPanel Scenario="_selectedIngestion"
+                                  IsRunning="_navigating"
+                                  RunButtonLabel="Run ingestion"
+                                  OnRun="RunIngestionAsync" />
+        </div>
+    </PageSection>
+
+    <PageSection Title="Block 2 — Query scenarios" Subtitle="Search & Chat → Curation & Compliance → human approval (reads from Fabric)">
+        <div class="picker-grid">
+            <ScenarioPickerPanel Scenarios="PortfolioState.QueryScenarios"
+                                 SelectedScenarioId="_selectedQueryId"
+                                 SelectedScenarioIdChanged="id => _selectedQueryId = id" />
+            <ScenarioPreviewPanel Scenario="_selectedQuery"
+                                  IsRunning="_navigating"
+                                  RunButtonLabel="Run query"
+                                  OnRun="RunQueryAsync" />
+        </div>
+    </PageSection>
+
+    <PageSection Title="Active sessions" Subtitle="Workspaces opened in this browser session">
+        <RecentSessionsList Sessions="PortfolioState.ActiveSessions" OnOpen="OpenSessionAsync" />
+    </PageSection>
+}
+
+@code {
+    private string? _selectedIngestionId;
+    private string? _selectedQueryId;
+    private bool _navigating;
+
+    private SeedScenarioDefinition? _selectedIngestion =>
+        PortfolioState.IngestionScenarios.FirstOrDefault(s => s.ScenarioId == _selectedIngestionId)
+        ?? PortfolioState.IngestionScenarios.FirstOrDefault();
+
+    private SeedScenarioDefinition? _selectedQuery =>
+        PortfolioState.QueryScenarios.FirstOrDefault(s => s.ScenarioId == _selectedQueryId)
+        ?? PortfolioState.QueryScenarios.FirstOrDefault();
+
+    protected override async Task OnInitializedAsync()
+    {
+        PortfolioState.OnChange += StateHasChanged;
+        await LoadAsync();
+        _selectedIngestionId = _selectedIngestion?.ScenarioId;
+        _selectedQueryId = _selectedQuery?.ScenarioId;
+    }
+
+    private async Task LoadAsync() => await PortfolioState.LoadAsync();
+
+    private async Task RunIngestionAsync()
+    {
+        if (_selectedIngestion is null) return;
+        _navigating = true;
+        SessionStore.OpenIngestionSession(_selectedIngestion.StudyId, _selectedIngestion.Title, _selectedIngestion.ScenarioId);
+        PortfolioState.RefreshSessions();
+        Navigation.NavigateTo($"/ingestion/{_selectedIngestion.StudyId}");
+        await Task.Delay(300);
+        _navigating = false;
+    }
+
+    private async Task RunQueryAsync()
+    {
+        if (_selectedQuery is null) return;
+        _navigating = true;
+        var sessionId = $"query-{_selectedQuery.ScenarioId}";
+        SessionStore.OpenQuerySession(sessionId, _selectedQuery.Title, _selectedQuery.StudyId, _selectedQuery.SampleQuestion ?? string.Empty, _selectedQuery.ScenarioId);
+        PortfolioState.RefreshSessions();
+        Navigation.NavigateTo($"/query/{sessionId}");
+        await Task.Delay(300);
+        _navigating = false;
+    }
+
+    private async Task OpenSessionAsync(KnowledgeSessionSummary session)
+    {
+        _navigating = true;
+        var url = session.Block == WorkflowBlock.Ingestion
+            ? string.IsNullOrWhiteSpace(session.ExecutionId)
+                ? $"/ingestion/{session.SessionId}"
+                : $"/ingestion/{session.SessionId}/{session.ExecutionId}"
+            : string.IsNullOrWhiteSpace(session.ExecutionId)
+                ? $"/query/{session.SessionId}"
+                : $"/query/{session.SessionId}/{session.ExecutionId}";
+        Navigation.NavigateTo(url);
+        await Task.Delay(300);
+        _navigating = false;
+    }
+
+    public void Dispose() => PortfolioState.OnChange -= StateHasChanged;
+}

@@ -1,0 +1,19 @@
+@if (Steps.Count > 0)
+{
+    <div class="card">
+        <h3 class="card-title">Workflow progress</h3>
+        <ol class="workflow-timeline">
+            @foreach (var step in Steps)
+            {
+                <li class="timeline-step state-@step.State.ToString().ToLowerInvariant()">
+                    <span class="timeline-dot"></span>
+                    <span class="timeline-label">@step.Label</span>
+                </li>
+            }
+        </ol>
+    </div>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<WorkflowTimelineStep> Steps { get; set; } = [];
+}

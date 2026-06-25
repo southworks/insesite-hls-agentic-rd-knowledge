@@ -1,0 +1,31 @@
+@{
+    var status = Progress?.Status ?? QueryProgress?.Status;
+    var message = Progress?.StatusMessage ?? QueryProgress?.StatusMessage;
+}
+
+@if (status is not null)
+{
+    <div class="workflow-banner @WorkflowStageUi.ToStatusBadgeClass(status.Value)">
+        <div class="banner-main">
+            <StatusBadge Label="@WorkflowStageUi.ToBusinessStatusLabel(status.Value)" CssClass="@WorkflowStageUi.ToStatusBadgeClass(status.Value)" />
+            <span class="banner-stage">@StageLabel</span>
+        </div>
+        <p class="banner-message">@message</p>
+        @if (IsPolling)
+        {
+            <p class="banner-polling" aria-live="polite"><span class="spinner spinner-sm"></span> Updating workflow status…</p>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public IngestionWorkflowProgress? Progress { get; set; }
+    [Parameter] public QueryWorkflowProgress? QueryProgress { get; set; }
+    [Parameter] public bool IsPolling { get; set; }
+
+    private string StageLabel => Progress is not null
+        ? WorkflowStageUi.ToIngestionStageLabel(Progress.CurrentStage)
+        : QueryProgress is not null
+            ? WorkflowStageUi.ToQueryStageLabel(QueryProgress.CurrentStage)
+            : string.Empty;
+}
