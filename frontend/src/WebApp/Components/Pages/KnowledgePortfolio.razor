@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject KnowledgePortfolioState PortfolioState
 @inject KnowledgeSessionStore SessionStore
+@inject IRdKnowledgeApiClient ApiClient
 @inject NavigationManager Navigation
 @implements IDisposable
 
@@ -112,12 +113,25 @@ else
     {
         if (_selectedQuery is null) return;
         _navigating = true;
-        var sessionId = $"query-{_selectedQuery.ScenarioId}";
-        SessionStore.OpenQuerySession(sessionId, _selectedQuery.Title, _selectedQuery.StudyId, _selectedQuery.SampleQuestion ?? string.Empty, _selectedQuery.ScenarioId);
-        PortfolioState.RefreshSessions();
-        Navigation.NavigateTo($"/query/{sessionId}");
-        await Task.Delay(300);
-        _navigating = false;
+        try
+        {
+            var sessionId = $"query-{_selectedQuery.ScenarioId}";
+            var response = await ApiClient.StartQueryWorkflowAsync(sessionId);
+            SessionStore.OpenQuerySession(
+                sessionId,
+                response.ExecutionId,
+                _selectedQuery.Title,
+                _selectedQuery.StudyId,
+                _selectedQuery.SampleQuestion ?? string.Empty,
+                _selectedQuery.ScenarioId);
+            PortfolioState.RefreshSessions();
+            Navigation.NavigateTo($"/query/{sessionId}/{response.ExecutionId}");
+        }
+        finally
+        {
+            await Task.Delay(300);
+            _navigating = false;
+        }
     }
 
     private async Task OpenSessionAsync(KnowledgeSessionSummary session)

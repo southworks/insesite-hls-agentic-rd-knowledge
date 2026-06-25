@@ -125,14 +125,17 @@ public class MockWorkflowSimulatorTests
     public void Curation_OnlyStartsOnExplicitRequest()
     {
         var sim = new MockWorkflowSimulator();
-        sim.BeginChatTurn("query-1", "Question?", "abc-2024");
-        sim.AdvanceChatOnPoll("query-1");
-        sim.AdvanceChatOnPoll("query-1");
+        var executionId = "qry-test-1";
+        sim.StartQueryWorkflow(executionId, "query-1", "abc-2024");
+        sim.BeginChatTurn(executionId, "Question?", "abc-2024");
+        sim.AdvanceChatOnPoll(executionId);
+        sim.AdvanceChatOnPoll(executionId);
 
-        var session = sim.GetQuerySession("query-1")!;
-        Assert.Null(session.CurationExecutionId);
+        var session = sim.GetQuerySession(executionId)!;
+        Assert.False(session.CurationStarted);
 
-        var curation = sim.StartCuration("query-1");
-        Assert.NotNull(sim.GetExecution(curation.ExecutionId));
+        var curation = sim.StartCuration(executionId);
+        Assert.True(session.CurationStarted);
+        Assert.Equal(executionId, curation.ExecutionId);
     }
 }

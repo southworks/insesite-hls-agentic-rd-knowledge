@@ -11,7 +11,7 @@ else
                 <div>
                     <span class="block-badge block-@session.Block.ToString().ToLowerInvariant()">@session.Block</span>
                     <strong>@session.Title</strong>
-                    <span class="meta-line">@session.SessionId</span>
+                    <span class="meta-line">@(session.ExecutionId ?? session.SessionId)</span>
                 </div>
                 <div class="session-actions">
                     <StatusBadge Label="@WorkflowStageUi.ToBusinessStatusLabel(session.Status)" CssClass="@WorkflowStageUi.ToStatusBadgeClass(session.Status)" />

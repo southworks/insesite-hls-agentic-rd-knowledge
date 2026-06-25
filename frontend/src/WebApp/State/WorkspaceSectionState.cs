@@ -51,4 +51,7 @@ public static class WorkspaceSections
     public const string StageSearchChat = "stage-search-chat";
     public const string StageCurationCompliance = "stage-curation-compliance";
     public const string StageQueryHitl = "stage-query-hitl";
+    public const string SidebarStudySummary = "sidebar-study-summary";
+    public const string SidebarFabricSources = "sidebar-fabric-sources";
+    public const string SidebarWorkflowProgress = "sidebar-workflow-progress";
 }

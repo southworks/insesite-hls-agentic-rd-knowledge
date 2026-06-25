@@ -65,11 +65,14 @@ else
         </div>
 
         <aside class="workspace-side">
-            <StudySummaryCard Study="WorkspaceState.Progress?.Study ?? _fallbackStudy" />
-            <div class="card">
-                <h3 class="card-title">Source material from Microsoft Fabric</h3>
+            <CollapsiblePageSection SectionId="@WorkspaceSections.SidebarStudySummary"
+                                    Title="Study summary">
+                <StudySummaryCard Study="WorkspaceState.Progress?.Study ?? _fallbackStudy" Nested="true" />
+            </CollapsiblePageSection>
+            <CollapsiblePageSection SectionId="@WorkspaceSections.SidebarFabricSources"
+                                    Title="Source material from Microsoft Fabric">
                 <KnowledgeSourceList Sources="WorkspaceState.Documents?.Sources ?? []" />
-            </div>
+            </CollapsiblePageSection>
             @if (WorkspaceState.Progress is not null)
             {
                 <WorkflowTimeline Steps="BackendWorkflowMapper.BuildIngestionTimeline(WorkspaceState.Progress)" />

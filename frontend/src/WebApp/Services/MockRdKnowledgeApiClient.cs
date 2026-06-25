@@ -93,17 +93,24 @@ public sealed class MockRdKnowledgeApiClient(
         return Task.FromResult(new SubmitIngestionDecisionResponse(executionId, state.Status));
     }
 
-    public Task<QuerySessionState> GetQuerySessionAsync(string sessionId, CancellationToken cancellationToken = default)
+    public Task<StartQueryWorkflowResponse> StartQueryWorkflowAsync(string sessionId, CancellationToken cancellationToken = default)
     {
-        var session = simulator.GetQuerySession(sessionId);
+        var executionId = $"qry-{Guid.NewGuid():N}"[..12];
+        simulator.StartQueryWorkflow(executionId, sessionId);
+        return Task.FromResult(new StartQueryWorkflowResponse(executionId, sessionId, WorkflowStatus.Pending));
+    }
+
+    public Task<QuerySessionState> GetQuerySessionAsync(string executionId, CancellationToken cancellationToken = default)
+    {
+        var session = simulator.GetQuerySession(executionId);
         if (session is null)
         {
-            return Task.FromResult(BuildEmptyQuerySession(sessionId));
+            throw new KeyNotFoundException($"Query execution {executionId} not found.");
         }
 
         if (session.IsChatRunning)
         {
-            simulator.AdvanceChatOnPoll(sessionId);
+            simulator.AdvanceChatOnPoll(executionId);
             if (!session.IsChatRunning)
             {
                 AppendAssistantMessage(session);
@@ -114,51 +121,58 @@ public sealed class MockRdKnowledgeApiClient(
     }
 
     public Task<QuerySessionState> SendChatMessageAsync(
-        string sessionId,
+        string executionId,
         SendChatMessageRequest request,
         CancellationToken cancellationToken = default)
     {
-        simulator.BeginChatTurn(sessionId, request.Question, request.StudyScope);
-        var session = simulator.GetQuerySession(sessionId)!;
+        simulator.BeginChatTurn(executionId, request.Question, request.StudyScope);
+        var session = simulator.GetQuerySession(executionId)!;
         return Task.FromResult(BuildQuerySessionState(session));
     }
 
-    public Task<StartCurationResponse> StartCurationAsync(string sessionId, CancellationToken cancellationToken = default)
+    public Task<StartCurationResponse> StartCurationAsync(string executionId, CancellationToken cancellationToken = default)
     {
-        var session = simulator.GetQuerySession(sessionId)
-            ?? throw new InvalidOperationException($"Query session {sessionId} has no chat messages.");
+        var session = simulator.GetQuerySession(executionId)
+            ?? throw new InvalidOperationException($"Query execution {executionId} not found.");
 
         if (session.Messages.Count == 0)
         {
             throw new InvalidOperationException("Cannot curate without accumulated chat responses.");
         }
 
-        if (session.CurationExecutionId is not null)
+        if (session.CurationStarted)
         {
-            var existing = simulator.GetExecution(session.CurationExecutionId);
+            var existing = simulator.GetExecution(executionId);
             if (existing?.Status is WorkflowStatus.Running or WorkflowStatus.AwaitingHumanApproval)
             {
-                throw new InvalidOperationException("Curation is already in progress for this session.");
+                throw new InvalidOperationException("Curation is already in progress for this execution.");
             }
         }
 
-        var state = simulator.StartCuration(sessionId);
-        return Task.FromResult(new StartCurationResponse(state.ExecutionId, sessionId, WorkflowStatus.Running));
+        var state = simulator.StartCuration(executionId);
+        return Task.FromResult(new StartCurationResponse(state.ExecutionId, session.SessionId, WorkflowStatus.Running));
     }
 
-    public Task<CurationWorkflowProgress> GetCurationStatusAsync(string curationExecutionId, CancellationToken cancellationToken = default)
+    public Task<CurationWorkflowProgress> GetCurationStatusAsync(string executionId, CancellationToken cancellationToken = default)
     {
-        var state = simulator.GetExecution(curationExecutionId)
-            ?? throw new KeyNotFoundException($"Curation execution {curationExecutionId} not found.");
+        var session = simulator.GetQuerySession(executionId)
+            ?? throw new KeyNotFoundException($"Query execution {executionId} not found.");
+
+        if (!session.CurationStarted)
+        {
+            throw new InvalidOperationException($"Curation has not started for execution {executionId}.");
+        }
+
+        var state = simulator.GetExecution(executionId)
+            ?? throw new KeyNotFoundException($"Query execution {executionId} not found.");
 
         if (state.Status is WorkflowStatus.Running or WorkflowStatus.Pending)
         {
-            state = simulator.AdvanceOnPoll(curationExecutionId);
+            state = simulator.AdvanceOnPoll(executionId);
         }
 
         var stage = simulator.GetCurationStage(state);
-        var session = simulator.GetQuerySession(state.ResourceId);
-        var studyId = session?.StudyScope ?? "abc-2024";
+        var studyId = session.StudyScope ?? "abc-2024";
 
         CurationComplianceResult? curation = null;
         if (stage >= QueryStage.CurationRunning && stage != QueryStage.Pending)
@@ -183,8 +197,8 @@ public sealed class MockRdKnowledgeApiClient(
         };
 
         return Task.FromResult(new CurationWorkflowProgress(
-            curationExecutionId,
-            state.ResourceId,
+            executionId,
+            session.SessionId,
             state.Status,
             stage,
             message,
@@ -194,13 +208,13 @@ public sealed class MockRdKnowledgeApiClient(
     }
 
     public Task<SubmitQueryDecisionResponse> SubmitCurationDecisionAsync(
-        string curationExecutionId,
+        string executionId,
         SubmitQueryDecisionRequest request,
         CancellationToken cancellationToken = default)
     {
-        simulator.SubmitDecision(curationExecutionId, request.Approved, request.Notes);
-        var state = simulator.GetExecution(curationExecutionId)!;
-        return Task.FromResult(new SubmitQueryDecisionResponse(curationExecutionId, state.Status));
+        simulator.SubmitDecision(executionId, request.Approved, request.Notes);
+        var state = simulator.GetExecution(executionId)!;
+        return Task.FromResult(new SubmitQueryDecisionResponse(executionId, state.Status));
     }
 
     public Task<bool> GetHealthAsync(CancellationToken cancellationToken = default) =>
@@ -225,48 +239,31 @@ public sealed class MockRdKnowledgeApiClient(
             DateTimeOffset.UtcNow));
     }
 
-    private static QuerySessionState BuildEmptyQuerySession(string sessionId) =>
-        new(
-            sessionId,
-            null,
-            [],
-            false,
-            null,
-            WorkflowStatus.Pending,
-            QueryStage.Pending,
-            "Ask a research question to begin Search & Chat.",
-            null,
-            null,
-            []);
-
     private QuerySessionState BuildQuerySessionState(MockQuerySessionState session)
     {
-        var stage = simulator.GetQuerySessionStage(session);
+        var execution = simulator.GetExecution(session.ExecutionId);
+        var stage = simulator.GetQuerySessionStage(session, execution);
         WorkflowStatus curationStatus = WorkflowStatus.Pending;
         CurationComplianceResult? curation = null;
         HumanDecisionRecord? humanDecision = null;
         var allowedActions = new List<string>();
 
-        if (session.CurationExecutionId is not null)
+        if (session.CurationStarted && execution is not null)
         {
-            var curationState = simulator.GetExecution(session.CurationExecutionId);
-            if (curationState is not null)
+            curationStatus = execution.Status;
+            humanDecision = execution.HumanDecision;
+            stage = simulator.GetCurationStage(execution);
+
+            if (execution.Status is WorkflowStatus.Running or WorkflowStatus.AwaitingHumanApproval or WorkflowStatus.Completed)
             {
-                curationStatus = curationState.Status;
-                humanDecision = curationState.HumanDecision;
-                stage = simulator.GetCurationStage(curationState);
+                var studyId = session.StudyScope ?? "abc-2024";
+                var json = catalog.ReadAgentOutputJson(studyId, "curation-compliance.json");
+                curation = AgentOutputParser.ParseCurationCompliance(json);
+            }
 
-                if (curationState.Status is WorkflowStatus.Running or WorkflowStatus.AwaitingHumanApproval or WorkflowStatus.Completed)
-                {
-                    var studyId = session.StudyScope ?? "abc-2024";
-                    var json = catalog.ReadAgentOutputJson(studyId, "curation-compliance.json");
-                    curation = AgentOutputParser.ParseCurationCompliance(json);
-                }
-
-                if (curationState.Status == WorkflowStatus.AwaitingHumanApproval)
-                {
-                    allowedActions.Add("SubmitDecision");
-                }
+            if (execution.Status == WorkflowStatus.AwaitingHumanApproval)
+            {
+                allowedActions.Add("SubmitDecision");
             }
         }
 
@@ -289,7 +286,7 @@ public sealed class MockRdKnowledgeApiClient(
             session.StudyScope,
             session.Messages.ToList(),
             session.IsChatRunning,
-            session.CurationExecutionId,
+            session.CurationStarted ? session.ExecutionId : null,
             curationStatus,
             stage,
             message,

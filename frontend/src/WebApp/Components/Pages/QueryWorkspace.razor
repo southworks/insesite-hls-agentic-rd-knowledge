@@ -14,7 +14,7 @@
     <a href="/" class="back-link" @onclick="GoHome" @onclick:preventDefault>← Portfolio</a>
     <PageMasthead Kicker="Querying"
                   Title="@(_sessionTitle ?? SessionId)"
-                  Subtitle="Process 1: Search & Chat (interactive) → Process 2: Curate on demand → Compliance Reviewer">
+                  Subtitle="Search & Chat (interactive) → Curate on demand → Compliance Reviewer">
         <LoadingButton CssClass="btn btn-secondary"
                        IsLoading="WorkspaceState.IsBusy"
                        Disabled="!WorkspaceState.CanStartCuration"
@@ -41,7 +41,7 @@ else
     <div class="workspace-grid">
         <div class="workspace-main">
             <CollapsiblePageSection SectionId="@WorkspaceSections.StageSearchChat"
-                                    Title="Process 1 — Search & Chat"
+                                    Title="Search & Chat"
                                     StatusLabel="@GetChatStatus()"
                                     StatusCssClass="@GetChatStatusCss()">
                 <ChatTranscript Messages="WorkspaceState.Session?.Messages ?? []" />
@@ -63,7 +63,7 @@ else
             </CollapsiblePageSection>
 
             <CollapsiblePageSection SectionId="@WorkspaceSections.StageCurationCompliance"
-                                    Title="Process 2 — Curation & Compliance"
+                                    Title="Curation & Compliance"
                                     StatusLabel="@GetCurationStatus()"
                                     StatusCssClass="@GetCurationStatusCss()">
                 <CurationCompliancePanel Result="@(WorkspaceState.CurationProgress?.CurationCompliance ?? WorkspaceState.Session?.CurationCompliance)" />
@@ -88,11 +88,18 @@ else
         </div>
 
         <aside class="workspace-side">
-            <StudySummaryCard Study="_studySummary" />
+            <CollapsiblePageSection SectionId="@WorkspaceSections.SidebarStudySummary"
+                                    Title="Study summary">
+                <StudySummaryCard Study="_studySummary" Nested="true" />
+            </CollapsiblePageSection>
             <div class="card vector-db-note">
                 <p>Reading from <strong>Vector DB</strong> — curated, embedded knowledge from approved ingestion workflows.</p>
             </div>
-            <WorkflowTimeline Steps="BackendWorkflowMapper.BuildQueryTimeline(WorkspaceState.Session, WorkspaceState.CurationProgress)" />
+            <CollapsiblePageSection SectionId="@WorkspaceSections.SidebarWorkflowProgress"
+                                    Title="Workflow progress">
+                <WorkflowTimeline Steps="BackendWorkflowMapper.BuildQueryTimeline(WorkspaceState.Session, WorkspaceState.CurationProgress)"
+                                  Nested="true" />
+            </CollapsiblePageSection>
             @if (!string.IsNullOrWhiteSpace(WorkspaceState.StudyScope))
             {
                 <div class="card">
@@ -115,24 +122,29 @@ else
     protected override async Task OnInitializedAsync()
     {
         WorkspaceState.OnChange += StateHasChanged;
-        SectionState.ResetForResource(SessionId);
+        SectionState.ResetForResource(GetResourceKey());
         ResolveSessionMeta();
         await ReloadAsync();
     }
 
     protected override async Task OnParametersSetAsync()
     {
-        if (WorkspaceState.SessionId != SessionId || WorkspaceState.CurationExecutionId != ExecutionId)
+        if (WorkspaceState.SessionId != SessionId || WorkspaceState.ExecutionId != ExecutionId)
         {
-            SectionState.ResetForResource(SessionId);
+            SectionState.ResetForResource(GetResourceKey());
             ResolveSessionMeta();
             await ReloadAsync();
         }
     }
 
+    private string GetResourceKey() =>
+        string.IsNullOrWhiteSpace(ExecutionId) ? SessionId : $"{SessionId}/{ExecutionId}";
+
     private void ResolveSessionMeta()
     {
-        var session = SessionStore.GetSession(SessionId);
+        var session = !string.IsNullOrWhiteSpace(ExecutionId)
+            ? SessionStore.GetQuerySession(ExecutionId)
+            : SessionStore.GetQuerySessionBySessionId(SessionId);
         _sessionTitle = session?.Title ?? SessionId;
         if (session is not null)
         {
@@ -145,14 +157,7 @@ else
 
     private async Task SendMessageAsync() => await WorkspaceState.SendMessageAsync();
 
-    private async Task StartCurationAsync()
-    {
-        await WorkspaceState.StartCurationAsync();
-        if (!string.IsNullOrWhiteSpace(WorkspaceState.CurationExecutionId))
-        {
-            Navigation.NavigateTo($"/query/{SessionId}/{WorkspaceState.CurationExecutionId}", replace: true);
-        }
-    }
+    private async Task StartCurationAsync() => await WorkspaceState.StartCurationAsync();
 
     private async Task SubmitDecisionAsync((bool Approved, string? Notes) decision) =>
         await WorkspaceState.SubmitDecisionAsync(decision.Approved, decision.Notes);

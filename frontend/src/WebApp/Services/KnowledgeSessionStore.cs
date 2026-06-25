@@ -29,7 +29,8 @@ public sealed class KnowledgeSession
 
 public sealed class KnowledgeSessionStore
 {
-    private readonly Dictionary<string, KnowledgeSession> _sessions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, KnowledgeSession> _ingestionSessions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, KnowledgeSession> _querySessions = new(StringComparer.OrdinalIgnoreCase);
 
     public KnowledgeSession OpenIngestionSession(string studyId, string title, string? scenarioId = null)
     {
@@ -44,11 +45,17 @@ public sealed class KnowledgeSessionStore
             ChatMessageCount = 0,
             Status = WorkflowStatus.Pending
         };
-        _sessions[session.SessionId] = session;
+        _ingestionSessions[session.SessionId] = session;
         return session;
     }
 
-    public KnowledgeSession OpenQuerySession(string sessionId, string title, string studyScope, string question, string? scenarioId = null)
+    public KnowledgeSession OpenQuerySession(
+        string sessionId,
+        string executionId,
+        string title,
+        string studyScope,
+        string question,
+        string? scenarioId = null)
     {
         var session = new KnowledgeSession
         {
@@ -58,22 +65,41 @@ public sealed class KnowledgeSessionStore
             StudyId = studyScope,
             ScenarioId = scenarioId,
             SampleQuestion = question,
-            ExecutionId = null,
+            ExecutionId = executionId,
             ChatMessageCount = 0,
             Status = WorkflowStatus.Pending
         };
-        _sessions[session.SessionId] = session;
+        _querySessions[executionId] = session;
         return session;
     }
 
     public KnowledgeSession? GetSession(string sessionId) =>
-        _sessions.TryGetValue(sessionId, out var session) ? session : null;
+        _ingestionSessions.TryGetValue(sessionId, out var ingestionSession)
+            ? ingestionSession
+            : null;
 
-    public void UpdateSession(KnowledgeSession session) =>
-        _sessions[session.SessionId] = session;
+    public KnowledgeSession? GetQuerySession(string executionId) =>
+        _querySessions.TryGetValue(executionId, out var session) ? session : null;
+
+    public KnowledgeSession? GetQuerySessionBySessionId(string sessionId) =>
+        _querySessions.Values.FirstOrDefault(s =>
+            s.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
+
+    public void UpdateSession(KnowledgeSession session)
+    {
+        if (session.Block == WorkflowBlock.Ingestion)
+        {
+            _ingestionSessions[session.SessionId] = session;
+        }
+        else if (session.ExecutionId is not null)
+        {
+            _querySessions[session.ExecutionId] = session;
+        }
+    }
 
     public IReadOnlyList<KnowledgeSessionSummary> GetSummaries() =>
-        _sessions.Values
+        _ingestionSessions.Values
+            .Concat(_querySessions.Values)
             .OrderByDescending(s => s.OpenedAt)
             .Select(s => new KnowledgeSessionSummary(
                 s.SessionId,

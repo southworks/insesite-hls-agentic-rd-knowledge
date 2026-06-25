@@ -58,9 +58,10 @@ Replace any stub behavior in [`Services/RdKnowledgeApiClient.cs`](../src/WebApp/
 | Start ingestion | POST | `/api/rd-knowledge/studies/{studyId}/ingestion/workflow/start` |
 | Ingestion status | GET | `/api/rd-knowledge/executions/{executionId}/ingestion/status` |
 | Ingestion HITL resume | POST | `/api/rd-knowledge/executions/{executionId}/ingestion/resume` |
-| Get query session | GET | `/api/rd-knowledge/query/sessions/{sessionId}` |
-| Send chat message | POST | `/api/rd-knowledge/query/sessions/{sessionId}/chat` |
-| Start curation | POST | `/api/rd-knowledge/query/sessions/{sessionId}/curate` |
+| Start query workflow | POST | `/api/rd-knowledge/query/sessions/{sessionId}/workflow/start` |
+| Get query session | GET | `/api/rd-knowledge/executions/{executionId}/query/session` |
+| Send chat message | POST | `/api/rd-knowledge/executions/{executionId}/query/chat` |
+| Start curation | POST | `/api/rd-knowledge/executions/{executionId}/query/curate` |
 | Curation status | GET | `/api/rd-knowledge/executions/{executionId}/query/status` |
 | Curation HITL resume | POST | `/api/rd-knowledge/executions/{executionId}/query/resume` |
 | Study documents | GET | `/api/rd-knowledge/studies/{studyId}/documents` |

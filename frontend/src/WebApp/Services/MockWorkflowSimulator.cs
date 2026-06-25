@@ -19,13 +19,14 @@ public sealed class MockExecutionState
 
 public sealed class MockQuerySessionState
 {
+    public required string ExecutionId { get; init; }
     public required string SessionId { get; init; }
     public string? StudyScope { get; set; }
     public List<ChatMessage> Messages { get; } = [];
     public bool IsChatRunning { get; set; }
     public int ChatPollCount { get; set; }
     public string? PendingQuestion { get; set; }
-    public string? CurationExecutionId { get; set; }
+    public bool CurationStarted { get; set; }
 }
 
 public sealed class MockWorkflowSimulator
@@ -61,37 +62,55 @@ public sealed class MockWorkflowSimulator
         return state;
     }
 
-    public MockQuerySessionState GetOrCreateQuerySession(string sessionId, string? studyScope = null)
+    public MockQuerySessionState StartQueryWorkflow(string executionId, string sessionId, string? studyScope = null)
+    {
+        var session = new MockQuerySessionState
+        {
+            ExecutionId = executionId,
+            SessionId = sessionId,
+            StudyScope = studyScope
+        };
+
+        var execution = new MockExecutionState
+        {
+            ExecutionId = executionId,
+            Block = WorkflowBlock.Query,
+            ResourceId = sessionId,
+            StudyScope = studyScope,
+            Status = WorkflowStatus.Pending
+        };
+
+        lock (_lock)
+        {
+            _querySessions[executionId] = session;
+            _executions[executionId] = execution;
+        }
+
+        return session;
+    }
+
+    public MockQuerySessionState? GetQuerySession(string executionId)
     {
         lock (_lock)
         {
-            if (!_querySessions.TryGetValue(sessionId, out var session))
+            return _querySessions.TryGetValue(executionId, out var session) ? session : null;
+        }
+    }
+
+    public void BeginChatTurn(string executionId, string question, string? studyScope)
+    {
+        lock (_lock)
+        {
+            if (!_querySessions.TryGetValue(executionId, out var session))
             {
-                session = new MockQuerySessionState { SessionId = sessionId, StudyScope = studyScope };
-                _querySessions[sessionId] = session;
+                throw new KeyNotFoundException($"Query execution {executionId} not found.");
             }
-            else if (studyScope is not null)
+
+            if (studyScope is not null)
             {
                 session.StudyScope = studyScope;
             }
 
-            return session;
-        }
-    }
-
-    public MockQuerySessionState? GetQuerySession(string sessionId)
-    {
-        lock (_lock)
-        {
-            return _querySessions.TryGetValue(sessionId, out var session) ? session : null;
-        }
-    }
-
-    public void BeginChatTurn(string sessionId, string question, string? studyScope)
-    {
-        lock (_lock)
-        {
-            var session = GetOrCreateQuerySession(sessionId, studyScope);
             session.PendingQuestion = question;
             session.ChatPollCount = 0;
             session.IsChatRunning = true;
@@ -102,14 +121,19 @@ public sealed class MockWorkflowSimulator
                 null,
                 null,
                 DateTimeOffset.UtcNow));
+
+            if (_executions.TryGetValue(executionId, out var execution))
+            {
+                execution.Status = WorkflowStatus.Running;
+            }
         }
     }
 
-    public void AdvanceChatOnPoll(string sessionId)
+    public void AdvanceChatOnPoll(string executionId)
     {
         lock (_lock)
         {
-            if (!_querySessions.TryGetValue(sessionId, out var session) || !session.IsChatRunning)
+            if (!_querySessions.TryGetValue(executionId, out var session) || !session.IsChatRunning)
             {
                 return;
             }
@@ -124,25 +148,25 @@ public sealed class MockWorkflowSimulator
         }
     }
 
-    public MockExecutionState StartCuration(string sessionId)
+    public MockExecutionState StartCuration(string executionId)
     {
-        var executionId = $"cur-{Guid.NewGuid():N}"[..12];
-        var state = new MockExecutionState
-        {
-            ExecutionId = executionId,
-            Block = WorkflowBlock.Query,
-            ResourceId = sessionId,
-            Status = WorkflowStatus.Running
-        };
-
         lock (_lock)
         {
-            var session = GetOrCreateQuerySession(sessionId);
-            session.CurationExecutionId = executionId;
-            _executions[executionId] = state;
-        }
+            if (!_querySessions.TryGetValue(executionId, out var session))
+            {
+                throw new KeyNotFoundException($"Query execution {executionId} not found.");
+            }
 
-        return state;
+            if (!_executions.TryGetValue(executionId, out var execution))
+            {
+                throw new KeyNotFoundException($"Query execution {executionId} not found.");
+            }
+
+            session.CurationStarted = true;
+            execution.Status = WorkflowStatus.Running;
+            execution.PollCount = 0;
+            return execution;
+        }
     }
 
     public MockExecutionState? GetExecution(string executionId)
@@ -241,12 +265,11 @@ public sealed class MockWorkflowSimulator
         _ => QueryStage.Pending
     };
 
-    public QueryStage GetQuerySessionStage(MockQuerySessionState session)
+    public QueryStage GetQuerySessionStage(MockQuerySessionState session, MockExecutionState? execution)
     {
-        if (session.CurationExecutionId is not null &&
-            _executions.TryGetValue(session.CurationExecutionId, out var curation))
+        if (session.CurationStarted && execution is not null)
         {
-            return GetCurationStage(curation);
+            return GetCurationStage(execution);
         }
 
         if (session.IsChatRunning || session.Messages.Count > 0)

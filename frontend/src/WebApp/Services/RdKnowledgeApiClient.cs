@@ -15,9 +15,10 @@ public interface IRdKnowledgeApiClient
     Task<StartIngestionWorkflowResponse> StartIngestionWorkflowAsync(string studyId, CancellationToken cancellationToken = default);
     Task<IngestionWorkflowProgress> GetIngestionStatusAsync(string executionId, CancellationToken cancellationToken = default);
     Task<SubmitIngestionDecisionResponse> SubmitIngestionDecisionAsync(string executionId, SubmitIngestionDecisionRequest request, CancellationToken cancellationToken = default);
-    Task<QuerySessionState> GetQuerySessionAsync(string sessionId, CancellationToken cancellationToken = default);
-    Task<QuerySessionState> SendChatMessageAsync(string sessionId, SendChatMessageRequest request, CancellationToken cancellationToken = default);
-    Task<StartCurationResponse> StartCurationAsync(string sessionId, CancellationToken cancellationToken = default);
+    Task<StartQueryWorkflowResponse> StartQueryWorkflowAsync(string sessionId, CancellationToken cancellationToken = default);
+    Task<QuerySessionState> GetQuerySessionAsync(string executionId, CancellationToken cancellationToken = default);
+    Task<QuerySessionState> SendChatMessageAsync(string executionId, SendChatMessageRequest request, CancellationToken cancellationToken = default);
+    Task<StartCurationResponse> StartCurationAsync(string executionId, CancellationToken cancellationToken = default);
     Task<CurationWorkflowProgress> GetCurationStatusAsync(string curationExecutionId, CancellationToken cancellationToken = default);
     Task<SubmitQueryDecisionResponse> SubmitCurationDecisionAsync(string curationExecutionId, SubmitQueryDecisionRequest request, CancellationToken cancellationToken = default);
     Task<bool> GetHealthAsync(CancellationToken cancellationToken = default);
@@ -53,20 +54,26 @@ public sealed class RdKnowledgeApiClient(HttpClient httpClient) : IRdKnowledgeAp
             request,
             cancellationToken);
 
-    public Task<QuerySessionState> GetQuerySessionAsync(string sessionId, CancellationToken cancellationToken = default) =>
-        GetAsync<QuerySessionState>(
-            RdKnowledgeBackendRoutes.GetQuerySession.Replace("{sessionId}", Uri.EscapeDataString(sessionId)),
+    public Task<StartQueryWorkflowResponse> StartQueryWorkflowAsync(string sessionId, CancellationToken cancellationToken = default) =>
+        PostAsync<StartQueryWorkflowResponse>(
+            RdKnowledgeBackendRoutes.StartQueryWorkflow.Replace("{sessionId}", Uri.EscapeDataString(sessionId)),
+            null,
             cancellationToken);
 
-    public Task<QuerySessionState> SendChatMessageAsync(string sessionId, SendChatMessageRequest request, CancellationToken cancellationToken = default) =>
+    public Task<QuerySessionState> GetQuerySessionAsync(string executionId, CancellationToken cancellationToken = default) =>
+        GetAsync<QuerySessionState>(
+            RdKnowledgeBackendRoutes.GetQuerySession.Replace("{executionId}", Uri.EscapeDataString(executionId)),
+            cancellationToken);
+
+    public Task<QuerySessionState> SendChatMessageAsync(string executionId, SendChatMessageRequest request, CancellationToken cancellationToken = default) =>
         PostAsync<QuerySessionState>(
-            RdKnowledgeBackendRoutes.SendChatMessage.Replace("{sessionId}", Uri.EscapeDataString(sessionId)),
+            RdKnowledgeBackendRoutes.SendChatMessage.Replace("{executionId}", Uri.EscapeDataString(executionId)),
             request,
             cancellationToken);
 
-    public Task<StartCurationResponse> StartCurationAsync(string sessionId, CancellationToken cancellationToken = default) =>
+    public Task<StartCurationResponse> StartCurationAsync(string executionId, CancellationToken cancellationToken = default) =>
         PostAsync<StartCurationResponse>(
-            RdKnowledgeBackendRoutes.StartCuration.Replace("{sessionId}", Uri.EscapeDataString(sessionId)),
+            RdKnowledgeBackendRoutes.StartCuration.Replace("{executionId}", Uri.EscapeDataString(executionId)),
             null,
             cancellationToken);
 
