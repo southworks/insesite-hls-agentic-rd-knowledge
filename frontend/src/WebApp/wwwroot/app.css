@@ -486,8 +486,8 @@ a:hover { text-decoration: underline; }
 .block-ingestion { background: #e8f0fe; color: #1a4480; }
 .block-query { background: #e6f4fa; color: #0078a8; }
 
-/* Fabric */
-.fabric-badge {
+/* Vector DB */
+.vector-db-badge {
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -497,7 +497,31 @@ a:hover { text-decoration: underline; }
     border-radius: 4px;
 }
 
-.fabric-note p { margin: 0; font-size: 0.875rem; color: var(--color-muted); }
+.vector-db-note p { margin: 0; font-size: 0.875rem; color: var(--color-muted); }
+
+/* Chat transcript */
+.chat-transcript { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
+
+.chat-message {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+}
+
+.chat-user { background: #f0f4f8; }
+.chat-assistant { background: #fff; }
+
+.chat-message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.chat-message-body { white-space: pre-wrap; line-height: 1.5; }
+
+.form-actions { margin-top: 0.75rem; }
 
 /* Entity chips */
 .chip-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }

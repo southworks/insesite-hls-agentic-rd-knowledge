@@ -28,9 +28,9 @@ public enum IngestionStage
 public enum QueryStage
 {
     Pending,
-    SearchChat,
-    CurationCompliance,
-    HumanApproval,
+    ChatActive,
+    CurationRunning,
+    AwaitingComplianceReview,
     Completed,
     Failed
 }

@@ -3,27 +3,43 @@ using Cohere.AgenticRDKnowledge.Shared.Contracts.Agents;
 
 namespace Cohere.AgenticRDKnowledge.Shared.Contracts.Query;
 
-public sealed record StartQueryWorkflowRequest(
-    string SessionId,
+public sealed record ChatMessage(
+    string Role,
+    string Content,
+    IReadOnlyList<Citation>? Citations,
+    string? LineageSummary,
+    IReadOnlyList<RetrievalTraceEvent>? RetrievalTrace,
+    DateTimeOffset Timestamp);
+
+public sealed record SendChatMessageRequest(
     string Question,
     string? StudyScope);
 
-public sealed record StartQueryWorkflowResponse(
-    string ExecutionId,
+public sealed record QuerySessionState(
+    string SessionId,
+    string? StudyScope,
+    IReadOnlyList<ChatMessage> Messages,
+    bool IsChatRunning,
+    string? CurationExecutionId,
+    WorkflowStatus CurationStatus,
+    QueryStage CurrentStage,
+    string StatusMessage,
+    CurationComplianceResult? CurationCompliance,
+    HumanDecisionRecord? HumanDecision,
+    IReadOnlyList<string> AllowedActions);
+
+public sealed record StartCurationResponse(
+    string CurationExecutionId,
     string SessionId,
     WorkflowStatus Status);
 
-public sealed record QueryWorkflowProgress(
+public sealed record CurationWorkflowProgress(
     string ExecutionId,
     string SessionId,
-    string Question,
-    string? StudyScope,
     WorkflowStatus Status,
     QueryStage CurrentStage,
     string StatusMessage,
-    SearchChatResult? SearchChat,
     CurationComplianceResult? CurationCompliance,
-    IReadOnlyList<RetrievalTraceEvent>? RetrievalTrace,
     HumanDecisionRecord? HumanDecision,
     IReadOnlyList<string> AllowedActions);
 

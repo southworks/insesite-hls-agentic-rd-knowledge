@@ -7,10 +7,11 @@ This document explains how the frontend currently uses **mocked data** and how t
 When `UseMockBackend` is `true` (default in `appsettings.json` and `appsettings.Development.json`):
 
 - `MockRdKnowledgeApiClient` implements `IRdKnowledgeApiClient`.
-- `MockWorkflowSimulator` advances workflow runs in memory on each status poll.
+- `MockWorkflowSimulator` advances ingestion and curation runs in memory on each status poll.
+- Block 2 uses **two processes**: Search & Chat (session-scoped messages) and Curate (on-demand curation execution).
 - Scenario definitions and agent output JSON live under [`dataset-seed/`](../dataset-seed/).
 - `KnowledgeSessionStore` tracks open workspaces for the current Blazor circuit (browser session).
-- Approving an ingestion run updates the in-memory Fabric summary counts (simulates a Fabric write).
+- Approving an ingestion run updates the in-memory Vector DB summary counts (simulates a Vector DB write).
 
 The UI **never calls HTTP** for workflow operations while mocks are enabled. Razor components consume mapped DTOs only — they do not parse raw agent JSON.
 
@@ -57,11 +58,13 @@ Replace any stub behavior in [`Services/RdKnowledgeApiClient.cs`](../src/WebApp/
 | Start ingestion | POST | `/api/rd-knowledge/studies/{studyId}/ingestion/workflow/start` |
 | Ingestion status | GET | `/api/rd-knowledge/executions/{executionId}/ingestion/status` |
 | Ingestion HITL resume | POST | `/api/rd-knowledge/executions/{executionId}/ingestion/resume` |
-| Start query | POST | `/api/rd-knowledge/query/workflow/start` |
-| Query status | GET | `/api/rd-knowledge/executions/{executionId}/query/status` |
-| Query HITL resume | POST | `/api/rd-knowledge/executions/{executionId}/query/resume` |
+| Get query session | GET | `/api/rd-knowledge/query/sessions/{sessionId}` |
+| Send chat message | POST | `/api/rd-knowledge/query/sessions/{sessionId}/chat` |
+| Start curation | POST | `/api/rd-knowledge/query/sessions/{sessionId}/curate` |
+| Curation status | GET | `/api/rd-knowledge/executions/{executionId}/query/status` |
+| Curation HITL resume | POST | `/api/rd-knowledge/executions/{executionId}/query/resume` |
 | Study documents | GET | `/api/rd-knowledge/studies/{studyId}/documents` |
-| Fabric summary | GET | `/api/rd-knowledge/fabric/summary` |
+| Vector DB summary | GET | `/api/rd-knowledge/vector-db/summary` |
 
 Use `ApiProblemDetails.EnsureSuccessOrThrowAsync` for failed responses. Map payloads through `BackendWorkflowMapper` — do not let Razor components parse raw JSON.
 
@@ -88,7 +91,7 @@ Once the backend is stable:
 | `Services/MockRdKnowledgeApiClient.cs` | Delete, or keep behind `#if DEBUG` / feature flag for demos |
 | `Services/MockWorkflowSimulator.cs` | Delete with mock client |
 | `dataset-seed/studies/*/agent-outputs/` | Keep for catalog previews; stop using for workflow progression |
-| In-memory Fabric mutation in mock client | Replace with `GET .../fabric/summary` from API |
+| In-memory Vector DB mutation in mock client | Replace with `GET .../vector-db/summary` from API |
 
 ### 5. Update tests
 
@@ -99,9 +102,10 @@ Once the backend is stable:
 ### 6. Verify integration
 
 - [ ] `GET /health` succeeds on frontend (`/health`) and API.
-- [ ] Start ingestion run → poll → HITL approve → Fabric summary reflects write via API.
-- [ ] Start query run **without** a fresh ingestion run → citations and lineage come from API.
-- [ ] Block 2 works independently (reads accumulated Fabric data).
+- [ ] Start ingestion run → poll → Knowledge Curator approve → Vector DB summary reflects write via API.
+- [ ] Send chat messages **without** a fresh ingestion run → citations and lineage come from Vector DB via API.
+- [ ] Curate on demand over accumulated chat → Compliance Reviewer HITL via API.
+- [ ] Block 2 works independently (reads accumulated Vector DB data).
 - [ ] Docker / Container Apps inject `ApiBaseUrl` and `UseMockBackend=false`.
 
 ### 7. Files that should NOT require UI changes

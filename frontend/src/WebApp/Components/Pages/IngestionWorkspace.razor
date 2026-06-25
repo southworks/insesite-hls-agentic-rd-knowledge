@@ -13,7 +13,7 @@
     <a href="/" class="back-link" @onclick="GoHome" @onclick:preventDefault>← Portfolio</a>
     <PageMasthead Kicker="Ingestion"
                   Title="@(_studyTitle ?? StudyId)"
-                  Subtitle="Ingestion & Translation → Metadata & Linking → human approval before Fabric persistence">
+                  Subtitle="Ingestion & Translation → Metadata & Linking → Knowledge Curator → Vector DB">
         <LoadingButton IsLoading="WorkspaceState.IsBusy"
                        Disabled="!WorkspaceState.CanStartWorkflow"
                        OnClick="StartWorkflowAsync">
@@ -52,11 +52,11 @@ else
             </CollapsiblePageSection>
 
             <CollapsiblePageSection SectionId="@WorkspaceSections.StageIngestionHitl"
-                                    Title="Human approval"
+                                    Title="Knowledge Curator"
                                     StatusLabel="@GetHitlStatus()"
                                     StatusCssClass="@(WorkspaceState.CanSubmitDecision ? "status-warning" : "status-neutral")">
-                <HumanReviewPanel Title="Approve ingested content for Fabric persistence"
-                                  Description="Review normalized and linked content before it is written to Microsoft Fabric."
+                <HumanReviewPanel Title="Knowledge Curator — approve before Vector DB write"
+                                  Description="Review normalized and linked content before it is embedded and saved to the Vector DB."
                                   Decision="WorkspaceState.Progress?.HumanDecision"
                                   CanSubmit="WorkspaceState.CanSubmitDecision"
                                   IsBusy="WorkspaceState.IsBusy"
@@ -67,15 +67,15 @@ else
         <aside class="workspace-side">
             <StudySummaryCard Study="WorkspaceState.Progress?.Study ?? _fallbackStudy" />
             <div class="card">
-                <h3 class="card-title">Source material</h3>
+                <h3 class="card-title">Source material from Microsoft Fabric</h3>
                 <KnowledgeSourceList Sources="WorkspaceState.Documents?.Sources ?? []" />
             </div>
             @if (WorkspaceState.Progress is not null)
             {
                 <WorkflowTimeline Steps="BackendWorkflowMapper.BuildIngestionTimeline(WorkspaceState.Progress)" />
             }
-            <div class="card fabric-note">
-                <p>On approval, curated knowledge is persisted to <strong>Microsoft Fabric</strong>. Query workflows can read this store independently.</p>
+            <div class="card vector-db-note">
+                <p>On approval, curated knowledge is embedded and persisted to the <strong>Vector DB</strong>. Query workflows read from the Vector DB independently.</p>
             </div>
         </aside>
     </div>
@@ -105,13 +105,14 @@ else
         }
     }
 
-    private async Task ReloadAsync()
+    protected override void OnParametersSet()
     {
-        await WorkspaceState.LoadAsync(StudyId, ExecutionId);
-        _studyTitle = WorkspaceState.Progress?.Study?.Title ?? StudyId;
-        _fallbackStudy = WorkspaceState.Progress?.Study
-            ?? Catalog.GetScenarioByStudyId(StudyId, WorkflowBlock.Ingestion)?.Study;
+        _fallbackStudy = Catalog.GetScenarioByStudyId(StudyId, WorkflowBlock.Ingestion)?.Study
+            ?? new StudySummary(StudyId, StudyId, "—", "—", "—", ["Microsoft Fabric"]);
+        _studyTitle = _fallbackStudy.Title;
     }
+
+    private async Task ReloadAsync() => await WorkspaceState.LoadAsync(StudyId, ExecutionId);
 
     private async Task StartWorkflowAsync()
     {

@@ -40,39 +40,81 @@ public class WorkspaceStateTests
     }
 
     [Fact]
-    public async Task QueryLoadAsync_WithExecutionId_LoadsCompletedProgressAndDisablesStart()
+    public async Task SendMessage_AddsChatWithoutStartingCuration()
     {
         const string sessionId = "query-test";
-        const string sampleQuestion = "Which protocols share the same endpoint?";
-        var (state, simulator, sessionStore) = CreateQueryState();
-        sessionStore.OpenQuerySession(sessionId, "Test query", StudyId, sampleQuestion);
-        CompleteQuery(simulator, "qry-1", sessionId, sampleQuestion);
+        var (state, _, sessionStore) = CreateQueryState();
+        sessionStore.OpenQuerySession(sessionId, "Test query", StudyId, "Sample question?");
 
-        await state.LoadAsync(sessionId, "qry-1");
+        await state.LoadAsync(sessionId, null);
+        state.SetQuestion("Which protocols share the same endpoint?");
+        await state.SendMessageAsync();
 
-        Assert.NotNull(state.Progress);
-        Assert.Equal(WorkflowStatus.Completed, state.Progress.Status);
-        Assert.False(state.CanStartWorkflow);
+        for (var i = 0; i < 3; i++)
+        {
+            await state.LoadAsync(sessionId, null);
+            if (state.Session?.IsChatRunning != true)
+            {
+                break;
+            }
+
+            await Task.Delay(50);
+        }
+
+        Assert.NotNull(state.Session);
+        Assert.True(state.Session.Messages.Count >= 2);
+        Assert.Null(state.CurationProgress);
+        Assert.False(state.CanStartCuration == false && state.Session.Messages.Count == 0);
     }
 
     [Fact]
-    public async Task QueryLoadAsync_WithoutExecutionId_ClearsCompletedProgressAndResetsQuestion()
+    public async Task StartCuration_RequiresChatMessages()
     {
         const string sessionId = "query-test";
-        const string sampleQuestion = "Which protocols share the same endpoint?";
-        var (state, simulator, sessionStore) = CreateQueryState();
-        sessionStore.OpenQuerySession(sessionId, "Test query", StudyId, sampleQuestion);
-        CompleteQuery(simulator, "qry-1", sessionId, sampleQuestion, "Modified during execution");
-
-        await state.LoadAsync(sessionId, "qry-1");
-        Assert.Equal("Modified during execution", state.Question);
+        var (state, _, sessionStore) = CreateQueryState();
+        sessionStore.OpenQuerySession(sessionId, "Test query", StudyId, "Question?");
 
         await state.LoadAsync(sessionId, null);
+        Assert.False(state.CanStartCuration);
 
-        Assert.Null(state.Progress);
-        Assert.Equal(sampleQuestion, state.Question);
-        Assert.True(state.CanStartWorkflow);
-        Assert.False(state.IsPolling);
+        state.SetQuestion("Which protocols share the same endpoint?");
+        await state.SendMessageAsync();
+
+        for (var i = 0; i < 5; i++)
+        {
+            await state.LoadAsync(sessionId, null);
+            if (state.Session?.IsChatRunning != true && state.Session?.Messages.Count >= 2)
+            {
+                break;
+            }
+
+            await Task.Delay(50);
+        }
+
+        Assert.True(state.CanStartCuration);
+        await state.StartCurationAsync();
+
+        Assert.NotNull(state.CurationExecutionId);
+        Assert.NotNull(state.CurationProgress);
+    }
+
+    [Fact]
+    public async Task CurationDecision_CompletesWithoutBlockingChat()
+    {
+        const string sessionId = "query-curate";
+        var (state, simulator, sessionStore) = CreateQueryState();
+        sessionStore.OpenQuerySession(sessionId, "Test query", StudyId, "Question?");
+        var curationId = CompleteChatAndCuration(simulator, sessionId, "Which protocols share the endpoint?");
+
+        await state.LoadAsync(sessionId, curationId);
+
+        Assert.NotNull(state.CurationProgress);
+        Assert.Equal(WorkflowStatus.AwaitingHumanApproval, state.CurationProgress.Status);
+        Assert.True(state.CanSubmitDecision);
+
+        await state.SubmitDecisionAsync(true, "Approved");
+
+        Assert.Equal(WorkflowStatus.Completed, state.CurationProgress!.Status);
     }
 
     [Fact]
@@ -96,13 +138,15 @@ public class WorkspaceStateTests
         const string sessionId = "query-test";
         var sessionStore = new KnowledgeSessionStore();
         var session = sessionStore.OpenQuerySession(sessionId, "Test query", StudyId, "Question?");
-        session.ExecutionId = "qry-old";
+        session.ExecutionId = "cur-old";
+        session.ChatMessageCount = 4;
         session.Status = WorkflowStatus.Completed;
         sessionStore.UpdateSession(session);
 
         var reopened = sessionStore.OpenQuerySession(sessionId, "Test query", StudyId, "Question?");
 
         Assert.Null(reopened.ExecutionId);
+        Assert.Equal(0, reopened.ChatMessageCount);
         Assert.Equal(WorkflowStatus.Pending, reopened.Status);
     }
 
@@ -122,7 +166,7 @@ public class WorkspaceStateTests
         var state = new QueryWorkspaceState(
             api,
             sessionStore,
-            Options.Create(new WorkflowPollingOptions()));
+            Options.Create(new WorkflowPollingOptions { IntervalSeconds = 1 }));
         return (state, simulator, sessionStore);
     }
 
@@ -148,20 +192,22 @@ public class WorkspaceStateTests
         simulator.SubmitDecision(executionId, true, "Approved");
     }
 
-    private static void CompleteQuery(
+    private static string CompleteChatAndCuration(
         MockWorkflowSimulator simulator,
-        string executionId,
         string sessionId,
-        string question,
-        string? questionOverride = null)
+        string question)
     {
-        simulator.StartQuery(executionId, sessionId, questionOverride ?? question, StudyId);
-        for (var i = 0; i < 5; i++)
+        simulator.BeginChatTurn(sessionId, question, StudyId);
+        simulator.AdvanceChatOnPoll(sessionId);
+        simulator.AdvanceChatOnPoll(sessionId);
+
+        var curation = simulator.StartCuration(sessionId);
+        for (var i = 0; i < 3; i++)
         {
-            simulator.AdvanceOnPoll(executionId);
+            simulator.AdvanceOnPoll(curation.ExecutionId);
         }
 
-        simulator.SubmitDecision(executionId, true, "Approved");
+        return curation.ExecutionId;
     }
 
     private static string GetWebAppContentRoot()

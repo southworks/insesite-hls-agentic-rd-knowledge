@@ -1,6 +1,6 @@
-namespace Cohere.AgenticRDKnowledge.Shared.Contracts.Fabric;
+namespace Cohere.AgenticRDKnowledge.Shared.Contracts.VectorDb;
 
-public sealed record FabricStoreSummary(
+public sealed record VectorDbStoreSummary(
     int TotalStudies,
     int TotalDocuments,
     int TotalEntities,

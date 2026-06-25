@@ -1,4 +1,6 @@
 using Cohere.AgenticRDKnowledge.Shared.Contracts;
+using Cohere.AgenticRDKnowledge.Shared.Contracts.Ingestion;
+using Cohere.AgenticRDKnowledge.Shared.Contracts.Query;
 
 namespace Cohere.AgenticRDKnowledge.WebApp.Services;
 
@@ -8,6 +10,7 @@ public sealed record KnowledgeSessionSummary(
     WorkflowBlock Block,
     WorkflowStatus Status,
     string? ExecutionId,
+    int ChatMessageCount,
     DateTimeOffset OpenedAt);
 
 public sealed class KnowledgeSession
@@ -19,6 +22,7 @@ public sealed class KnowledgeSession
     public string? ScenarioId { get; init; }
     public string? SampleQuestion { get; set; }
     public string? ExecutionId { get; set; }
+    public int ChatMessageCount { get; set; }
     public WorkflowStatus Status { get; set; } = WorkflowStatus.Pending;
     public DateTimeOffset OpenedAt { get; init; } = DateTimeOffset.UtcNow;
 }
@@ -37,6 +41,7 @@ public sealed class KnowledgeSessionStore
             StudyId = studyId,
             ScenarioId = scenarioId,
             ExecutionId = null,
+            ChatMessageCount = 0,
             Status = WorkflowStatus.Pending
         };
         _sessions[session.SessionId] = session;
@@ -54,6 +59,7 @@ public sealed class KnowledgeSessionStore
             ScenarioId = scenarioId,
             SampleQuestion = question,
             ExecutionId = null,
+            ChatMessageCount = 0,
             Status = WorkflowStatus.Pending
         };
         _sessions[session.SessionId] = session;
@@ -75,6 +81,7 @@ public sealed class KnowledgeSessionStore
                 s.Block,
                 s.Status,
                 s.ExecutionId,
+                s.ChatMessageCount,
                 s.OpenedAt))
             .ToList();
 }

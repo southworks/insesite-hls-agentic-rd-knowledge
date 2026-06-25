@@ -1,8 +1,7 @@
 using Cohere.AgenticRDKnowledge.Shared.Contracts;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Agents;
-using Cohere.AgenticRDKnowledge.Shared.Contracts.Fabric;
-using Cohere.AgenticRDKnowledge.Shared.Contracts.Ingestion;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Query;
+using Cohere.AgenticRDKnowledge.Shared.Contracts.VectorDb;
 
 namespace Cohere.AgenticRDKnowledge.WebApp.Services;
 
@@ -11,25 +10,36 @@ public sealed class MockExecutionState
     public required string ExecutionId { get; init; }
     public required WorkflowBlock Block { get; init; }
     public required string ResourceId { get; init; }
-    public string? Question { get; init; }
     public string? StudyScope { get; init; }
     public WorkflowStatus Status { get; set; } = WorkflowStatus.Running;
     public int PollCount { get; set; }
     public HumanDecisionRecord? HumanDecision { get; set; }
-    public bool FabricUpdated { get; set; }
+    public bool VectorDbUpdated { get; set; }
+}
+
+public sealed class MockQuerySessionState
+{
+    public required string SessionId { get; init; }
+    public string? StudyScope { get; set; }
+    public List<ChatMessage> Messages { get; } = [];
+    public bool IsChatRunning { get; set; }
+    public int ChatPollCount { get; set; }
+    public string? PendingQuestion { get; set; }
+    public string? CurationExecutionId { get; set; }
 }
 
 public sealed class MockWorkflowSimulator
 {
     private readonly Dictionary<string, MockExecutionState> _executions = new(StringComparer.OrdinalIgnoreCase);
-    private FabricStoreSummary _fabricSummary = new(0, 0, 0, 0, null, null);
+    private readonly Dictionary<string, MockQuerySessionState> _querySessions = new(StringComparer.OrdinalIgnoreCase);
+    private VectorDbStoreSummary _vectorDbSummary = new(0, 0, 0, 0, null, null);
     private readonly object _lock = new();
 
-    public FabricStoreSummary GetFabricSummary()
+    public VectorDbStoreSummary GetVectorDbSummary()
     {
         lock (_lock)
         {
-            return _fabricSummary;
+            return _vectorDbSummary;
         }
     }
 
@@ -51,20 +61,84 @@ public sealed class MockWorkflowSimulator
         return state;
     }
 
-    public MockExecutionState StartQuery(string executionId, string sessionId, string question, string? studyScope)
+    public MockQuerySessionState GetOrCreateQuerySession(string sessionId, string? studyScope = null)
     {
+        lock (_lock)
+        {
+            if (!_querySessions.TryGetValue(sessionId, out var session))
+            {
+                session = new MockQuerySessionState { SessionId = sessionId, StudyScope = studyScope };
+                _querySessions[sessionId] = session;
+            }
+            else if (studyScope is not null)
+            {
+                session.StudyScope = studyScope;
+            }
+
+            return session;
+        }
+    }
+
+    public MockQuerySessionState? GetQuerySession(string sessionId)
+    {
+        lock (_lock)
+        {
+            return _querySessions.TryGetValue(sessionId, out var session) ? session : null;
+        }
+    }
+
+    public void BeginChatTurn(string sessionId, string question, string? studyScope)
+    {
+        lock (_lock)
+        {
+            var session = GetOrCreateQuerySession(sessionId, studyScope);
+            session.PendingQuestion = question;
+            session.ChatPollCount = 0;
+            session.IsChatRunning = true;
+            session.Messages.Add(new ChatMessage(
+                "user",
+                question,
+                null,
+                null,
+                null,
+                DateTimeOffset.UtcNow));
+        }
+    }
+
+    public void AdvanceChatOnPoll(string sessionId)
+    {
+        lock (_lock)
+        {
+            if (!_querySessions.TryGetValue(sessionId, out var session) || !session.IsChatRunning)
+            {
+                return;
+            }
+
+            session.ChatPollCount++;
+            if (session.ChatPollCount < 2)
+            {
+                return;
+            }
+
+            session.IsChatRunning = false;
+        }
+    }
+
+    public MockExecutionState StartCuration(string sessionId)
+    {
+        var executionId = $"cur-{Guid.NewGuid():N}"[..12];
         var state = new MockExecutionState
         {
             ExecutionId = executionId,
             Block = WorkflowBlock.Query,
             ResourceId = sessionId,
-            Question = question,
-            StudyScope = studyScope,
             Status = WorkflowStatus.Running
         };
 
         lock (_lock)
         {
+            var session = GetOrCreateQuerySession(sessionId);
+            session.CurationExecutionId = executionId;
             _executions[executionId] = state;
         }
 
@@ -95,22 +169,23 @@ public sealed class MockWorkflowSimulator
 
             state.PollCount++;
 
-            state.Status = state.Block switch
+            if (state.Block == WorkflowBlock.Ingestion)
             {
-                WorkflowBlock.Ingestion => state.PollCount switch
+                state.Status = state.PollCount switch
                 {
                     <= 2 => WorkflowStatus.Running,
                     <= 4 => WorkflowStatus.Running,
                     _ => WorkflowStatus.AwaitingHumanApproval
-                },
-                WorkflowBlock.Query => state.PollCount switch
+                };
+            }
+            else
+            {
+                state.Status = state.PollCount switch
                 {
                     <= 2 => WorkflowStatus.Running,
-                    <= 4 => WorkflowStatus.Running,
                     _ => WorkflowStatus.AwaitingHumanApproval
-                },
-                _ => state.Status
-            };
+                };
+            }
 
             return state;
         }
@@ -128,18 +203,18 @@ public sealed class MockWorkflowSimulator
             state.HumanDecision = new HumanDecisionRecord(approved, notes, DateTimeOffset.UtcNow);
             state.Status = approved ? WorkflowStatus.Completed : WorkflowStatus.Failed;
 
-            if (approved && state.Block == WorkflowBlock.Ingestion && !state.FabricUpdated)
+            if (approved && state.Block == WorkflowBlock.Ingestion && !state.VectorDbUpdated)
             {
-                _fabricSummary = _fabricSummary with
+                _vectorDbSummary = _vectorDbSummary with
                 {
-                    TotalStudies = _fabricSummary.TotalStudies + 1,
-                    TotalDocuments = _fabricSummary.TotalDocuments + 12,
-                    TotalEntities = _fabricSummary.TotalEntities + 28,
-                    TotalLinks = _fabricSummary.TotalLinks + 15,
+                    TotalStudies = _vectorDbSummary.TotalStudies + 1,
+                    TotalDocuments = _vectorDbSummary.TotalDocuments + 12,
+                    TotalEntities = _vectorDbSummary.TotalEntities + 28,
+                    TotalLinks = _vectorDbSummary.TotalLinks + 15,
                     LastIngestionAt = DateTimeOffset.UtcNow,
                     LastIngestedStudyId = state.ResourceId
                 };
-                state.FabricUpdated = true;
+                state.VectorDbUpdated = true;
             }
         }
     }
@@ -156,26 +231,40 @@ public sealed class MockWorkflowSimulator
         _ => IngestionStage.Pending
     };
 
-    public QueryStage GetQueryStage(MockExecutionState state) => state.Status switch
+    public QueryStage GetCurationStage(MockExecutionState state) => state.Status switch
     {
         WorkflowStatus.Pending => QueryStage.Pending,
-        WorkflowStatus.Running => state.PollCount <= 2
-            ? QueryStage.SearchChat
-            : QueryStage.CurationCompliance,
-        WorkflowStatus.AwaitingHumanApproval => QueryStage.HumanApproval,
+        WorkflowStatus.Running => QueryStage.CurationRunning,
+        WorkflowStatus.AwaitingHumanApproval => QueryStage.AwaitingComplianceReview,
         WorkflowStatus.Completed => QueryStage.Completed,
         WorkflowStatus.Failed => QueryStage.Failed,
         _ => QueryStage.Pending
     };
 
-    public IReadOnlyList<RetrievalTraceEvent> BuildRetrievalTrace(MockExecutionState state, string blockLabel)
+    public QueryStage GetQuerySessionStage(MockQuerySessionState session)
     {
-        if (state.PollCount < 2)
+        if (session.CurationExecutionId is not null &&
+            _executions.TryGetValue(session.CurationExecutionId, out var curation))
+        {
+            return GetCurationStage(curation);
+        }
+
+        if (session.IsChatRunning || session.Messages.Count > 0)
+        {
+            return QueryStage.ChatActive;
+        }
+
+        return QueryStage.Pending;
+    }
+
+    public IReadOnlyList<RetrievalTraceEvent> BuildRetrievalTrace(int pollCount, string blockLabel)
+    {
+        if (pollCount < 1)
         {
             return [];
         }
 
-        var baseTime = DateTimeOffset.UtcNow.AddSeconds(-state.PollCount);
+        var baseTime = DateTimeOffset.UtcNow.AddSeconds(-pollCount);
         return
         [
             new RetrievalTraceEvent("Cohere Embed", $"{blockLabel}: embedded candidate passages", 48, baseTime.AddSeconds(1)),

@@ -2,7 +2,7 @@
   "scenarioId": "ingestion-abc-2024",
   "block": "Ingestion",
   "title": "Study ABC-2024 results ingestion",
-  "description": "Ingest study portal results: de-duplicate documents, normalize PDFs and ELN records, extract entities, and link documents to datasets and protocols before Fabric persistence.",
+  "description": "Ingest study portal results: de-duplicate documents, normalize PDFs and ELN records, extract entities, and link documents to datasets and protocols before Vector DB persistence.",
   "studyId": "abc-2024",
   "sampleQuestion": null,
   "outcomeHint": "Approve",

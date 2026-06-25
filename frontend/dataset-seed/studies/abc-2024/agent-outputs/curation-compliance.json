@@ -10,7 +10,7 @@
     {
       "severity": "Low",
       "category": "Evidence gap",
-      "description": "Protocol GHI-2023 endpoint definition available only in summary form; full protocol not indexed in Fabric.",
+      "description": "Protocol GHI-2023 endpoint definition available only in summary form; full protocol not indexed in Vector DB.",
       "policyReference": null
     }
   ],

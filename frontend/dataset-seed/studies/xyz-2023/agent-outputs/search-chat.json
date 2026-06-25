@@ -5,7 +5,7 @@
       "documentId": "src-safety-001",
       "title": "XYZ-2023 interim safety report",
       "excerpt": "Treatment-emergent adverse events: nausea 32%, headache 24%, ALT elevation 18%. One DLT (Grade 3 hepatotoxicity) in cohort 3 at 120 mg.",
-      "sourceSystem": "Microsoft Fabric",
+      "sourceSystem": "Vector DB",
       "relevanceScore": 0.96
     },
     {
@@ -16,5 +16,5 @@
       "relevanceScore": 0.89
     }
   ],
-  "lineageSummary": "Safety profile synthesized from Fabric-indexed XYZ-2023 safety report and linked Phase I study summaries for CMP-8821."
+  "lineageSummary": "Safety profile synthesized from Vector DB-indexed XYZ-2023 safety report and linked Phase I study summaries for CMP-8821."
 }

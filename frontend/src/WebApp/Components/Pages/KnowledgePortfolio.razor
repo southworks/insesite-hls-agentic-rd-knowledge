@@ -9,7 +9,7 @@
 
 <PageMasthead Kicker="HLS Agentic R&amp;D Knowledge Mining"
               Title="Knowledge Portfolio"
-              Subtitle="Two independent workflows — ingestion populates Microsoft Fabric; querying reads accumulated knowledge at any time." />
+              Subtitle="Two independent blocks — ingestion reads Microsoft Fabric and writes to Vector DB; querying reads Vector DB at any time." />
 
 @if (PortfolioState.IsLoading)
 {
@@ -21,11 +21,11 @@ else if (!string.IsNullOrWhiteSpace(PortfolioState.Error))
 }
 else
 {
-    <PageSection Title="Knowledge store" Subtitle="Shared bridge between Block 1 and Block 2">
-        <FabricStoreSummaryCard Summary="PortfolioState.FabricSummary" />
+    <PageSection Title="Knowledge store" Subtitle="Vector DB — shared bridge between Block 1 and Block 2">
+        <VectorDbSummaryCard Summary="PortfolioState.VectorDbSummary" />
     </PageSection>
 
-    <PageSection Title="Ingestion scenarios" Subtitle="Ingestion & Translation → Metadata & Linking → human approval → Fabric">
+    <PageSection Title="Ingestion scenarios" Subtitle="Ingestion & Translation → Metadata & Linking → Knowledge Curator → Vector DB">
         <div class="picker-grid">
             <ScenarioPickerPanel Scenarios="PortfolioState.IngestionScenarios"
                                  @bind-SelectedScenarioId="_selectedIngestionId" />
@@ -37,7 +37,7 @@ else
         </div>
     </PageSection>
 
-    <PageSection Title="Query scenarios" Subtitle="Search & Chat → Curation & Compliance → human approval (reads from Fabric)">
+    <PageSection Title="Query scenarios" Subtitle="Search & Chat (interactive) → Curate on demand → Compliance Reviewer (reads from Vector DB)">
         <div class="picker-grid">
             <ScenarioPickerPanel Scenarios="PortfolioState.QueryScenarios"
                                  @bind-SelectedScenarioId="_selectedQueryId" />

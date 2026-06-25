@@ -1,9 +1,9 @@
 @if (Summary is not null)
 {
-    <div class="card fabric-summary">
+    <div class="card vector-db-summary">
         <div class="card-header-row">
-            <h3 class="card-title">Microsoft Fabric knowledge store</h3>
-            <span class="fabric-badge">System of record</span>
+            <h3 class="card-title">Vector DB</h3>
+            <span class="vector-db-badge">Bridge between blocks</span>
         </div>
         <p class="card-desc">Durable bridge between Block 1 (ingestion writes) and Block 2 (query reads). Block 2 operates against accumulated knowledge without requiring a fresh ingestion run.</p>
         <dl class="detail-list grid-2">
@@ -18,11 +18,11 @@
         }
         else
         {
-            <p class="meta-line muted">No approved ingestions yet. Run Block 1 to populate Fabric.</p>
+            <p class="meta-line muted">No approved ingestions yet. Run Block 1 to populate the Vector DB.</p>
         }
     </div>
 }
 
 @code {
-    [Parameter] public FabricStoreSummary? Summary { get; set; }
+    [Parameter] public VectorDbStoreSummary? Summary { get; set; }
 }

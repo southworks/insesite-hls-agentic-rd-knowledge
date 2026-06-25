@@ -5,7 +5,7 @@
       "documentId": "src-protocol-001",
       "title": "ABC-2024 Clinical Protocol v3.2",
       "excerpt": "Primary endpoint: change from baseline in HbA1c at Week 24 (MMRM analysis).",
-      "sourceSystem": "Microsoft Fabric",
+      "sourceSystem": "Vector DB",
       "relevanceScore": 0.97
     },
     {
@@ -23,5 +23,5 @@
       "relevanceScore": 0.91
     }
   ],
-  "lineageSummary": "Endpoint lineage resolved via Fabric entity graph: ABC-2024 → EP-HBA1C-W24 ← XYZ-2019, DEF-2021, GHI-2023."
+  "lineageSummary": "Endpoint lineage resolved via Vector DB entity graph: ABC-2024 → EP-HBA1C-W24 ← XYZ-2019, DEF-2021, GHI-2023."
 }

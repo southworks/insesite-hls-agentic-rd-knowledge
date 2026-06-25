@@ -1,30 +1,32 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using Cohere.AgenticRDKnowledge.Shared.Contracts.Fabric;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Ingestion;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Query;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Studies;
+using Cohere.AgenticRDKnowledge.Shared.Contracts.VectorDb;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Backend;
 
 namespace Cohere.AgenticRDKnowledge.WebApp.Services;
 
 public interface IRdKnowledgeApiClient
 {
-    Task<FabricStoreSummary> GetFabricStoreSummaryAsync(CancellationToken cancellationToken = default);
+    Task<VectorDbStoreSummary> GetVectorDbStoreSummaryAsync(CancellationToken cancellationToken = default);
     Task<StudyDocumentsResponse> GetStudyDocumentsAsync(string studyId, CancellationToken cancellationToken = default);
     Task<StartIngestionWorkflowResponse> StartIngestionWorkflowAsync(string studyId, CancellationToken cancellationToken = default);
     Task<IngestionWorkflowProgress> GetIngestionStatusAsync(string executionId, CancellationToken cancellationToken = default);
     Task<SubmitIngestionDecisionResponse> SubmitIngestionDecisionAsync(string executionId, SubmitIngestionDecisionRequest request, CancellationToken cancellationToken = default);
-    Task<StartQueryWorkflowResponse> StartQueryWorkflowAsync(StartQueryWorkflowRequest request, CancellationToken cancellationToken = default);
-    Task<QueryWorkflowProgress> GetQueryStatusAsync(string executionId, CancellationToken cancellationToken = default);
-    Task<SubmitQueryDecisionResponse> SubmitQueryDecisionAsync(string executionId, SubmitQueryDecisionRequest request, CancellationToken cancellationToken = default);
+    Task<QuerySessionState> GetQuerySessionAsync(string sessionId, CancellationToken cancellationToken = default);
+    Task<QuerySessionState> SendChatMessageAsync(string sessionId, SendChatMessageRequest request, CancellationToken cancellationToken = default);
+    Task<StartCurationResponse> StartCurationAsync(string sessionId, CancellationToken cancellationToken = default);
+    Task<CurationWorkflowProgress> GetCurationStatusAsync(string curationExecutionId, CancellationToken cancellationToken = default);
+    Task<SubmitQueryDecisionResponse> SubmitCurationDecisionAsync(string curationExecutionId, SubmitQueryDecisionRequest request, CancellationToken cancellationToken = default);
     Task<bool> GetHealthAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class RdKnowledgeApiClient(HttpClient httpClient) : IRdKnowledgeApiClient
 {
-    public Task<FabricStoreSummary> GetFabricStoreSummaryAsync(CancellationToken cancellationToken = default) =>
-        GetAsync<FabricStoreSummary>(RdKnowledgeBackendRoutes.GetFabricStoreSummary, cancellationToken);
+    public Task<VectorDbStoreSummary> GetVectorDbStoreSummaryAsync(CancellationToken cancellationToken = default) =>
+        GetAsync<VectorDbStoreSummary>(RdKnowledgeBackendRoutes.GetVectorDbStoreSummary, cancellationToken);
 
     public Task<StudyDocumentsResponse> GetStudyDocumentsAsync(string studyId, CancellationToken cancellationToken = default) =>
         GetAsync<StudyDocumentsResponse>(
@@ -51,20 +53,34 @@ public sealed class RdKnowledgeApiClient(HttpClient httpClient) : IRdKnowledgeAp
             request,
             cancellationToken);
 
-    public Task<StartQueryWorkflowResponse> StartQueryWorkflowAsync(StartQueryWorkflowRequest request, CancellationToken cancellationToken = default) =>
-        PostAsync<StartQueryWorkflowResponse>(RdKnowledgeBackendRoutes.StartQueryWorkflow, request, cancellationToken);
-
-    public Task<QueryWorkflowProgress> GetQueryStatusAsync(string executionId, CancellationToken cancellationToken = default) =>
-        GetAsync<QueryWorkflowProgress>(
-            RdKnowledgeBackendRoutes.GetQueryStatus.Replace("{executionId}", Uri.EscapeDataString(executionId)),
+    public Task<QuerySessionState> GetQuerySessionAsync(string sessionId, CancellationToken cancellationToken = default) =>
+        GetAsync<QuerySessionState>(
+            RdKnowledgeBackendRoutes.GetQuerySession.Replace("{sessionId}", Uri.EscapeDataString(sessionId)),
             cancellationToken);
 
-    public Task<SubmitQueryDecisionResponse> SubmitQueryDecisionAsync(
-        string executionId,
+    public Task<QuerySessionState> SendChatMessageAsync(string sessionId, SendChatMessageRequest request, CancellationToken cancellationToken = default) =>
+        PostAsync<QuerySessionState>(
+            RdKnowledgeBackendRoutes.SendChatMessage.Replace("{sessionId}", Uri.EscapeDataString(sessionId)),
+            request,
+            cancellationToken);
+
+    public Task<StartCurationResponse> StartCurationAsync(string sessionId, CancellationToken cancellationToken = default) =>
+        PostAsync<StartCurationResponse>(
+            RdKnowledgeBackendRoutes.StartCuration.Replace("{sessionId}", Uri.EscapeDataString(sessionId)),
+            null,
+            cancellationToken);
+
+    public Task<CurationWorkflowProgress> GetCurationStatusAsync(string curationExecutionId, CancellationToken cancellationToken = default) =>
+        GetAsync<CurationWorkflowProgress>(
+            RdKnowledgeBackendRoutes.GetCurationStatus.Replace("{executionId}", Uri.EscapeDataString(curationExecutionId)),
+            cancellationToken);
+
+    public Task<SubmitQueryDecisionResponse> SubmitCurationDecisionAsync(
+        string curationExecutionId,
         SubmitQueryDecisionRequest request,
         CancellationToken cancellationToken = default) =>
         PostAsync<SubmitQueryDecisionResponse>(
-            RdKnowledgeBackendRoutes.SubmitQueryDecision.Replace("{executionId}", Uri.EscapeDataString(executionId)),
+            RdKnowledgeBackendRoutes.SubmitCurationDecision.Replace("{executionId}", Uri.EscapeDataString(curationExecutionId)),
             request,
             cancellationToken);
 

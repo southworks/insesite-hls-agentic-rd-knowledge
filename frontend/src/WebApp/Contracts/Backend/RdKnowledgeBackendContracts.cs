@@ -17,18 +17,24 @@ public static class RdKnowledgeBackendRoutes
     public const string SubmitIngestionDecision =
         "/api/rd-knowledge/executions/{executionId}/ingestion/resume";
 
-    public const string StartQueryWorkflow =
-        "/api/rd-knowledge/query/workflow/start";
+    public const string GetQuerySession =
+        "/api/rd-knowledge/query/sessions/{sessionId}";
 
-    public const string GetQueryStatus =
+    public const string SendChatMessage =
+        "/api/rd-knowledge/query/sessions/{sessionId}/chat";
+
+    public const string StartCuration =
+        "/api/rd-knowledge/query/sessions/{sessionId}/curate";
+
+    public const string GetCurationStatus =
         "/api/rd-knowledge/executions/{executionId}/query/status";
 
-    public const string SubmitQueryDecision =
+    public const string SubmitCurationDecision =
         "/api/rd-knowledge/executions/{executionId}/query/resume";
 
     public const string GetStudyDocuments =
         "/api/rd-knowledge/studies/{studyId}/documents";
 
-    public const string GetFabricStoreSummary =
-        "/api/rd-knowledge/fabric/summary";
+    public const string GetVectorDbStoreSummary =
+        "/api/rd-knowledge/vector-db/summary";
 }

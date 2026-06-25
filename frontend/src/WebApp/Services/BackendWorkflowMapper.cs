@@ -19,25 +19,55 @@ public static class BackendWorkflowMapper
                 "Metadata & Linking",
                 GetIngestionStepState(progress.CurrentStage, IngestionStage.MetadataLinking)),
             new WorkflowTimelineStep(
-                "Human approval",
+                "Knowledge Curator",
                 GetIngestionStepState(progress.CurrentStage, IngestionStage.HumanApproval))
         ];
     }
 
-    public static IReadOnlyList<WorkflowTimelineStep> BuildQueryTimeline(QueryWorkflowProgress progress)
+    public static IReadOnlyList<WorkflowTimelineStep> BuildQueryTimeline(
+        QuerySessionState? session,
+        CurationWorkflowProgress? curation)
     {
+        var chatState = GetChatStepState(session);
+        var curateState = GetCurateStepState(session, curation);
+
         return
         [
-            new WorkflowTimelineStep(
-                "Search & Chat",
-                GetQueryStepState(progress.CurrentStage, QueryStage.SearchChat)),
-            new WorkflowTimelineStep(
-                "Curation & Compliance",
-                GetQueryStepState(progress.CurrentStage, QueryStage.CurationCompliance)),
-            new WorkflowTimelineStep(
-                "Human approval",
-                GetQueryStepState(progress.CurrentStage, QueryStage.HumanApproval))
+            new WorkflowTimelineStep("Process 1 — Search & Chat", chatState),
+            new WorkflowTimelineStep("Process 2 — Curate", curateState)
         ];
+    }
+
+    private static WorkflowStepState GetChatStepState(QuerySessionState? session)
+    {
+        if (session is null || session.Messages.Count == 0)
+        {
+            return WorkflowStepState.Pending;
+        }
+
+        if (session.IsChatRunning)
+        {
+            return WorkflowStepState.InProgress;
+        }
+
+        return WorkflowStepState.Completed;
+    }
+
+    private static WorkflowStepState GetCurateStepState(QuerySessionState? session, CurationWorkflowProgress? curation)
+    {
+        if (curation is null)
+        {
+            return session?.Messages.Count > 0 ? WorkflowStepState.Pending : WorkflowStepState.Pending;
+        }
+
+        return curation.CurrentStage switch
+        {
+            QueryStage.CurationRunning => WorkflowStepState.InProgress,
+            QueryStage.AwaitingComplianceReview => WorkflowStepState.ActionRequired,
+            QueryStage.Completed => WorkflowStepState.Completed,
+            QueryStage.Failed => WorkflowStepState.Failed,
+            _ => WorkflowStepState.Pending
+        };
     }
 
     private static WorkflowStepState GetIngestionStepState(IngestionStage current, IngestionStage step)
@@ -60,33 +90,6 @@ public static class BackendWorkflowMapper
         if (current == step)
         {
             return current == IngestionStage.HumanApproval && step == IngestionStage.HumanApproval
-                ? WorkflowStepState.ActionRequired
-                : WorkflowStepState.InProgress;
-        }
-
-        return WorkflowStepState.Pending;
-    }
-
-    private static WorkflowStepState GetQueryStepState(QueryStage current, QueryStage step)
-    {
-        if (current == QueryStage.Failed)
-        {
-            return step <= current ? WorkflowStepState.Failed : WorkflowStepState.Pending;
-        }
-
-        if (current == QueryStage.Completed)
-        {
-            return WorkflowStepState.Completed;
-        }
-
-        if (current > step)
-        {
-            return WorkflowStepState.Completed;
-        }
-
-        if (current == step)
-        {
-            return current == QueryStage.HumanApproval && step == QueryStage.HumanApproval
                 ? WorkflowStepState.ActionRequired
                 : WorkflowStepState.InProgress;
         }

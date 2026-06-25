@@ -2,7 +2,7 @@
   "scenarioId": "query-compound-safety",
   "block": "Query",
   "title": "Compound safety profile lookup",
-  "description": "Query accumulated Fabric knowledge for adverse event patterns and dose-limiting toxicities reported across early-phase studies for CMP-8821.",
+  "description": "Query accumulated Vector DB knowledge for adverse event patterns and dose-limiting toxicities reported across early-phase studies for CMP-8821.",
   "studyId": "xyz-2023",
   "sampleQuestion": "What adverse events were reported for CMP-8821 in Phase I studies?",
   "outcomeHint": "Approve",
@@ -12,6 +12,6 @@
     "compound": "CMP-8821",
     "phase": "Phase I",
     "primaryEndpoint": "Pharmacodynamic biomarker response at Day 14",
-    "sourceSystems": ["Microsoft Fabric", "Safety database"]
+    "sourceSystems": ["Vector DB", "Safety database"]
   }
 }

@@ -27,7 +27,7 @@ public static class WorkflowStageUi
     {
         IngestionStage.IngestionTranslation => "Ingestion & Translation",
         IngestionStage.MetadataLinking => "Metadata & Linking",
-        IngestionStage.HumanApproval => "Human approval",
+        IngestionStage.HumanApproval => "Knowledge Curator",
         IngestionStage.Completed => "Completed",
         IngestionStage.Failed => "Failed",
         _ => "Pending"
@@ -35,9 +35,9 @@ public static class WorkflowStageUi
 
     public static string ToQueryStageLabel(QueryStage stage) => stage switch
     {
-        QueryStage.SearchChat => "Search & Chat",
-        QueryStage.CurationCompliance => "Curation & Compliance",
-        QueryStage.HumanApproval => "Human approval",
+        QueryStage.ChatActive => "Search & Chat",
+        QueryStage.CurationRunning => "Curation & Compliance",
+        QueryStage.AwaitingComplianceReview => "Compliance Reviewer",
         QueryStage.Completed => "Completed",
         QueryStage.Failed => "Failed",
         _ => "Pending"

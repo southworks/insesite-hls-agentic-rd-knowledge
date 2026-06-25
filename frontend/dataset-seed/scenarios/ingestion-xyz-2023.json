@@ -2,7 +2,7 @@
   "scenarioId": "ingestion-xyz-2023",
   "block": "Ingestion",
   "title": "Study XYZ-2023 biomarker data ingestion",
-  "description": "Ingest biomarker assay results from LIMS and imaging archives: harmonize assay panels, link specimens to visit windows, and validate metadata before Fabric persistence.",
+  "description": "Ingest biomarker assay results from LIMS and imaging archives: harmonize assay panels, link specimens to visit windows, and validate metadata before Vector DB persistence.",
   "studyId": "xyz-2023",
   "sampleQuestion": null,
   "outcomeHint": "Review",
