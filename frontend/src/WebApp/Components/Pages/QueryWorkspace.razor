@@ -14,14 +14,7 @@
     <a href="/" class="back-link" @onclick="GoHome" @onclick:preventDefault>← Portfolio</a>
     <PageMasthead Kicker="Querying"
                   Title="@(_sessionTitle ?? SessionId)"
-                  Subtitle="Search & Chat (interactive) → Curate on demand → Compliance Reviewer">
-        <LoadingButton CssClass="btn btn-secondary"
-                       IsLoading="WorkspaceState.IsBusy"
-                       Disabled="!WorkspaceState.CanStartCuration"
-                       OnClick="StartCurationAsync">
-            Curate
-        </LoadingButton>
-    </PageMasthead>
+                  Subtitle="Search & Chat (interactive) → Curate on demand → Compliance Reviewer" />
 </div>
 
 @if (WorkspaceState.IsBusy && WorkspaceState.Session is null)
@@ -59,6 +52,18 @@ else
                         </LoadingButton>
                     </div>
                     <p class="meta-line muted">Queries run against knowledge in the Vector DB — no fresh ingestion required. Ask follow-up questions; responses accumulate for curation.</p>
+                </div>
+                <div class="curate-action-bar">
+                    <p class="meta-line muted">
+                        When you're satisfied with the conversation, Curate sends all responses above to Curation &amp; Compliance for review.
+                    </p>
+                    <div class="form-actions">
+                        <LoadingButton IsLoading="WorkspaceState.IsBusy"
+                                       Disabled="!WorkspaceState.CanStartCuration"
+                                       OnClick="StartCurationAsync">
+                            Curate
+                        </LoadingButton>
+                    </div>
                 </div>
             </CollapsiblePageSection>
 

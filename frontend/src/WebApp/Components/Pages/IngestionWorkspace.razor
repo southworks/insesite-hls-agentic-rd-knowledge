@@ -75,7 +75,11 @@ else
             </CollapsiblePageSection>
             @if (WorkspaceState.Progress is not null)
             {
-                <WorkflowTimeline Steps="BackendWorkflowMapper.BuildIngestionTimeline(WorkspaceState.Progress)" />
+                <CollapsiblePageSection SectionId="@WorkspaceSections.SidebarWorkflowProgress"
+                                        Title="Workflow progress">
+                    <WorkflowTimeline Steps="BackendWorkflowMapper.BuildIngestionTimeline(WorkspaceState.Progress)"
+                                      Nested="true" />
+                </CollapsiblePageSection>
             }
             <div class="card vector-db-note">
                 <p>On approval, curated knowledge is embedded and persisted to the <strong>Vector DB</strong>. Query workflows read from the Vector DB independently.</p>
