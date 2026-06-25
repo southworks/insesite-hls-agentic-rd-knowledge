@@ -3,6 +3,7 @@ using Cohere.AgenticRDKnowledge.Shared.Contracts;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Studies;
 using Cohere.AgenticRDKnowledge.WebApp.Configuration;
 using Cohere.AgenticRDKnowledge.WebApp.Models;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Cohere.AgenticRDKnowledge.WebApp.Services;
@@ -14,9 +15,12 @@ public sealed class DatasetSeedCatalogService
     private IReadOnlyList<SeedScenarioDefinition>? _scenarios;
     private IReadOnlyDictionary<string, StudyDocumentsResponse>? _documentsByStudy;
 
-    public DatasetSeedCatalogService(IOptions<DatasetSeedOptions> options)
+    public DatasetSeedCatalogService(IOptions<DatasetSeedOptions> options, IHostEnvironment environment)
     {
-        _rootPath = Path.GetFullPath(options.Value.RootPath);
+        var configuredPath = options.Value.RootPath;
+        _rootPath = Path.IsPathRooted(configuredPath)
+            ? configuredPath
+            : Path.GetFullPath(Path.Combine(environment.ContentRootPath, configuredPath));
     }
 
     public IReadOnlyList<SeedScenarioDefinition> GetScenarios()

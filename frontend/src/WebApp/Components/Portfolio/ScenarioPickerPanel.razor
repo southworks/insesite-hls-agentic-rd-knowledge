@@ -11,7 +11,10 @@
     <ul class="scenario-list" role="listbox">
         @foreach (var scenario in FilteredScenarios)
         {
-            <li role="option" aria-selected="@(scenario.ScenarioId == SelectedScenarioId)" class="scenario-item @(scenario.ScenarioId == SelectedScenarioId ? "selected" : "")" @onclick="() => Select(scenario.ScenarioId)">
+            <li role="option"
+                aria-selected="@IsSelected(scenario.ScenarioId)"
+                class="scenario-item @(IsSelected(scenario.ScenarioId) ? "selected" : "")"
+                @onclick="() => SelectAsync(scenario.ScenarioId)">
                 <span class="scenario-title">@scenario.Title</span>
                 <span class="scenario-meta">@scenario.StudyId · @scenario.OutcomeHint</span>
             </li>
@@ -26,21 +29,29 @@
 
     private string _search = string.Empty;
     private string? _outcomeFilter;
-    private static readonly string[] _filters = ["All", "Approve", "Review", "Deny"];
+    private static readonly string[] _filters = ["Approve", "Review", "Deny"];
 
-    private IEnumerable<SeedScenarioDefinition> FilteredScenarios
-    {
-        get
-        {
-            var filter = _outcomeFilter == "All" ? null : _outcomeFilter;
-            return ScenarioPickerFilter.Apply(Scenarios, _search, filter);
-        }
-    }
+    private IEnumerable<SeedScenarioDefinition> FilteredScenarios =>
+        ScenarioPickerFilter.Apply(Scenarios, _search, _outcomeFilter);
 
     private void SetFilter(string filter)
     {
-        _outcomeFilter = filter == "All" ? null : filter;
+        _outcomeFilter = string.Equals(_outcomeFilter, filter, StringComparison.OrdinalIgnoreCase)
+            ? null
+            : filter;
     }
 
-    private async Task Select(string scenarioId) => await SelectedScenarioIdChanged.InvokeAsync(scenarioId);
+    private async Task SelectAsync(string scenarioId)
+    {
+        if (IsSelected(scenarioId))
+        {
+            return;
+        }
+
+        await SelectedScenarioIdChanged.InvokeAsync(scenarioId);
+    }
+
+    private bool IsSelected(string scenarioId) =>
+        !string.IsNullOrWhiteSpace(SelectedScenarioId) &&
+        scenarioId.Equals(SelectedScenarioId, StringComparison.OrdinalIgnoreCase);
 }

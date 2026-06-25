@@ -1,0 +1,17 @@
+{
+  "summary": "Extracted 19 entities and created 11 document↔specimen↔study links. Indexed biomarker assay content for linking RAG pipeline.",
+  "entities": [
+    { "name": "CMP-8821", "category": "Compound", "version": "v1.0" },
+    { "name": "Phase I", "category": "Study phase", "version": "—" },
+    { "name": "PD biomarker Day 14", "category": "Primary endpoint", "version": "Protocol v1.4" },
+    { "name": "SP-3301", "category": "Specimen", "version": "2023-09-12" },
+    { "name": "SP-3318", "category": "Specimen", "version": "2023-09-26" }
+  ],
+  "links": [
+    { "fromDocument": "XYZ-2023 LIMS assay export", "toTarget": "SP-3301", "relationship": "assay result for specimen" },
+    { "fromDocument": "XYZ-2023 LIMS assay export", "toTarget": "SP-3318", "relationship": "assay result for specimen" },
+    { "fromDocument": "XYZ-2023 Clinical Protocol v1.4", "toTarget": "XYZ-2023", "relationship": "defines study" },
+    { "fromDocument": "XYZ-2023 interim safety report", "toTarget": "CMP-8821", "relationship": "safety profile for compound" }
+  ],
+  "vectorsIndexed": 9
+}

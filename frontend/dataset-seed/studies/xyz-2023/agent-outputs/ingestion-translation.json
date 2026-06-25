@@ -1,0 +1,7 @@
+{
+  "summary": "Connected to LIMS and imaging archive. Normalized 9 assay and imaging documents. Formats: CSV tables, DICOM summaries, PDF protocol and safety reports.",
+  "documentsProcessed": 9,
+  "duplicatesRemoved": 1,
+  "normalizedFormats": ["PDF", "CSV tables", "DICOM summary", "JSON metadata"],
+  "connectedPortals": ["LIMS", "Imaging archive", "ELN"]
+}

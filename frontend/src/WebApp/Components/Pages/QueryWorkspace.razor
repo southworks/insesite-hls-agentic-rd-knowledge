@@ -12,7 +12,7 @@
 
 <div class="workspace-header">
     <a href="/" class="back-link" @onclick="GoHome" @onclick:preventDefault>← Portfolio</a>
-    <PageMasthead Kicker="Block 2 — Querying"
+    <PageMasthead Kicker="Querying"
                   Title="@(_sessionTitle ?? SessionId)"
                   Subtitle="Search & Chat → Curation & Compliance → human approval (reads from Fabric)">
         <LoadingButton IsLoading="WorkspaceState.IsBusy"
@@ -62,7 +62,7 @@ else
             </CollapsiblePageSection>
 
             <CollapsiblePageSection SectionId="@WorkspaceSections.StageQueryHitl"
-                                    Title="Human approval — Block 2"
+                                    Title="Human approval"
                                     StatusLabel="@GetHitlStatus()"
                                     StatusCssClass="@(WorkspaceState.CanSubmitDecision ? "status-warning" : "status-neutral")">
                 <HumanReviewPanel Title="Approve query results and compliance findings"
@@ -77,7 +77,7 @@ else
         <aside class="workspace-side">
             <StudySummaryCard Study="_studySummary" />
             <div class="card fabric-note">
-                <p>Reading from <strong>Microsoft Fabric</strong>. This block is independent of Block 1 ingestion runs.</p>
+                <p>Reading from <strong>Microsoft Fabric</strong>. Queries run against knowledge accumulated by ingestion workflows.</p>
             </div>
             @if (WorkspaceState.Progress is not null)
             {

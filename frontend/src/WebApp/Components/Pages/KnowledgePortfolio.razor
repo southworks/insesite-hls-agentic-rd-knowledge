@@ -25,24 +25,24 @@ else
         <FabricStoreSummaryCard Summary="PortfolioState.FabricSummary" />
     </PageSection>
 
-    <PageSection Title="Block 1 — Ingestion scenarios" Subtitle="Ingestion & Translation → Metadata & Linking → human approval → Fabric">
+    <PageSection Title="Ingestion scenarios" Subtitle="Ingestion & Translation → Metadata & Linking → human approval → Fabric">
         <div class="picker-grid">
             <ScenarioPickerPanel Scenarios="PortfolioState.IngestionScenarios"
-                                 SelectedScenarioId="_selectedIngestionId"
-                                 SelectedScenarioIdChanged="id => _selectedIngestionId = id" />
+                                 @bind-SelectedScenarioId="_selectedIngestionId" />
             <ScenarioPreviewPanel Scenario="_selectedIngestion"
+                                  IsSelected="_selectedIngestion is not null"
                                   IsRunning="_navigating"
                                   RunButtonLabel="Run ingestion"
                                   OnRun="RunIngestionAsync" />
         </div>
     </PageSection>
 
-    <PageSection Title="Block 2 — Query scenarios" Subtitle="Search & Chat → Curation & Compliance → human approval (reads from Fabric)">
+    <PageSection Title="Query scenarios" Subtitle="Search & Chat → Curation & Compliance → human approval (reads from Fabric)">
         <div class="picker-grid">
             <ScenarioPickerPanel Scenarios="PortfolioState.QueryScenarios"
-                                 SelectedScenarioId="_selectedQueryId"
-                                 SelectedScenarioIdChanged="id => _selectedQueryId = id" />
+                                 @bind-SelectedScenarioId="_selectedQueryId" />
             <ScenarioPreviewPanel Scenario="_selectedQuery"
+                                  IsSelected="_selectedQuery is not null"
                                   IsRunning="_navigating"
                                   RunButtonLabel="Run query"
                                   OnRun="RunQueryAsync" />
@@ -69,10 +69,30 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        PortfolioState.OnChange += StateHasChanged;
+        PortfolioState.OnChange += OnPortfolioChanged;
         await LoadAsync();
-        _selectedIngestionId = _selectedIngestion?.ScenarioId;
-        _selectedQueryId = _selectedQuery?.ScenarioId;
+        EnsureDefaultSelections();
+    }
+
+    private void OnPortfolioChanged()
+    {
+        EnsureDefaultSelections();
+        StateHasChanged();
+    }
+
+    private void EnsureDefaultSelections()
+    {
+        if (_selectedIngestionId is null ||
+            PortfolioState.IngestionScenarios.All(s => !s.ScenarioId.Equals(_selectedIngestionId, StringComparison.OrdinalIgnoreCase)))
+        {
+            _selectedIngestionId = PortfolioState.IngestionScenarios.FirstOrDefault()?.ScenarioId;
+        }
+
+        if (_selectedQueryId is null ||
+            PortfolioState.QueryScenarios.All(s => !s.ScenarioId.Equals(_selectedQueryId, StringComparison.OrdinalIgnoreCase)))
+        {
+            _selectedQueryId = PortfolioState.QueryScenarios.FirstOrDefault()?.ScenarioId;
+        }
     }
 
     private async Task LoadAsync() => await PortfolioState.LoadAsync();
@@ -115,5 +135,5 @@ else
         _navigating = false;
     }
 
-    public void Dispose() => PortfolioState.OnChange -= StateHasChanged;
+    public void Dispose() => PortfolioState.OnChange -= OnPortfolioChanged;
 }

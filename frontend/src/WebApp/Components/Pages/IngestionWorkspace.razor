@@ -11,7 +11,7 @@
 
 <div class="workspace-header">
     <a href="/" class="back-link" @onclick="GoHome" @onclick:preventDefault>← Portfolio</a>
-    <PageMasthead Kicker="Block 1 — Ingestion"
+    <PageMasthead Kicker="Ingestion"
                   Title="@(_studyTitle ?? StudyId)"
                   Subtitle="Ingestion & Translation → Metadata & Linking → human approval before Fabric persistence">
         <LoadingButton IsLoading="WorkspaceState.IsBusy"
@@ -52,7 +52,7 @@ else
             </CollapsiblePageSection>
 
             <CollapsiblePageSection SectionId="@WorkspaceSections.StageIngestionHitl"
-                                    Title="Human approval — Block 1"
+                                    Title="Human approval"
                                     StatusLabel="@GetHitlStatus()"
                                     StatusCssClass="@(WorkspaceState.CanSubmitDecision ? "status-warning" : "status-neutral")">
                 <HumanReviewPanel Title="Approve ingested content for Fabric persistence"
@@ -75,7 +75,7 @@ else
                 <WorkflowTimeline Steps="BackendWorkflowMapper.BuildIngestionTimeline(WorkspaceState.Progress)" />
             }
             <div class="card fabric-note">
-                <p>On approval, curated knowledge is persisted to <strong>Microsoft Fabric</strong>. Block 2 can query this store independently.</p>
+                <p>On approval, curated knowledge is persisted to <strong>Microsoft Fabric</strong>. Query workflows can read this store independently.</p>
             </div>
         </aside>
     </div>

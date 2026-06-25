@@ -20,7 +20,7 @@ The UI **never calls HTTP** for workflow operations while mocks are enabled. Raz
 {
   "UseMockBackend": true,
   "ApiBaseUrl": "http://localhost:5038/",
-  "DatasetSeed": { "RootPath": "../../../dataset-seed" },
+  "DatasetSeed": { "RootPath": "../../dataset-seed" },
   "WorkflowPolling": {
     "IntervalSeconds": 2,
     "MaxDurationMinutes": 10
