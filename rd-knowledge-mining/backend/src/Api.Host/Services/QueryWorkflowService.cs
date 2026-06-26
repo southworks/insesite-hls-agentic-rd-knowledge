@@ -80,11 +80,14 @@ public sealed class QueryWorkflowService
 
         session.History.Add(new ChatMessage(ChatRole.Assistant, answer));
 
+        bool isGrounded = QuerySessionCurateRules.EvaluateGrounded(answer, citations, passages, rawOutput);
+
         var turn = new ChatTurn
         {
             Question = question,
             Answer = answer,
-            Citations = citations
+            Citations = citations,
+            IsGrounded = isGrounded
         };
 
         session.Turns.Add(turn);
@@ -96,7 +99,8 @@ public sealed class QueryWorkflowService
             Question = question,
             Answer = answer,
             Citations = citations,
-            TurnCount = session.Turns.Count
+            TurnCount = session.Turns.Count,
+            CurateEnabled = QuerySessionCurateRules.IsCurateEnabled(session)
         };
     }
 
@@ -178,12 +182,23 @@ public sealed class QueryWorkflowService
         }
 
         QueryChatSession session = _store.GetRequiredSession(sessionId.Trim());
-        IReadOnlyList<string> chatResponses = session.Turns.Select(turn => turn.Answer).ToArray();
+
+        if (!QuerySessionCurateRules.IsCurateEnabled(session))
+        {
+            throw new InvalidOperationException(
+                $"Session '{sessionId}' has no grounded Search & Chat responses to curate. " +
+                "Ingest knowledge into the Vector DB and ask again when grounded answers are available.");
+        }
+
+        IReadOnlyList<string> chatResponses = session.Turns
+            .Where(turn => turn.IsGrounded)
+            .Select(turn => turn.Answer)
+            .ToArray();
 
         if (chatResponses.Count == 0)
         {
             throw new InvalidOperationException(
-                $"Session '{sessionId}' has no Search & Chat responses to curate. Ask at least one question first.");
+                $"Session '{sessionId}' has no grounded Search & Chat responses to curate.");
         }
 
         var execution = new WorkflowExecution

@@ -7,8 +7,9 @@ Agent-as-code definitions for the R&D Knowledge Mining demo. Pattern mirrors `lo
 | Agent | Block | Responsibility | MCP path |
 | --- | --- | --- | --- |
 | `search-chat-agent` | 2 (Search & Chat) | Grounded Q&A over the Vector DB with citations and lineage | `/knowledge-search/mcp` |
+| `curation-compliance-agent` | 2 (Curate) | Review chat responses; flag gaps and sensitive content; capture compliance decisions | `/curation-compliance/mcp` |
 
-Additional agents (`ingestion-translation-agent`, `metadata-linking-agent`, `curation-compliance-agent`) will be added in follow-up steps.
+Additional agents (`ingestion-translation-agent`, `metadata-linking-agent`) will be added in follow-up steps.
 
 All agents use the Foundry model deployment **Cohere Command A** (`cohere-command-a`).
 
@@ -25,6 +26,7 @@ agents/
 shared/
   agent-structured-output.schema.json
   search-chat-structured-output.schema.json
+  curation-compliance-structured-output.schema.json
 config/
   provisioning.json
 ```
@@ -40,6 +42,24 @@ config/
 - `lineage` — optional document/dataset/study lineage narrative
 
 The backend `QueryWorkflowService` extracts `summary` as the chat answer and merges `citations` with retriever output.
+
+## Curation & Compliance structured output
+
+`curation-compliance-agent` returns strict JSON with:
+
+- `summary` — curation outcome for the Compliance Reviewer
+- `decision` — `Approve Response` | `Flag for Review` | `Insufficient Information`
+- `evidence` — rationale tied to chat responses and policy checks
+- `flags` — gap/sensitivity/policy issue labels
+- `capturedDecisions` — recorded compliance decisions
+- `policyRefs` — HLS policy codes (e.g. `HLS-TRIAL-300`, `HLS-LIC-200`)
+- `citations` — approved entity IDs from the reviewed responses
+- `sensitive_content_found` — boolean
+- `required_human_review` — boolean
+
+Curate is only started when the session has at least one grounded Search & Chat turn (`curateEnabled: true` on the ask response). Empty-knowledge-base chat outcomes do not invoke this agent.
+
+The Curate workflow (`QueryWorkflowFactory`) parses this via `AgentStructuredOutputParser` and pauses at the Compliance Reviewer gate.
 
 ## Configuration
 
@@ -83,6 +103,16 @@ The `knowledge-search` MCP server is not implemented yet. When added, it should 
 | `get_knowledge_lineage` | Resolve document/dataset/study links for a passage (`sessionId`, `passageId`) |
 
 Until the MCP host exists, the API stub retriever injects passages into the prompt and the agent can answer from that context alone.
+
+## Curation & Compliance MCP tools (expected)
+
+The `curation-compliance` MCP server is not implemented yet. When added, it should expose:
+
+| Tool | Purpose |
+| --- | --- |
+| `get_relevant_policies` | Retrieve HLS trial, licensing, or regional policies for review (`query`) |
+| `get_policies_by_refs` | Look up policies by reference code (`HLS-TRIAL-300`, `HLS-LIC-200`, …) |
+| `flag_sensitive_content` | Assess chat text for PHI/PII/confidential partner content |
 
 ## Governance
 

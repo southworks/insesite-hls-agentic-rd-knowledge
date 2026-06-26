@@ -53,6 +53,9 @@ public sealed class ChatAnswerResponse
     public required IReadOnlyList<string> Citations { get; init; }
 
     public required int TurnCount { get; init; }
+
+    /// <summary>True when the session has at least one grounded Search &amp; Chat response and Curate may be started.</summary>
+    public required bool CurateEnabled { get; init; }
 }
 
 public sealed class StartCurateRequest
