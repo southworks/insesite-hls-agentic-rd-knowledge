@@ -6,16 +6,16 @@
       "value": "hlsrd"
     },
     "fabricWorkspaceName": {
-      "value": ""
+      "value": "Test-Maxi"
     },
     "fabricLakehouseName": {
       "value": "HlsRdKnowledgeLakehouse"
     },
     "fabricUamiResourceId": {
-      "value": ""
+      "value": "/subscriptions/a7c38d21-c587-4bd0-9913-67218cfdc5bf/resourcegroups/project-inesite/providers/Microsoft.ManagedIdentity/userAssignedIdentities/fabric-provision-identity"
     },
     "fabricRepositoryArchiveUrl": {
-      "value": ""
+      "value": "https://hlsrdcorpus7297.blob.core.windows.net/archives/insesite-hls-agentic-rd-knowledge.zip?se=2026-07-26T15%3A33Z&sp=r&spr=https&sv=2026-04-06&sr=b&sig=8WkRQcUOvOTrWX4r0GPE8g0dLsAGkX%2FDoMXcDRybp7U%3D"
     }
   }
 }
