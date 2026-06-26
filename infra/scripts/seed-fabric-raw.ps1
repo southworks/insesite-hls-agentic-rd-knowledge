@@ -6,7 +6,7 @@ param(
     [string]$LakehouseId,
 
     [Parameter(Mandatory = $true)]
-    [string]$CorpusPath,
+    [string]$DatasetSeedPath,
 
     [string]$OneLakeEndpoint = 'https://onelake.dfs.fabric.microsoft.com'
 )
@@ -45,38 +45,57 @@ function Get-OneLakeAccessToken {
 Write-Host '=== Fabric raw seed (HLS) ==='
 Write-Host "WorkspaceId: $WorkspaceId"
 Write-Host "LakehouseId: $LakehouseId"
-Write-Host "CorpusPath: $CorpusPath"
+Write-Host "DatasetSeedPath: $DatasetSeedPath"
 Write-Host "OneLake endpoint: $OneLakeEndpoint"
 
-$corpusRoot = (Resolve-Path -LiteralPath $CorpusPath).ProviderPath
-if (-not $corpusRoot.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
-    $corpusRoot += [System.IO.Path]::DirectorySeparatorChar
+$datasetSeedRoot = (Resolve-Path -LiteralPath $DatasetSeedPath).ProviderPath
+if (-not $datasetSeedRoot.EndsWith([System.IO.Path]::DirectorySeparatorChar)) {
+    $datasetSeedRoot += [System.IO.Path]::DirectorySeparatorChar
 }
 
-Write-Host "Corpus root: $corpusRoot"
+Write-Host "Dataset-seed root: $datasetSeedRoot"
 
-$excludeNames = @('source_catalog.json', 'raw_manifest.json', 'agent_document_manifest.json')
+$allFiles = [System.Collections.ArrayList]::new()
 
-$allFiles = Get-ChildItem -Path $corpusRoot -File -Recurse |
-    Where-Object {
-        if ($excludeNames -contains $_.Name) {
-            return $false
+$casesRoot = Join-Path $datasetSeedRoot 'cases'
+if (Test-Path -LiteralPath $casesRoot -PathType Container) {
+    Get-ChildItem -Path $casesRoot -Directory | ForEach-Object {
+        $caseName = $_.Name
+        $ingestPath = Join-Path $_.FullName 'ingest'
+        if (Test-Path -LiteralPath $ingestPath -PathType Container) {
+            Get-ChildItem -Path $ingestPath -File | ForEach-Object {
+                [void]$allFiles.Add([pscustomobject]@{
+                    FullName   = $_.FullName
+                    CaseName   = $caseName
+                    FileName   = $_.Name
+                    TargetPath = "Files/raw/$caseName/$($_.Name)"
+                })
+            }
         }
-
-        $fullPath = [System.IO.Path]::GetFullPath($_.FullName)
-        $relativePath = $fullPath.Substring($corpusRoot.Length)
-        $segments = $relativePath.Split([System.IO.Path]::DirectorySeparatorChar, [System.StringSplitOptions]::RemoveEmptyEntries)
-
-        if ($segments -contains 'agent_inputs') {
-            return $false
+        else {
+            Write-Host "Case '$caseName' has no ingest folder, skipping."
         }
+    }
+}
+else {
+    throw "Cases directory not found: $casesRoot"
+}
 
-        return $true
-    } |
-    Sort-Object -Property FullName
+$policiesRoot = Join-Path $datasetSeedRoot 'policies'
+if (Test-Path -LiteralPath $policiesRoot -PathType Container) {
+    Write-Host "Uploading policy files..."
+    Get-ChildItem -Path $policiesRoot -File | ForEach-Object {
+        [void]$allFiles.Add([pscustomobject]@{
+            FullName   = $_.FullName
+            CaseName   = 'policies'
+            FileName   = $_.Name
+            TargetPath = "Files/policies/$($_.Name)"
+        })
+    }
+}
 
 if ($allFiles.Count -eq 0) {
-    throw "No files found in $corpusRoot (after exclusions)"
+    throw "No files found in $casesRoot (no cases with ingest folders)"
 }
 
 Write-Host "Found $($allFiles.Count) files to upload."
@@ -90,16 +109,9 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
         $lhId = $using:LakehouseId
         $endpoint = $using:OneLakeEndpoint
         $token = $using:token
-        $corpusRoot = $using:corpusRoot
 
-        $fullFilePath = [System.IO.Path]::GetFullPath($file.FullName)
-        if (-not $fullFilePath.StartsWith($corpusRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
-            throw "Raw file path '$fullFilePath' is outside expected root '$corpusRoot'."
-        }
-
-        $relativeTargetPath = $fullFilePath.Substring($corpusRoot.Length).TrimStart([System.IO.Path]::DirectorySeparatorChar, [char]'/').Replace('\', '/')
-
-        $targetPath = "$lhId/Files/raw/$relativeTargetPath"
+        $relativeTargetPath = $file.TargetPath
+        $targetPath = "$lhId/$relativeTargetPath"
         $baseUri = "$endpoint/$wsId/$targetPath"
         $fileBytes = [System.IO.File]::ReadAllBytes($file.FullName)
 
@@ -152,14 +164,9 @@ else {
     Write-Host 'PowerShell 5.x detected. Uploading raw files sequentially (parallel mode requires PowerShell 7+).'
 
     foreach ($file in $allFiles) {
-        $fullFilePath = [System.IO.Path]::GetFullPath($file.FullName)
-        if (-not $fullFilePath.StartsWith($corpusRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
-            throw "Raw file path '$fullFilePath' is outside expected root '$corpusRoot'."
-        }
+        $relativeTargetPath = $file.TargetPath
 
-        $relativeTargetPath = $fullFilePath.Substring($corpusRoot.Length).TrimStart([System.IO.Path]::DirectorySeparatorChar, [char]'/').Replace('\', '/')
-
-        $targetPath = "$LakehouseId/Files/raw/$relativeTargetPath"
+        $targetPath = "$LakehouseId/$relativeTargetPath"
         $baseUri = "$OneLakeEndpoint/$WorkspaceId/$targetPath"
         $fileBytes = [System.IO.File]::ReadAllBytes($file.FullName)
 

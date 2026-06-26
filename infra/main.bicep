@@ -19,7 +19,7 @@ param fabricUamiResourceId string
 @description('When false, the lakehouse is still provisioned but no data is uploaded. The MCP will see an empty lakehouse and the adapter handles this at runtime.')
 param enableFabricSeed bool = true
 
-@description('Repository archive URL the seed script downloads to fetch infra/scripts/ and data-generation/corpus/.')
+@description('Repository archive URL the seed script downloads to fetch infra/scripts/ and dataset-seed/cases/.')
 param fabricRepositoryArchiveUrl string = 'https://github.com/southworks/insesite-hls-agentic-rd-knowledge/archive/refs/heads/main.zip'
 
 @secure()

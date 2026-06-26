@@ -83,18 +83,18 @@ Expand-ArchiveCrossPlatform -ArchivePath $archivePath -DestinationPath $workDir
 
 $repoRoot = Get-ChildItem $workDir -Directory | Where-Object {
     (Test-Path (Join-Path $_.FullName 'infra/scripts') -PathType Container) -and
-    (Test-Path (Join-Path $_.FullName 'data-generation/corpus') -PathType Container)
+    (Test-Path (Join-Path $_.FullName 'dataset-seed/cases') -PathType Container)
 } | Select-Object -First 1
 
 if (-not $repoRoot) {
     if ((Test-Path (Join-Path $workDir 'infra/scripts') -PathType Container) -and
-        (Test-Path (Join-Path $workDir 'data-generation/corpus') -PathType Container)) {
+        (Test-Path (Join-Path $workDir 'dataset-seed/cases') -PathType Container)) {
         $repoRoot = Get-Item $workDir
     }
 }
 
 if (-not $repoRoot) {
-    throw "Could not locate extracted repository root. Expected either a wrapper directory containing both 'infra/scripts' and 'data-generation/corpus', or those two directories at the top level of the archive."
+    throw "Could not locate extracted repository root. Expected either a wrapper directory containing both 'infra/scripts' and 'dataset-seed/cases', or those two directories at the top level of the archive."
 }
 
 $scriptsDirectory = Join-Path $repoRoot.FullName 'infra/scripts'
@@ -128,17 +128,17 @@ if (-not [string]::IsNullOrWhiteSpace($envSqlServer)) {
     Write-Host "Resolved SqlDatabase: $envSqlDatabase"
 }
 
-$corpusPath = Join-Path $repoRoot.FullName 'data-generation/corpus'
-if (-not (Test-Path -LiteralPath $corpusPath)) {
-    throw "Corpus path not found: $corpusPath"
+$datasetSeedPath = Join-Path $repoRoot.FullName 'dataset-seed'
+if (-not (Test-Path -LiteralPath $datasetSeedPath)) {
+    throw "Dataset-seed path not found: $datasetSeedPath"
 }
 
-Write-Host "Running seed-fabric-raw.ps1 with corpus: $corpusPath"
+Write-Host "Running seed-fabric-raw.ps1 with dataset-seed: $datasetSeedPath"
 $seedScript = Join-Path $scriptsDirectory 'seed-fabric-raw.ps1'
 & $seedScript `
     -WorkspaceId $envWorkspaceId `
     -LakehouseId $envLakehouseId `
-    -CorpusPath $corpusPath
+    -DatasetSeedPath $datasetSeedPath
 if ($LASTEXITCODE -ne 0) {
     throw "seed-fabric-raw.ps1 failed with exit code $LASTEXITCODE"
 }
