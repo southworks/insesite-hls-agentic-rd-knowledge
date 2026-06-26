@@ -72,9 +72,13 @@ public sealed class QueryWorkflowService
             .RunAsync(session.History, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        string answer = WorkflowTextExtractor.GetAgentResponseText(response);
+        string rawOutput = WorkflowTextExtractor.GetAgentResponseText(response);
+        string answer = ExtractChatAnswer(rawOutput);
+        IReadOnlyList<string> citations = MergeCitations(
+            passages.Select(passage => passage.Citation),
+            rawOutput);
+
         session.History.Add(new ChatMessage(ChatRole.Assistant, answer));
-        IReadOnlyList<string> citations = passages.Select(passage => passage.Citation).ToArray();
 
         var turn = new ChatTurn
         {
@@ -108,6 +112,55 @@ public sealed class QueryWorkflowService
             passages.Select((passage, index) => $"[{index + 1}] ({passage.Citation}) {passage.Content}"));
 
         return $"Use the following retrieved context to answer with grounded citations and lineage.{Environment.NewLine}{context}{Environment.NewLine}{Environment.NewLine}Question: {question}";
+    }
+
+    private static string ExtractChatAnswer(string rawOutput)
+    {
+        AgentStructuredOutput? structured = AgentStructuredOutputParser.TryParseStructuredOutput(rawOutput);
+        if (structured is not null && !string.IsNullOrWhiteSpace(structured.Summary))
+        {
+            return structured.Summary.Trim();
+        }
+
+        return rawOutput.Trim();
+    }
+
+    private static IReadOnlyList<string> MergeCitations(
+        IEnumerable<string> retrieverCitations,
+        string rawOutput)
+    {
+        var citations = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        void Add(string? citation)
+        {
+            if (string.IsNullOrWhiteSpace(citation))
+            {
+                return;
+            }
+
+            string trimmed = citation.Trim();
+            if (seen.Add(trimmed))
+            {
+                citations.Add(trimmed);
+            }
+        }
+
+        foreach (string citation in retrieverCitations)
+        {
+            Add(citation);
+        }
+
+        AgentStructuredOutput? structured = AgentStructuredOutputParser.TryParseStructuredOutput(rawOutput);
+        if (structured?.Citations is not null)
+        {
+            foreach (string citation in structured.Citations)
+            {
+                Add(citation);
+            }
+        }
+
+        return citations;
     }
 
     // ---- Process 2: Curate (on-demand, Compliance gate) ----
