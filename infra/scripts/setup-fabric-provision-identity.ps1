@@ -44,7 +44,10 @@ function Get-FabricAccessToken {
         return (Get-AzAccessToken -ResourceUrl $resource).Token
     }
     catch {
+        $prevEAP = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
         $token = az account get-access-token --resource $resource --query accessToken -o tsv 2>$null
+        $ErrorActionPreference = $prevEAP
         if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($token)) {
             throw "Unable to acquire Fabric access token for '$resource'."
         }
@@ -74,10 +77,16 @@ if (-not $SkipWorkspaceRoleAssignment) {
     Write-Host "Resolved WorkspaceId: $WorkspaceId"
 }
 
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
 $rg = az group show --name $ResourceGroupName -o json 2>$null | ConvertFrom-Json
+$ErrorActionPreference = $prevEAP
 if (-not $rg) {
     Write-Host "Creating resource group '$ResourceGroupName' in '$Location'..."
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     az group create --name $ResourceGroupName --location $Location -o none
+    $ErrorActionPreference = $prevEAP
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to create resource group '$ResourceGroupName'."
     }
@@ -86,13 +95,19 @@ else {
     Write-Host "Resource group '$ResourceGroupName' already exists."
 }
 
+$prevEAP = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
 $identity = az identity show --resource-group $ResourceGroupName --name $IdentityName -o json 2>$null | ConvertFrom-Json
+$ErrorActionPreference = $prevEAP
 if ($identity) {
     Write-Host "Managed identity '$IdentityName' already exists."
 }
 else {
     Write-Host "Creating managed identity '$IdentityName'..."
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
     $identity = az identity create --resource-group $ResourceGroupName --name $IdentityName --location $Location -o json 2>$null | ConvertFrom-Json
+    $ErrorActionPreference = $prevEAP
     if ($LASTEXITCODE -ne 0 -or -not $identity) {
         throw "Failed to create managed identity '$IdentityName'."
     }
@@ -134,7 +149,8 @@ if (-not $SkipWorkspaceRoleAssignment) {
                 -Method POST `
                 -Uri "https://api.fabric.microsoft.com/v1/workspaces/$WorkspaceId/roleAssignments" `
                 -Headers @{ Authorization = "Bearer $fabricToken"; 'Content-Type' = 'application/json' } `
-                -Body $body
+                -Body $body `
+                -ErrorAction Stop
             Write-Host "Fabric workspace role '$FabricRole' assigned successfully."
             $roleAssigned = $true
             break
