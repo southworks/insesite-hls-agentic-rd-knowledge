@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - feature/128674-hls-create-bicep-scripts-infrastructure
     paths:
       - 'backend/Api.Host/**'
       - 'backend/RndKnowledgeMining.Mcp/**'
