@@ -1,0 +1,57 @@
+name: Publish Container Images
+
+on:
+  push:
+    branches:
+      - main
+      - feature/128674-hls-create-bicep-scripts-infrastructure
+    paths:
+      - 'rd-knowledge-mining/backend/src/Api.Host/**'
+      - 'rd-knowledge-mining/backend/src/RndKnowledgeMining.Mcp/**'
+      - 'rd-knowledge-mining/agent-provisioning/**'
+      - 'rd-knowledge-mining/policies/**'
+      - '.github/workflows/publish-container-images.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: coherernd
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: coherernd-api
+            dockerfile: backend/src/Api.Host/Dockerfile
+          - image: coherernd-mcp
+            dockerfile: backend/src/RndKnowledgeMining.Mcp/Dockerfile
+          - image: coherernd-provisioning
+            dockerfile: agent-provisioning/Dockerfile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: rd-knowledge-mining
+          file: rd-knowledge-mining/${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}:demo
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}:${{ github.sha }}

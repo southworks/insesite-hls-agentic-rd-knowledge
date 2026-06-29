@@ -81,38 +81,46 @@ Environment overrides:
 
 ## Provision locally
 
-Until the R&D provisioning CLI is added, reuse the loan provisioning project pointed at this agents folder:
-
 ```powershell
-dotnet run --project loan-and-mortage/agent-provisioning/src/CohereLoanAndMortgage.AgentProvisioning -- `
+dotnet run --project rd-knowledge-mining/agent-provisioning/src/CohereRndKnowledge.AgentProvisioning -- `
   --config rd-knowledge-mining/agent-provisioning/config/provisioning.local.json `
   --agents rd-knowledge-mining/agent-provisioning/agents
 ```
 
 Create `config/provisioning.local.json` with your Foundry endpoint and MCP base URL.
 
-> **Note:** The loan provisioning CLI appends generic structured-output instructions. `search-chat-agent` also defines citation/lineage rules in `instructions.md` and uses `search-chat-structured-output.schema.json`.
+## Azure deployment lifecycle
 
-## MCP tools (expected)
+During infra deploy ([infra/main.bicep](../infra/main.bicep)):
 
-The `knowledge-search` MCP server is not implemented yet. When added, it should expose:
+1. Provisions Foundry, Storage, Search, and model deployments.
+2. Deploys the MCP Container App.
+3. Starts the policy seed job.
+4. Starts the agent provisioning Container Apps Job.
+5. Waits for the job to finish before completing the deployment.
+
+The provisioning container image is built from [Dockerfile](Dockerfile) and runs the R&D provisioning CLI with agents baked into `/app/agents`.
+
+## MCP tools
+
+Implemented in `rd-knowledge-mining/backend/src/RndKnowledgeMining.Mcp/` (requires Azure AI Search + Foundry; see that README).
+
+### `knowledge-search` (`/knowledge-search/mcp`)
 
 | Tool | Purpose |
 | --- | --- |
 | `search_rd_knowledge` | Vector search + Cohere rerank over the R&D knowledge index (`sessionId`, `query`, `topK`) |
 | `get_knowledge_lineage` | Resolve document/dataset/study links for a passage (`sessionId`, `passageId`) |
 
-Until the MCP host exists, the API stub retriever injects passages into the prompt and the agent can answer from that context alone.
-
-## Curation & Compliance MCP tools (expected)
-
-The `curation-compliance` MCP server is not implemented yet. When added, it should expose:
+### `curation-compliance` (`/curation-compliance/mcp`)
 
 | Tool | Purpose |
 | --- | --- |
 | `get_relevant_policies` | Retrieve HLS trial, licensing, or regional policies for review (`query`) |
 | `get_policies_by_refs` | Look up policies by reference code (`HLS-TRIAL-300`, `HLS-LIC-200`, …) |
-| `flag_sensitive_content` | Assess chat text for PHI/PII/confidential partner content |
+| `flag_sensitive_content` | Assess chat text for PHI/PII/confidential partner content (`sessionId`, `text`) |
+
+The API host still uses `StubVectorKnowledgeRetriever` until wired to the same index; agents can also retrieve via MCP during Foundry runs.
 
 ## Governance
 
