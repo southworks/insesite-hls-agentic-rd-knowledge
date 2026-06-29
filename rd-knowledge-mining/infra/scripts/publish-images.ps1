@@ -7,7 +7,6 @@ param(
 )
 
 # Optional local maintainer helper. Publish api and mcp images before deploying infra.
-
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "../..")
