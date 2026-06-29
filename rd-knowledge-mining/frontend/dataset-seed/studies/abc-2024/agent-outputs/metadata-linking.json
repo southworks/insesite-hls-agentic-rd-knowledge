@@ -1,0 +1,17 @@
+{
+  "summary": "Extracted 28 entities and created 15 document↔dataset↔study links. Indexed content via Cohere Embed for linking RAG pipeline.",
+  "entities": [
+    { "name": "CMP-1042", "category": "Compound", "version": "v2.1" },
+    { "name": "Phase II", "category": "Study phase", "version": "—" },
+    { "name": "HbA1c at Week 24", "category": "Primary endpoint", "version": "Protocol v3.2" },
+    { "name": "DS-8841", "category": "Dataset", "version": "2024-06-01" },
+    { "name": "DS-8842", "category": "Dataset", "version": "2024-06-01" }
+  ],
+  "links": [
+    { "fromDocument": "ABC-2024 Interim Results Report", "toTarget": "DS-8841", "relationship": "references dataset" },
+    { "fromDocument": "ABC-2024 Interim Results Report", "toTarget": "DS-8842", "relationship": "references dataset" },
+    { "fromDocument": "ABC-2024 Clinical Protocol v3.2", "toTarget": "ABC-2024", "relationship": "defines study" },
+    { "fromDocument": "ELN batch record BR-2024-118", "toTarget": "CMP-1042", "relationship": "analytical record for compound" }
+  ],
+  "vectorsIndexed": 12
+}

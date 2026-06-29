@@ -1,0 +1,20 @@
+{
+  "answer": "Across Phase I studies for CMP-8821, the most frequently reported adverse events were nausea (32%), headache (24%), and elevated ALT (18%). One dose-limiting toxicity (Grade 3 hepatotoxicity) was observed in cohort 3 at 120 mg; the event resolved after dose interruption.",
+  "citations": [
+    {
+      "documentId": "src-safety-001",
+      "title": "XYZ-2023 interim safety report",
+      "excerpt": "Treatment-emergent adverse events: nausea 32%, headache 24%, ALT elevation 18%. One DLT (Grade 3 hepatotoxicity) in cohort 3 at 120 mg.",
+      "sourceSystem": "Vector DB",
+      "relevanceScore": 0.96
+    },
+    {
+      "documentId": "src-protocol-xyz-001",
+      "title": "XYZ-2023 Clinical Protocol v1.4",
+      "excerpt": "Safety stopping rules and DLT definition for dose escalation cohorts 1–4.",
+      "sourceSystem": "Safety database",
+      "relevanceScore": 0.89
+    }
+  ],
+  "lineageSummary": "Safety profile synthesized from Vector DB-indexed XYZ-2023 safety report and linked Phase I study summaries for CMP-8821."
+}

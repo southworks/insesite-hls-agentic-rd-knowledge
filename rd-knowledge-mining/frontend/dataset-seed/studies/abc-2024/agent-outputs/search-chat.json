@@ -1,0 +1,27 @@
+{
+  "answer": "Three protocols share the same primary endpoint (change from baseline in HbA1c at Week 24) as study ABC-2024: Protocol XYZ-2019 (Phase III), Protocol DEF-2021 (Phase II), and Protocol GHI-2023 (Phase IIb). All definitions trace to the same endpoint ontology entry EP-HBA1C-W24.",
+  "citations": [
+    {
+      "documentId": "src-protocol-001",
+      "title": "ABC-2024 Clinical Protocol v3.2",
+      "excerpt": "Primary endpoint: change from baseline in HbA1c at Week 24 (MMRM analysis).",
+      "sourceSystem": "Vector DB",
+      "relevanceScore": 0.97
+    },
+    {
+      "documentId": "src-protocol-xyz",
+      "title": "XYZ-2019 Clinical Protocol v5.0",
+      "excerpt": "Primary endpoint: change from baseline in HbA1c at Week 24.",
+      "sourceSystem": "R&D CMS",
+      "relevanceScore": 0.94
+    },
+    {
+      "documentId": "src-protocol-def",
+      "title": "DEF-2021 Clinical Protocol v2.1",
+      "excerpt": "Primary endpoint: change from baseline in HbA1c at Week 24 (ANCOVA).",
+      "sourceSystem": "R&D CMS",
+      "relevanceScore": 0.91
+    }
+  ],
+  "lineageSummary": "Endpoint lineage resolved via Vector DB entity graph: ABC-2024 → EP-HBA1C-W24 ← XYZ-2019, DEF-2021, GHI-2023."
+}

@@ -1,0 +1,33 @@
+{
+  "studyId": "abc-2024",
+  "sources": [
+    {
+      "sourceId": "src-protocol-001",
+      "title": "ABC-2024 Clinical Protocol v3.2",
+      "sourceType": "Protocol",
+      "format": "PDF",
+      "summary": "Primary endpoint definition, inclusion criteria, and visit schedule for study ABC-2024."
+    },
+    {
+      "sourceId": "src-results-001",
+      "title": "ABC-2024 Interim Results Report",
+      "sourceType": "Results",
+      "format": "PDF + tables",
+      "summary": "Week 24 efficacy and safety results with dataset references DS-8841 and DS-8842."
+    },
+    {
+      "sourceId": "src-eln-001",
+      "title": "ELN batch record BR-2024-118",
+      "sourceType": "ELN/LIMS",
+      "format": "Structured record",
+      "summary": "Analytical batch processing record linked to compound CMP-1042 formulation lot L-4412."
+    },
+    {
+      "sourceId": "src-partner-001",
+      "title": "Partner CRO data transfer package",
+      "sourceType": "Partner repository",
+      "format": "Mixed",
+      "summary": "External CRO submission with de-identified patient-level summary tables."
+    }
+  ]
+}

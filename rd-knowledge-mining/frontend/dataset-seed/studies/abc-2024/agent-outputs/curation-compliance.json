@@ -1,0 +1,18 @@
+{
+  "summary": "One compliance gap detected. No sensitive PHI/PII flagged in retrieved passages.",
+  "flags": [
+    {
+      "severity": "Medium",
+      "category": "Regional policy gap",
+      "description": "Answer section on cross-study endpoint comparison does not reference EU regional policy RP-EU-2022-14 for scientific communication.",
+      "policyReference": "RP-EU-2022-14"
+    },
+    {
+      "severity": "Low",
+      "category": "Evidence gap",
+      "description": "Protocol GHI-2023 endpoint definition available only in summary form; full protocol not indexed in Vector DB.",
+      "policyReference": null
+    }
+  ],
+  "promptedOwners": ["Study owner — ABC-2024", "Regional compliance reviewer — EU"]
+}
