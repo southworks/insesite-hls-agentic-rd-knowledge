@@ -36,6 +36,9 @@ public sealed class AgentStructuredOutput
     [JsonPropertyName("citations")]
     public IReadOnlyList<string>? Citations { get; init; }
 
+    [JsonPropertyName("lineage")]
+    public string? Lineage { get; init; }
+
     [JsonPropertyName("capturedDecisions")]
     public IReadOnlyList<string>? CapturedDecisions { get; init; }
 }
@@ -62,6 +65,8 @@ public sealed class AgentStepResult
 
     public IReadOnlyList<string>? Citations { get; init; }
 
+    public string? Lineage { get; init; }
+
     public IReadOnlyList<string>? CapturedDecisions { get; init; }
 
     public required DateTimeOffset CompletedAtUtc { get; init; }
@@ -79,6 +84,7 @@ public sealed class AgentStepResult
             KeyFacts = output.KeyFacts,
             Flags = output.Flags,
             Citations = output.Citations,
+            Lineage = output.Lineage,
             CapturedDecisions = output.CapturedDecisions,
             CompletedAtUtc = DateTimeOffset.UtcNow
         };
@@ -196,6 +202,7 @@ public static class AgentStructuredOutputParser
                 KeyFacts = ReadOptionalStringArray(root, "keyFacts"),
                 Flags = ReadOptionalStringArray(root, "flags"),
                 Citations = ReadOptionalStringArray(root, "citations"),
+                Lineage = ReadOptionalString(root, "lineage"),
                 CapturedDecisions = ReadOptionalStringArray(root, "capturedDecisions")
             };
         }

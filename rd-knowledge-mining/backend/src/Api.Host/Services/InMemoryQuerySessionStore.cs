@@ -14,6 +14,9 @@ public sealed class ChatTurn
 
     public IReadOnlyList<string> Citations { get; init; } = [];
 
+    /// <summary>True when this turn contains grounded knowledge eligible for Curate.</summary>
+    public bool IsGrounded { get; init; }
+
     public DateTimeOffset CreatedUtc { get; init; } = DateTimeOffset.UtcNow;
 }
 

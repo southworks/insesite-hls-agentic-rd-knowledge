@@ -72,15 +72,22 @@ public sealed class QueryWorkflowService
             .RunAsync(session.History, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        string answer = WorkflowTextExtractor.GetAgentResponseText(response);
+        string rawOutput = WorkflowTextExtractor.GetAgentResponseText(response);
+        string answer = ExtractChatAnswer(rawOutput);
+        IReadOnlyList<string> citations = MergeCitations(
+            passages.Select(passage => passage.Citation),
+            rawOutput);
+
         session.History.Add(new ChatMessage(ChatRole.Assistant, answer));
-        IReadOnlyList<string> citations = passages.Select(passage => passage.Citation).ToArray();
+
+        bool isGrounded = QuerySessionCurateRules.EvaluateGrounded(answer, citations, passages, rawOutput);
 
         var turn = new ChatTurn
         {
             Question = question,
             Answer = answer,
-            Citations = citations
+            Citations = citations,
+            IsGrounded = isGrounded
         };
 
         session.Turns.Add(turn);
@@ -92,7 +99,8 @@ public sealed class QueryWorkflowService
             Question = question,
             Answer = answer,
             Citations = citations,
-            TurnCount = session.Turns.Count
+            TurnCount = session.Turns.Count,
+            CurateEnabled = QuerySessionCurateRules.IsCurateEnabled(session)
         };
     }
 
@@ -110,6 +118,55 @@ public sealed class QueryWorkflowService
         return $"Use the following retrieved context to answer with grounded citations and lineage.{Environment.NewLine}{context}{Environment.NewLine}{Environment.NewLine}Question: {question}";
     }
 
+    private static string ExtractChatAnswer(string rawOutput)
+    {
+        AgentStructuredOutput? structured = AgentStructuredOutputParser.TryParseStructuredOutput(rawOutput);
+        if (structured is not null && !string.IsNullOrWhiteSpace(structured.Summary))
+        {
+            return structured.Summary.Trim();
+        }
+
+        return rawOutput.Trim();
+    }
+
+    private static IReadOnlyList<string> MergeCitations(
+        IEnumerable<string> retrieverCitations,
+        string rawOutput)
+    {
+        var citations = new List<string>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        void Add(string? citation)
+        {
+            if (string.IsNullOrWhiteSpace(citation))
+            {
+                return;
+            }
+
+            string trimmed = citation.Trim();
+            if (seen.Add(trimmed))
+            {
+                citations.Add(trimmed);
+            }
+        }
+
+        foreach (string citation in retrieverCitations)
+        {
+            Add(citation);
+        }
+
+        AgentStructuredOutput? structured = AgentStructuredOutputParser.TryParseStructuredOutput(rawOutput);
+        if (structured?.Citations is not null)
+        {
+            foreach (string citation in structured.Citations)
+            {
+                Add(citation);
+            }
+        }
+
+        return citations;
+    }
+
     // ---- Process 2: Curate (on-demand, Compliance gate) ----
 
     public CurateWorkflowStatusResponse StartCurate(string sessionId, string executionId)
@@ -125,12 +182,23 @@ public sealed class QueryWorkflowService
         }
 
         QueryChatSession session = _store.GetRequiredSession(sessionId.Trim());
-        IReadOnlyList<string> chatResponses = session.Turns.Select(turn => turn.Answer).ToArray();
+
+        if (!QuerySessionCurateRules.IsCurateEnabled(session))
+        {
+            throw new InvalidOperationException(
+                $"Session '{sessionId}' has no grounded Search & Chat responses to curate. " +
+                "Ingest knowledge into the Vector DB and ask again when grounded answers are available.");
+        }
+
+        IReadOnlyList<string> chatResponses = session.Turns
+            .Where(turn => turn.IsGrounded)
+            .Select(turn => turn.Answer)
+            .ToArray();
 
         if (chatResponses.Count == 0)
         {
             throw new InvalidOperationException(
-                $"Session '{sessionId}' has no Search & Chat responses to curate. Ask at least one question first.");
+                $"Session '{sessionId}' has no grounded Search & Chat responses to curate.");
         }
 
         var execution = new WorkflowExecution
