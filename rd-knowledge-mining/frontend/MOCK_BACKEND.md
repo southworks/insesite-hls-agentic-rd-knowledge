@@ -9,7 +9,7 @@ When `UseMockBackend` is `true` (default in `appsettings.json` and `appsettings.
 - `MockRdKnowledgeApiClient` implements `IRdKnowledgeApiClient`.
 - `MockWorkflowSimulator` advances ingestion and curation runs in memory on each status poll.
 - Block 2 uses **two processes**: Search & Chat (session-scoped messages) and Curate (on-demand curation execution).
-- Scenario definitions and agent output JSON live under [`dataset-seed/`](../dataset-seed/).
+- Scenario definitions and agent output JSON live under [`dataset-seed/`](dataset-seed/).
 - `KnowledgeSessionStore` tracks open workspaces for the current Blazor circuit (browser session).
 - Approving an ingestion run updates the in-memory Vector DB summary counts (simulates a Vector DB write).
 
@@ -127,12 +127,12 @@ If backend payload shapes differ, update `Contracts/` and `BackendWorkflowMapper
 - [ ] Contract namespaces unchanged (avoid breaking tests)
 - [ ] Polling intervals unchanged unless backend recommends SSE/WebSockets later
 - [ ] Mock services documented as demo-only or removed
-- [ ] `frontend/MOCK_BACKEND.md` updated if routes or config keys change
+- [ ] `rd-knowledge-mining/frontend/MOCK_BACKEND.md` updated if routes or config keys change
 
 ## Local development
 
 ```powershell
-cd frontend/src/WebApp
+cd rd-knowledge-mining/frontend/src/WebApp
 dotnet run
 ```
 
