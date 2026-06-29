@@ -5,11 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'backend/Api.Host/**'
-      - 'backend/RndKnowledgeMining.Mcp/**'
-      - 'agent-provisioning/**'
-      - 'frontend/WebApp/**'
-      - 'dataset-seed/**'
+      - 'rd-knowledge-mining/backend/src/Api.Host/**'
+      - 'rd-knowledge-mining/backend/src/RndKnowledgeMining.Mcp/**'
+      - 'rd-knowledge-mining/agent-provisioning/**'
+      - 'rd-knowledge-mining/policies/**'
       - '.github/workflows/publish-container-images.yml'
   workflow_dispatch:
 
@@ -29,13 +28,11 @@ jobs:
       matrix:
         include:
           - image: coherernd-api
-            dockerfile: backend/Api.Host/Dockerfile
+            dockerfile: backend/src/Api.Host/Dockerfile
           - image: coherernd-mcp
-            dockerfile: backend/RndKnowledgeMining.Mcp/Dockerfile
+            dockerfile: backend/src/RndKnowledgeMining.Mcp/Dockerfile
           - image: coherernd-provisioning
             dockerfile: agent-provisioning/Dockerfile
-          - image: coherernd-web
-            dockerfile: frontend/src/WebApp/Dockerfile
 
     steps:
       - name: Checkout
@@ -51,8 +48,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ${{ matrix.dockerfile }}
+          context: rd-knowledge-mining
+          file: rd-knowledge-mining/${{ matrix.dockerfile }}
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}:demo
