@@ -2,13 +2,13 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-COPY src/WebApp/Cohere.AgenticRDKnowledge.WebApp.csproj src/WebApp/
-RUN dotnet restore src/WebApp/Cohere.AgenticRDKnowledge.WebApp.csproj
+COPY frontend/src/WebApp/Cohere.AgenticRDKnowledge.WebApp.csproj frontend/src/WebApp/
+RUN dotnet restore frontend/src/WebApp/Cohere.AgenticRDKnowledge.WebApp.csproj
 
-COPY src/WebApp/ src/WebApp/
-COPY frontend/src/dataset-seed/ dataset-seed/
+COPY frontend/src/WebApp/ frontend/src/WebApp/
+COPY frontend/dataset-seed/ dataset-seed/
 
-RUN dotnet publish src/WebApp/Cohere.AgenticRDKnowledge.WebApp.csproj \
+RUN dotnet publish frontend/src/WebApp/Cohere.AgenticRDKnowledge.WebApp.csproj \
     -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
