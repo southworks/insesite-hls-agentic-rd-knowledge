@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MetadataLinkingStandardOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "drugName",
+    "indication",
+    "mutation",
+    "clinicalTrialPhase",
+    "endpoint",
+    "studyId",
+    "confidence",
+    "evidence"
+  ],
+  "properties": {
+    "drugName": {
+      "type": ["string", "null"],
+      "description": "Nombre del farmaco identificado."
+    },
+    "indication": {
+      "type": ["string", "null"],
+      "description": "Indicación terapéutica o enfermedad objetivo."
+    },
+    "mutation": {
+      "type": ["string", "null"],
+      "description": "Mutación genética asociada (por ejemplo KRAS G12C)."
+    },
+    "clinicalTrialPhase": {
+      "type": ["string", "null"],
+      "description": "Fase del ensayo clínico (I, II, III, IV)."
+    },
+    "endpoint": {
+      "type": ["string", "null"],
+      "description": "Endpoint o criterio de evaluación principal/relavante."
+    },
+    "studyId": {
+      "type": ["string", "null"],
+      "description": "Identificador del estudio (Study ID)."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confianza global de la extracción."
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fragmentos de texto que justifican los campos extraídos."
+    }
+  }
+}
