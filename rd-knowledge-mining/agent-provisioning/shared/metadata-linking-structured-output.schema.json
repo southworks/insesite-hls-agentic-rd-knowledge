@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MetadataLinkingStandardOutput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "drugName",
+    "indication",
+    "mutation",
+    "clinicalTrialPhase",
+    "endpoint",
+    "studyId",
+    "confidence",
+    "evidence"
+  ],
+  "properties": {
+    "drugName": {
+      "type": ["string", "null"]
+    },
+    "indication": {
+      "type": ["string", "null"]
+    },
+    "mutation": {
+      "type": ["string", "null"]
+    },
+    "clinicalTrialPhase": {
+      "type": ["string", "null"]
+    },
+    "endpoint": {
+      "type": ["string", "null"]
+    },
+    "studyId": {
+      "type": ["string", "null"]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
