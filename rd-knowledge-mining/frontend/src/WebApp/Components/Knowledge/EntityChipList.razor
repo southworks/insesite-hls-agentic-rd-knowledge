@@ -1,7 +1,7 @@
-@if (Entities.Count > 0)
+@if ((Entities?.Count ?? 0) > 0)
 {
     <div class="chip-list">
-        @foreach (var entity in Entities)
+        @foreach (var entity in Entities!)
         {
             <span class="entity-chip">
                 <span class="chip-category">@entity.Category</span>

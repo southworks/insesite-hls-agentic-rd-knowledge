@@ -1,27 +1,30 @@
-# Mock Backend — Replacement Instructions
+# API integration guide
 
-This document explains how the frontend currently uses **mocked data** and how to switch to a **real backend** once it is available.
+The frontend calls **Api.Host** over HTTP from the Blazor Server process. Portfolio scenarios are loaded from `appsettings.json` (`PortfolioScenarios` section).
 
-## Current mock setup
+## Scenario catalog
 
-When `UseMockBackend` is `true` (default in `appsettings.json` and `appsettings.Development.json`):
+The portfolio lists **six canonical demo scenarios** aligned with `dataset-seed/cases/` and `data-generation/scripts/scenarios.py`:
 
-- `MockRdKnowledgeApiClient` implements `IRdKnowledgeApiClient`.
-- `MockWorkflowSimulator` advances ingestion and curation runs in memory on each status poll.
-- Block 2 uses **two processes**: Search & Chat (session-scoped messages) and Curate (on-demand curation execution).
-- Scenario definitions and agent output JSON live under [`dataset-seed/`](dataset-seed/).
-- `KnowledgeSessionStore` tracks open workspaces for the current Blazor circuit (browser session).
-- Approving an ingestion run updates the in-memory Vector DB summary counts (simulates a Vector DB write).
+| Legacy ID | Block | `sourceId` / session | Backend start payload |
+|-----------|-------|----------------------|------------------------|
+| ING-001 | Ingestion | `case-04-demo` | `POST /api/rd-knowledge/ingestion/start` → `{ "sourceId": "case-04-demo" }` |
+| ING-002 | Ingestion | `case-01-human-review` | `{ "sourceId": "case-01-human-review" }` |
+| ING-003 | Ingestion | `case-02-approval-labeling` | `{ "sourceId": "case-02-approval-labeling" }` |
+| ING-004 | Ingestion | `case-03-sensitive-denied` | `{ "sourceId": "case-03-sensitive-denied" }` |
+| QRY-001 | Query | `query-query-qry-001` | `POST /api/rd-knowledge/query/ask` → `{ "sessionId", "question" }` (auto-sent on open) |
+| QRY-002 | Query | `query-query-qry-002` | Same osimertinib prompt after ING-001 |
 
-The UI **never calls HTTP** for workflow operations while mocks are enabled. Razor components consume mapped DTOs only — they do not parse raw agent JSON.
+**UI-only fields** (not sent to Api.Host): title, description, study metadata, `legacyScenarioId`, `outcomeHint`, `finalOutcome`.
+
+**Headline demo sequence:** QRY-001 → ING-001 → QRY-002.
 
 ## Configuration
 
 ```json
 {
-  "UseMockBackend": true,
-  "ApiBaseUrl": "http://localhost:5038/",
-  "DatasetSeed": { "RootPath": "../../dataset-seed" },
+  "ApiBaseUrl": "http://localhost:8080/",
+  "PortfolioScenarios": { "Scenarios": [ ... ] },
   "WorkflowPolling": {
     "IntervalSeconds": 2,
     "MaxDurationMinutes": 10
@@ -29,117 +32,53 @@ The UI **never calls HTTP** for workflow operations while mocks are enabled. Raz
 }
 ```
 
-| Setting | Mock mode | Production mode |
-|---------|-----------|-----------------|
-| `UseMockBackend` | `true` | `false` |
-| `ApiBaseUrl` | Ignored | API FQDN |
-| `DatasetSeed:RootPath` | Required for scenarios | Optional (catalog previews only) |
+| Setting | Purpose |
+|---------|---------|
+| `ApiBaseUrl` | Base URL of `backend/src/Api.Host` (include trailing slash) |
+| `PortfolioScenarios:Scenarios` | Ingestion and query scenario catalog for the portfolio page |
+| `WorkflowPolling` | Ingestion and curation status polling intervals |
 
-## When a backend is available
+In Azure Container Apps, inject `ApiBaseUrl` with the API FQDN.
 
-### 1. Set configuration
+## Api.Host routes
 
-In `appsettings.Development.json`, Azure Container Apps env, or deployment pipeline:
-
-```json
-{
-  "UseMockBackend": false,
-  "ApiBaseUrl": "https://{your-api-host}/"
-}
-```
-
-### 2. Implement `RdKnowledgeApiClient`
-
-Replace any stub behavior in [`Services/RdKnowledgeApiClient.cs`](../src/WebApp/Services/RdKnowledgeApiClient.cs) with HTTP calls matching the routes documented in [`Contracts/Backend/RdKnowledgeBackendContracts.cs`](../src/WebApp/Contracts/Backend/RdKnowledgeBackendContracts.cs):
-
-| Method | HTTP | Path |
-|--------|------|------|
+| Operation | HTTP | Path |
+|-----------|------|------|
 | Health | GET | `/health` |
-| Start ingestion | POST | `/api/rd-knowledge/studies/{studyId}/ingestion/workflow/start` |
-| Ingestion status | GET | `/api/rd-knowledge/executions/{executionId}/ingestion/status` |
-| Ingestion HITL resume | POST | `/api/rd-knowledge/executions/{executionId}/ingestion/resume` |
-| Start query workflow | POST | `/api/rd-knowledge/query/sessions/{sessionId}/workflow/start` |
-| Get query session | GET | `/api/rd-knowledge/executions/{executionId}/query/session` |
-| Send chat message | POST | `/api/rd-knowledge/executions/{executionId}/query/chat` |
-| Start curation | POST | `/api/rd-knowledge/executions/{executionId}/query/curate` |
-| Curation status | GET | `/api/rd-knowledge/executions/{executionId}/query/status` |
-| Curation HITL resume | POST | `/api/rd-knowledge/executions/{executionId}/query/resume` |
-| Study documents | GET | `/api/rd-knowledge/studies/{studyId}/documents` |
-| Vector DB summary | GET | `/api/rd-knowledge/vector-db/summary` |
+| Start ingestion | POST | `/api/rd-knowledge/ingestion/start` |
+| Ingestion status | GET | `/api/rd-knowledge/ingestion/executions/{executionId}/status` |
+| Ingestion HITL resume | POST | `/api/rd-knowledge/ingestion/sources/{sourceId}/executions/{executionId}/resume` |
+| Ask (Search & Chat) | POST | `/api/rd-knowledge/query/ask` |
+| Start curation | POST | `/api/rd-knowledge/query/curate/start` |
+| Curation status | GET | `/api/rd-knowledge/query/curate/executions/{executionId}/status` |
+| Curation HITL resume | POST | `/api/rd-knowledge/query/curate/sessions/{sessionId}/executions/{executionId}/resume` |
 
-Use `ApiProblemDetails.EnsureSuccessOrThrowAsync` for failed responses. Map payloads through `BackendWorkflowMapper` — do not let Razor components parse raw JSON.
-
-### 3. Verify DI registration
-
-In [`Program.cs`](../src/WebApp/Program.cs):
-
-```csharp
-if (configuration.GetValue("UseMockBackend", true))
-    builder.Services.AddSingleton<IRdKnowledgeApiClient, MockRdKnowledgeApiClient>();
-else
-    builder.Services.AddHttpClient<IRdKnowledgeApiClient, RdKnowledgeApiClient>(client =>
-        client.BaseAddress = new Uri(configuration["ApiBaseUrl"]!));
-```
-
-No other registration changes should be required.
-
-### 4. Remove or gate mock-only code (optional)
-
-Once the backend is stable:
-
-| File | Action |
-|------|--------|
-| `Services/MockRdKnowledgeApiClient.cs` | Delete, or keep behind `#if DEBUG` / feature flag for demos |
-| `Services/MockWorkflowSimulator.cs` | Delete with mock client |
-| `dataset-seed/studies/*/agent-outputs/` | Keep for catalog previews; stop using for workflow progression |
-| In-memory Vector DB mutation in mock client | Replace with `GET .../vector-db/summary` from API |
-
-### 5. Update tests
-
-- Keep unit tests for `BackendWorkflowMapper`, `AgentOutputParser`, `ScenarioPickerFilter`, and workspace state classes using fixture JSON from `dataset-seed/`.
-- Add `RdKnowledgeApiClientTests` with a mocked `HttpMessageHandler` (mirror the loan-mortgage demo pattern).
-- Remove tests that assert mock tick progression if `MockWorkflowSimulator` is deleted.
-
-### 6. Verify integration
-
-- [ ] `GET /health` succeeds on frontend (`/health`) and API.
-- [ ] Start ingestion run → poll → Knowledge Curator approve → Vector DB summary reflects write via API.
-- [ ] Send chat messages **without** a fresh ingestion run → citations and lineage come from Vector DB via API.
-- [ ] Curate on demand over accumulated chat → Compliance Reviewer HITL via API.
-- [ ] Block 2 works independently (reads accumulated Vector DB data).
-- [ ] Docker / Container Apps inject `ApiBaseUrl` and `UseMockBackend=false`.
-
-### 7. Files that should NOT require UI changes
-
-These consume DTOs from `IRdKnowledgeApiClient` only:
-
-- `Components/Pages/KnowledgePortfolio.razor`
-- `Components/Pages/IngestionWorkspace.razor`
-- `Components/Pages/QueryWorkspace.razor`
-- All agent panels, HITL panels, and workflow components
-
-If backend payload shapes differ, update `Contracts/` and `BackendWorkflowMapper` — not Razor markup.
-
-## Checklist for the replacing agent
-
-- [ ] `UseMockBackend=false` in all deployed environments
-- [ ] All `IRdKnowledgeApiClient` methods implemented over HTTP
-- [ ] Contract namespaces unchanged (avoid breaking tests)
-- [ ] Polling intervals unchanged unless backend recommends SSE/WebSockets later
-- [ ] Mock services documented as demo-only or removed
-- [ ] `rd-knowledge-mining/frontend/MOCK_BACKEND.md` updated if routes or config keys change
+Backend DTOs are mirrored in `Contracts/Backend/BackendApiContracts.cs`. UI DTOs are mapped in `Services/BackendApiMapper.cs`.
 
 ## Local development
+
+1. Start Api.Host:
+
+```powershell
+cd rd-knowledge-mining/backend/src/Api.Host
+dotnet run --urls http://localhost:8080
+```
+
+2. Start the frontend:
 
 ```powershell
 cd rd-knowledge-mining/frontend/src/WebApp
 dotnet run
 ```
 
-Open `http://localhost:5147`. With mocks enabled, no backend process is required.
+3. Open the frontend URL (typically `http://localhost:5147`).
 
-To test against a local API:
+Ensure `ApiBaseUrl` in `appsettings.Development.json` matches the API URL.
 
-1. Start the backend on port 5038 (or your chosen port).
-2. Set `UseMockBackend` to `false` and `ApiBaseUrl` to the API URL.
-3. Restart the frontend.
+## Features not yet on the API
+
+The frontend degrades gracefully when these endpoints are absent:
+
+- **Vector DB summary** — shows empty counts
+- **Study source documents** — sidebar shows empty state
+- **Retrieval trace events** — omitted from workflow progress panels

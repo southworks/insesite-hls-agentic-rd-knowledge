@@ -1,7 +1,0 @@
-{
-  "summary": "Connected to study portal and partner repository. De-duplicated 4 source packages into 12 normalized documents. Formats: PDF, structured ELN/LIMS records, CSV tables.",
-  "documentsProcessed": 12,
-  "duplicatesRemoved": 3,
-  "normalizedFormats": ["PDF", "Structured ELN", "CSV tables", "JSON metadata"],
-  "connectedPortals": ["Study portal", "ELN", "Partner CRO repository"]
-}

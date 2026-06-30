@@ -113,25 +113,122 @@ public static class AgentOutputParser
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public static IngestionTranslationResult? ParseIngestionTranslation(string? json) =>
-        Parse<IngestionTranslationResult>(json);
+    public static IngestionTranslationResult? ParseIngestionTranslation(string? raw) =>
+        ParseWithSchemaFallback(
+            raw,
+            json => JsonSerializer.Deserialize<IngestionTranslationResult>(json, JsonOptions),
+            result => !string.IsNullOrWhiteSpace(result?.Summary)
+                && result.NormalizedFormats is not null
+                && result.ConnectedPortals is not null,
+            AgentOutputSchemaMapper.MapIngestionTranslation);
 
-    public static MetadataLinkingResult? ParseMetadataLinking(string? json) =>
-        Parse<MetadataLinkingResult>(json);
+    public static MetadataLinkingResult? ParseMetadataLinking(string? raw) =>
+        ParseWithSchemaFallback(
+            raw,
+            json => JsonSerializer.Deserialize<MetadataLinkingResult>(json, JsonOptions),
+            result => !string.IsNullOrWhiteSpace(result?.Summary)
+                && result.Entities is not null
+                && result.Links is not null,
+            AgentOutputSchemaMapper.MapMetadataLinking);
 
-    public static SearchChatResult? ParseSearchChat(string? json) =>
-        Parse<SearchChatResult>(json);
+    public static SearchChatResult? ParseSearchChat(string? raw) =>
+        ParseWithSchemaFallback(
+            raw,
+            json => JsonSerializer.Deserialize<SearchChatResult>(json, JsonOptions),
+            result => !string.IsNullOrWhiteSpace(result?.Answer),
+            AgentOutputSchemaMapper.MapSearchChat);
 
-    public static CurationComplianceResult? ParseCurationCompliance(string? json) =>
-        Parse<CurationComplianceResult>(json);
+    public static CurationComplianceResult? ParseCurationCompliance(string? raw) =>
+        ParseWithSchemaFallback(
+            raw,
+            json => JsonSerializer.Deserialize<CurationComplianceResult>(json, JsonOptions),
+            result => !string.IsNullOrWhiteSpace(result?.Summary) && result.Flags is not null,
+            AgentOutputSchemaMapper.MapCurationCompliance);
 
-    private static T? Parse<T>(string? json) where T : class
+    private static T? ParseWithSchemaFallback<T>(
+        string? raw,
+        Func<string, T?> tryLegacy,
+        Func<T?, bool> isUsable,
+        Func<string, T?> trySchema) where T : class
     {
-        if (string.IsNullOrWhiteSpace(json))
+        var normalized = NormalizePayload(raw);
+        if (normalized is null)
         {
             return null;
         }
 
-        return JsonSerializer.Deserialize<T>(json, JsonOptions);
+        try
+        {
+            T? legacy = null;
+            try
+            {
+                legacy = tryLegacy(normalized);
+            }
+            catch (JsonException)
+            {
+                // Legacy DTO shape mismatch; fall through to schema mapper.
+            }
+
+            if (isUsable(legacy))
+            {
+                return legacy;
+            }
+
+            return trySchema(normalized);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    internal static string? NormalizePayload(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        var trimmed = raw.Trim();
+
+        const string assistantPrefix = "[assistant]";
+        var assistantIndex = trimmed.LastIndexOf(assistantPrefix, StringComparison.OrdinalIgnoreCase);
+        if (assistantIndex >= 0)
+        {
+            trimmed = trimmed[(assistantIndex + assistantPrefix.Length)..].TrimStart();
+        }
+
+        trimmed = ExtractJsonFromMarkdownFence(trimmed);
+
+        if (trimmed.Length == 0 || (trimmed[0] != '{' && trimmed[0] != '['))
+        {
+            return null;
+        }
+
+        return trimmed;
+    }
+
+    private static string ExtractJsonFromMarkdownFence(string value)
+    {
+        const string jsonFence = "```json";
+        var start = value.IndexOf(jsonFence, StringComparison.OrdinalIgnoreCase);
+        if (start < 0)
+        {
+            const string genericFence = "```";
+            start = value.IndexOf(genericFence, StringComparison.Ordinal);
+            if (start < 0)
+            {
+                return value;
+            }
+
+            start += genericFence.Length;
+        }
+        else
+        {
+            start += jsonFence.Length;
+        }
+
+        var end = value.IndexOf("```", start, StringComparison.Ordinal);
+        return end < 0 ? value[start..].Trim() : value[start..end].Trim();
     }
 }

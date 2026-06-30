@@ -6,13 +6,13 @@
             <div><dt>Documents processed</dt><dd>@Result.DocumentsProcessed</dd></div>
             <div><dt>Duplicates removed</dt><dd>@Result.DuplicatesRemoved</dd></div>
         </dl>
-        @if (Result.ConnectedPortals.Count > 0)
+        @if ((Result.ConnectedPortals?.Count ?? 0) > 0)
         {
-            <p class="meta-line"><strong>Connected:</strong> @string.Join(", ", Result.ConnectedPortals)</p>
+            <p class="meta-line"><strong>Connected:</strong> @string.Join(", ", Result.ConnectedPortals!)</p>
         }
-        @if (Result.NormalizedFormats.Count > 0)
+        @if ((Result.NormalizedFormats?.Count ?? 0) > 0)
         {
-            <p class="meta-line"><strong>Formats:</strong> @string.Join(", ", Result.NormalizedFormats)</p>
+            <p class="meta-line"><strong>Formats:</strong> @string.Join(", ", Result.NormalizedFormats!)</p>
         }
     </div>
 }
