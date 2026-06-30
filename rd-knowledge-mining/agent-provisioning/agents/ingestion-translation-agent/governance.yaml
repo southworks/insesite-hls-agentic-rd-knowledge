@@ -15,6 +15,14 @@ rules:
     condition: "tool_name == 'curate_session_responses'"
     action: deny
     priority: 100
+  - name: deny-index-rd-knowledge
+    condition: "tool_name == 'index_rd_knowledge'"
+    action: deny
+    priority: 100
+  - name: deny-link-rd-metadata
+    condition: "tool_name == 'link_rd_metadata'"
+    action: deny
+    priority: 100
   - name: deny-flag-sensitive-content
     condition: "tool_name == 'flag_sensitive_content'"
     action: deny
