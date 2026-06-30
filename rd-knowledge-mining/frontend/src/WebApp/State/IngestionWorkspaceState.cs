@@ -1,4 +1,5 @@
 using Cohere.AgenticRDKnowledge.Shared.Contracts;
+using Cohere.AgenticRDKnowledge.Shared.Contracts.Agents;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Ingestion;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Studies;
 using Cohere.AgenticRDKnowledge.WebApp.Configuration;
@@ -14,6 +15,7 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
     private readonly PortfolioScenarioService _scenarios;
     private readonly WorkflowPollingOptions _pollingOptions;
     private CancellationTokenSource? _pollingCts;
+    private HumanDecisionRecord? _lastHumanDecision;
 
     public string? StudyId { get; private set; }
     public string? SourceId { get; private set; }
@@ -61,7 +63,8 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
 
             if (!string.IsNullOrWhiteSpace(executionId))
             {
-                Progress = await _apiClient.GetIngestionStatusAsync(executionId, cancellationToken);
+                Progress = ApplyProgressNormalization(
+                    await _apiClient.GetIngestionStatusAsync(executionId, cancellationToken));
                 SourceId ??= Progress.StudyId;
                 UpdateSession();
                 if (ShouldPoll(Progress.Status))
@@ -102,9 +105,11 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
 
         try
         {
+            _lastHumanDecision = null;
             var response = await _apiClient.StartIngestionWorkflowAsync(SourceId, cancellationToken);
             ExecutionId = response.ExecutionId;
-            Progress = await _apiClient.GetIngestionStatusAsync(response.ExecutionId, cancellationToken);
+            Progress = ApplyProgressNormalization(
+                await _apiClient.GetIngestionStatusAsync(response.ExecutionId, cancellationToken));
             UpdateSession();
             StartPolling();
         }
@@ -137,7 +142,9 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
                 SourceId,
                 new SubmitIngestionDecisionRequest(approved, notes),
                 cancellationToken);
-            Progress = await _apiClient.GetIngestionStatusAsync(ExecutionId, cancellationToken);
+            _lastHumanDecision = new HumanDecisionRecord(approved, notes, DateTimeOffset.UtcNow);
+            Progress = ApplyProgressNormalization(
+                await _apiClient.GetIngestionStatusAsync(ExecutionId, cancellationToken));
             UpdateSession();
             if (ShouldPoll(Progress.Status))
             {
@@ -206,7 +213,8 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
                     break;
                 }
 
-                Progress = await _apiClient.GetIngestionStatusAsync(ExecutionId, cancellationToken);
+                Progress = ApplyProgressNormalization(
+                    await _apiClient.GetIngestionStatusAsync(ExecutionId, cancellationToken));
                 UpdateSession();
                 PollingStatusMessage = Progress.StatusMessage;
                 Notify();
@@ -237,6 +245,12 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
 
     private static bool ShouldPoll(WorkflowStatus status) =>
         status is WorkflowStatus.Running or WorkflowStatus.Pending;
+
+    private IngestionWorkflowProgress ApplyProgressNormalization(IngestionWorkflowProgress progress) =>
+        IngestionProgressNormalizer.Normalize(
+            progress,
+            _scenarios.ResolveIngestionScenario(SourceId ?? StudyId ?? string.Empty),
+            _lastHumanDecision);
 
     private void UpdateSession()
     {

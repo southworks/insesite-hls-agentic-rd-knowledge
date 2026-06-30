@@ -40,7 +40,8 @@ public static class BackendApiMapper
             linking,
             null,
             null,
-            allowedActions);
+            allowedActions,
+            response.FailureReason);
     }
 
     public static CurationWorkflowProgress ToCurationProgress(CurateWorkflowStatusResponse response)
@@ -185,6 +186,11 @@ public static class BackendApiMapper
     {
         if (status == WorkflowStatus.Failed)
         {
+            if (IngestionProgressNormalizer.IsKnownPostApprovalWorkflowOutputError(failureReason))
+            {
+                return IngestionProgressNormalizer.PostApprovalCompletionErrorFallback;
+            }
+
             return failureReason ?? "Ingestion denied or failed.";
         }
 

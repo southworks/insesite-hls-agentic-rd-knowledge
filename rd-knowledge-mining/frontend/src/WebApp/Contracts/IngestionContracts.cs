@@ -22,7 +22,8 @@ public sealed record IngestionWorkflowProgress(
     MetadataLinkingResult? MetadataLinking,
     IReadOnlyList<RetrievalTraceEvent>? RetrievalTrace,
     HumanDecisionRecord? HumanDecision,
-    IReadOnlyList<string> AllowedActions);
+    IReadOnlyList<string> AllowedActions,
+    string? FailureReason = null);
 
 public sealed record SubmitIngestionDecisionRequest(
     bool Approved,
