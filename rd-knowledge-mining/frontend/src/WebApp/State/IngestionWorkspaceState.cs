@@ -139,7 +139,14 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
                 cancellationToken);
             Progress = await _apiClient.GetIngestionStatusAsync(ExecutionId, cancellationToken);
             UpdateSession();
-            StopPolling();
+            if (ShouldPoll(Progress.Status))
+            {
+                StartPolling();
+            }
+            else
+            {
+                StopPolling();
+            }
         }
         catch (Exception ex)
         {

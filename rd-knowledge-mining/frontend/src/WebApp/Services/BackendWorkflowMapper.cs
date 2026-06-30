@@ -117,14 +117,18 @@ public static class AgentOutputParser
         ParseWithSchemaFallback(
             raw,
             json => JsonSerializer.Deserialize<IngestionTranslationResult>(json, JsonOptions),
-            result => !string.IsNullOrWhiteSpace(result?.Summary),
+            result => !string.IsNullOrWhiteSpace(result?.Summary)
+                && result.NormalizedFormats is not null
+                && result.ConnectedPortals is not null,
             AgentOutputSchemaMapper.MapIngestionTranslation);
 
     public static MetadataLinkingResult? ParseMetadataLinking(string? raw) =>
         ParseWithSchemaFallback(
             raw,
             json => JsonSerializer.Deserialize<MetadataLinkingResult>(json, JsonOptions),
-            result => !string.IsNullOrWhiteSpace(result?.Summary),
+            result => !string.IsNullOrWhiteSpace(result?.Summary)
+                && result.Entities is not null
+                && result.Links is not null,
             AgentOutputSchemaMapper.MapMetadataLinking);
 
     public static SearchChatResult? ParseSearchChat(string? raw) =>
@@ -138,7 +142,7 @@ public static class AgentOutputParser
         ParseWithSchemaFallback(
             raw,
             json => JsonSerializer.Deserialize<CurationComplianceResult>(json, JsonOptions),
-            result => !string.IsNullOrWhiteSpace(result?.Summary),
+            result => !string.IsNullOrWhiteSpace(result?.Summary) && result.Flags is not null,
             AgentOutputSchemaMapper.MapCurationCompliance);
 
     private static T? ParseWithSchemaFallback<T>(
@@ -155,7 +159,16 @@ public static class AgentOutputParser
 
         try
         {
-            var legacy = tryLegacy(normalized);
+            T? legacy = null;
+            try
+            {
+                legacy = tryLegacy(normalized);
+            }
+            catch (JsonException)
+            {
+                // Legacy DTO shape mismatch; fall through to schema mapper.
+            }
+
             if (isUsable(legacy))
             {
                 return legacy;

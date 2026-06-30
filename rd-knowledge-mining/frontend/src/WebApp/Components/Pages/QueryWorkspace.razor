@@ -144,7 +144,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        WorkspaceState.OnChange += StateHasChanged;
+        WorkspaceState.OnChange += OnWorkspaceChanged;
         SectionState.ResetForResource(GetResourceKey());
         ResolveSessionMeta();
         await ReloadAsync();
@@ -249,6 +249,8 @@ else
 
     private string? GetHitlStatus() => WorkspaceState.CanSubmitDecision ? "Action required" : WorkspaceState.CurationProgress?.HumanDecision is not null ? "Decided" : null;
 
+    private async void OnWorkspaceChanged() => await InvokeAsync(StateHasChanged);
+
     private async Task GoHome()
     {
         _navigating = true;
@@ -259,7 +261,7 @@ else
 
     public async ValueTask DisposeAsync()
     {
-        WorkspaceState.OnChange -= StateHasChanged;
+        WorkspaceState.OnChange -= OnWorkspaceChanged;
         await WorkspaceState.DisposeAsync();
     }
 }

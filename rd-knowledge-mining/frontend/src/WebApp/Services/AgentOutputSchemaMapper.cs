@@ -54,43 +54,12 @@ public static class AgentOutputSchemaMapper
             return null;
         }
 
-        var entities = new List<EntityChip>();
-        if (root.TryGetProperty("entities", out var entitiesProp) && entitiesProp.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var entity in entitiesProp.EnumerateArray())
-            {
-                var name = entity.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    continue;
-                }
-
-                var category = entity.TryGetProperty("category", out var catProp) ? catProp.GetString() ?? "—" : "—";
-                var version = entity.TryGetProperty("version", out var verProp) ? verProp.GetString() ?? "—" : "—";
-                entities.Add(new EntityChip(name, category, version));
-            }
-        }
-
-        var links = new List<DocumentLink>();
-        if (root.TryGetProperty("links", out var linksProp) && linksProp.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var link in linksProp.EnumerateArray())
-            {
-                var from = link.TryGetProperty("fromDocument", out var fromProp) ? fromProp.GetString() : null;
-                var to = link.TryGetProperty("toTarget", out var toProp) ? toProp.GetString() : null;
-                var relationship = link.TryGetProperty("relationship", out var relProp) ? relProp.GetString() : null;
-                if (string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(to))
-                {
-                    continue;
-                }
-
-                links.Add(new DocumentLink(from, to, relationship ?? "linked"));
-            }
-        }
+        var entities = MapEntityChips(root);
+        var links = MapDocumentLinks(root);
 
         var vectorsIndexed = root.TryGetProperty("vectorsIndexed", out var vectorsProp) && vectorsProp.TryGetInt32(out var count)
             ? count
-            : 0;
+            : Math.Max(entities.Count, links.Count);
 
         return new MetadataLinkingResult(summary, entities, links, vectorsIndexed);
     }
@@ -176,5 +145,70 @@ public static class AgentOutputSchemaMapper
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Select(value => value!)
             .ToList();
+    }
+
+    private static List<EntityChip> MapEntityChips(JsonElement root)
+    {
+        var entities = new List<EntityChip>();
+        if (root.TryGetProperty("entities", out var entitiesProp) && entitiesProp.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var entity in entitiesProp.EnumerateArray())
+            {
+                var name = entity.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    continue;
+                }
+
+                var category = entity.TryGetProperty("category", out var catProp) ? catProp.GetString() ?? "—" : "—";
+                var version = entity.TryGetProperty("version", out var verProp) ? verProp.GetString() ?? "—" : "—";
+                entities.Add(new EntityChip(name, category, version));
+            }
+        }
+
+        if (entities.Count == 0)
+        {
+            foreach (var fact in ReadStringArray(root, "keyFacts"))
+            {
+                entities.Add(new EntityChip(fact, "Entity", "—"));
+            }
+        }
+
+        return entities;
+    }
+
+    private static List<DocumentLink> MapDocumentLinks(JsonElement root)
+    {
+        var links = new List<DocumentLink>();
+        if (root.TryGetProperty("links", out var linksProp) && linksProp.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var link in linksProp.EnumerateArray())
+            {
+                var from = link.TryGetProperty("fromDocument", out var fromProp) ? fromProp.GetString() : null;
+                var to = link.TryGetProperty("toTarget", out var toProp) ? toProp.GetString() : null;
+                var relationship = link.TryGetProperty("relationship", out var relProp) ? relProp.GetString() : null;
+                if (string.IsNullOrWhiteSpace(from) || string.IsNullOrWhiteSpace(to))
+                {
+                    continue;
+                }
+
+                links.Add(new DocumentLink(from, to, relationship ?? "linked"));
+            }
+        }
+
+        if (links.Count == 0)
+        {
+            var linkSources = ReadStringArray(root, "flags")
+                .Concat(ReadStringArray(root, "citations"))
+                .Concat(ReadStringArray(root, "policyRefs"))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var source in linkSources)
+            {
+                links.Add(new DocumentLink(source, "Vector DB", "linked"));
+            }
+        }
+
+        return links;
     }
 }
