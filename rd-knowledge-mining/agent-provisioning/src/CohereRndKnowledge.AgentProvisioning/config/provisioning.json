@@ -1,5 +1,5 @@
 {
-  "ProjectEndpoint": "https://cohererndfoundryru6mavy7.services.ai.azure.com/api/projects/coherernd-project",
+  "ProjectEndpoint": "https://cohererndfoundryoehjl7ts.services.ai.azure.com/api/projects/coherernd-project",
   "ModelDeploymentName": "cohere-command-a",
-  "McpBaseUrl": "https://cohereloan-mcp-7d4ofvyd6i5mg.livelyriver-65dc46d9.westus.azurecontainerapps.io"
+  "McpBaseUrl": "https://coherernd-mcp-oehjl7ts4giay.orangeforest-433a39e2.westus3.azurecontainerapps.io"
 }
