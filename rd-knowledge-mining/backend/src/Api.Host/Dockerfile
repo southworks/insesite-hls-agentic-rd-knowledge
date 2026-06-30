@@ -8,7 +8,7 @@ WORKDIR /src
 COPY ["backend/src/Api.Host/CohereRndKnowledgeMining.Api.Host.csproj", "backend/src/Api.Host/"]
 RUN dotnet restore "backend/src/Api.Host/CohereRndKnowledgeMining.Api.Host.csproj"
 COPY backend/src/Api.Host/ backend/src/Api.Host/
-COPY dataset-seed/ dataset-seed/
+COPY ../dataset-seed/ dataset-seed/
 WORKDIR /src/backend/src/Api.Host
 RUN dotnet publish "CohereRndKnowledgeMining.Api.Host.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
