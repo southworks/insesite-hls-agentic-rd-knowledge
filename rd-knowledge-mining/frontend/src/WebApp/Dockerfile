@@ -6,7 +6,7 @@ COPY src/WebApp/Cohere.AgenticRDKnowledge.WebApp.csproj src/WebApp/
 RUN dotnet restore src/WebApp/Cohere.AgenticRDKnowledge.WebApp.csproj
 
 COPY src/WebApp/ src/WebApp/
-COPY dataset-seed/ dataset-seed/
+COPY frontend/src/dataset-seed/ dataset-seed/
 
 RUN dotnet publish src/WebApp/Cohere.AgenticRDKnowledge.WebApp.csproj \
     -c Release -o /app/publish --no-restore
