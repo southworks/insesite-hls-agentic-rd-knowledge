@@ -68,6 +68,16 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
             CurationExecutionId ??= Session.CurationExecutionId;
             UpdateSessionFromQueryState();
 
+            if (Session.Messages.Count == 0 && !string.IsNullOrWhiteSpace(stored?.SampleQuestion))
+            {
+                Session = await _apiClient.SendChatMessageAsync(
+                    sessionId,
+                    new SendChatMessageRequest(stored.SampleQuestion, StudyScope),
+                    cancellationToken);
+                Question = string.Empty;
+                UpdateSessionFromQueryState();
+            }
+
             if (!string.IsNullOrWhiteSpace(CurationExecutionId))
             {
                 CurationProgress = await _apiClient.GetCurationStatusAsync(CurationExecutionId, cancellationToken);

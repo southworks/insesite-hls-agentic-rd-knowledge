@@ -62,7 +62,7 @@ public sealed class RdKnowledgeApiClient(
             RdKnowledgeBackendRoutes.GetIngestionStatus.Replace("{executionId}", Uri.EscapeDataString(executionId)),
             cancellationToken);
 
-        var study = scenarios.GetScenarioByStudyId(response.SourceId, WorkflowBlock.Ingestion)?.Study;
+        var study = scenarios.ResolveIngestionScenario(response.SourceId)?.Study;
         return BackendApiMapper.ToIngestionProgress(response, study);
     }
 

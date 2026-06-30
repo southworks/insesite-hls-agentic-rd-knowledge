@@ -30,6 +30,15 @@ public sealed class PortfolioScenarioService
             s.StudyId.Equals(studyId, StringComparison.OrdinalIgnoreCase) &&
             s.Block.Equals(block.ToString(), StringComparison.OrdinalIgnoreCase));
 
+    public SeedScenarioDefinition? GetScenarioBySourceId(string sourceId, WorkflowBlock block) =>
+        _scenarios.FirstOrDefault(s =>
+            s.SourceId.Equals(sourceId, StringComparison.OrdinalIgnoreCase) &&
+            s.Block.Equals(block.ToString(), StringComparison.OrdinalIgnoreCase));
+
+    public SeedScenarioDefinition? ResolveIngestionScenario(string studyOrSourceId) =>
+        GetScenarioByStudyId(studyOrSourceId, WorkflowBlock.Ingestion)
+        ?? GetScenarioBySourceId(studyOrSourceId, WorkflowBlock.Ingestion);
+
     public string? GetSourceIdByStudyId(string studyId, WorkflowBlock block) =>
         GetScenarioByStudyId(studyId, block)?.SourceId is { Length: > 0 } sourceId
             ? sourceId

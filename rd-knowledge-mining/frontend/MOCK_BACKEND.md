@@ -2,6 +2,23 @@
 
 The frontend calls **Api.Host** over HTTP from the Blazor Server process. Portfolio scenarios are loaded from `appsettings.json` (`PortfolioScenarios` section).
 
+## Scenario catalog
+
+The portfolio lists **six canonical demo scenarios** aligned with `dataset-seed/cases/` and `data-generation/scripts/scenarios.py`:
+
+| Legacy ID | Block | `sourceId` / session | Backend start payload |
+|-----------|-------|----------------------|------------------------|
+| ING-001 | Ingestion | `case-04-demo` | `POST /api/rd-knowledge/ingestion/start` → `{ "sourceId": "case-04-demo" }` |
+| ING-002 | Ingestion | `case-01-human-review` | `{ "sourceId": "case-01-human-review" }` |
+| ING-003 | Ingestion | `case-02-approval-labeling` | `{ "sourceId": "case-02-approval-labeling" }` |
+| ING-004 | Ingestion | `case-03-sensitive-denied` | `{ "sourceId": "case-03-sensitive-denied" }` |
+| QRY-001 | Query | `query-query-qry-001` | `POST /api/rd-knowledge/query/ask` → `{ "sessionId", "question" }` (auto-sent on open) |
+| QRY-002 | Query | `query-query-qry-002` | Same osimertinib prompt after ING-001 |
+
+**UI-only fields** (not sent to Api.Host): title, description, study metadata, `legacyScenarioId`, `outcomeHint`, `finalOutcome`.
+
+**Headline demo sequence:** QRY-001 → ING-001 → QRY-002.
+
 ## Configuration
 
 ```json
