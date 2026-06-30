@@ -1,0 +1,51 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "summary": {
+      "type": "string",
+      "description": "Concise description of the ingestion batch outcome."
+    },
+    "decision": {
+      "type": "string",
+      "description": "Outcome of the ingestion step."
+    },
+    "evidence": {
+      "type": "string",
+      "description": "Key quality and risk findings from ingest processing."
+    },
+    "riskLevel": {
+      "type": "string",
+      "description": "Risk level based on sensitivity and quality issues: low, medium, or high."
+    },
+    "anomalies": {
+      "type": "array",
+      "description": "Specific quality issues found (truncated content, missing fields, unparseable data).",
+      "items": {
+        "type": "string"
+      }
+    },
+    "keyFacts": {
+      "type": "array",
+      "description": "Extracted entities for metadata linking (compound codes, phases, endpoints, regions, dataset IDs).",
+      "items": {
+        "type": "string"
+      }
+    },
+    "flags": {
+      "type": "array",
+      "description": "Sensitivity and compliance markers (PHI detected, PII present, confidential data).",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "summary",
+    "decision",
+    "evidence",
+    "anomalies",
+    "keyFacts",
+    "flags"
+  ]
+}

@@ -37,6 +37,24 @@ public static class WorkflowPayloadBuilder
         return [CreateJsonMessage(payload)];
     }
 
+    /// <summary>
+    /// Block 1 entry payload when data has been uploaded to Fabric. The agent receives
+    /// only a reference pointer and must use MCP tools to retrieve the raw documents.
+    /// </summary>
+    public static List<ChatMessage> CreateFabricParamsMessage(
+        string sourceId,
+        string executionId)
+    {
+        var payload = new
+        {
+            sourceId,
+            executionId,
+            dataSource = "fabric"
+        };
+
+        return [CreateJsonMessage(payload)];
+    }
+
     /// <summary>Block 2 Curate entry payload: all accumulated Search &amp; Chat responses.</summary>
     public static List<ChatMessage> CreateCurationInputMessages(
         string sessionId,
