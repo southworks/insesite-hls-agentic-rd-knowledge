@@ -165,10 +165,18 @@ public sealed class IngestionWorkflowFactory
             {
                 string rawOutput = WorkflowTextExtractor.FromLastAssistantMessage(messages);
                 AgentStepResult result = ParseBridgeOutput(sourceAgentName, rawOutput);
-                ChatMessage payload = WorkflowPayloadBuilder.CreateAgentTransitionMessage(
-                    correlationId,
-                    executionId,
-                    result);
+                ChatMessage payload = string.Equals(
+                    sourceAgentName,
+                    IngestionWorkflowConstants.IngestionTranslationAgentName,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? WorkflowPayloadBuilder.CreateIngestionToLinkingTransitionMessage(
+                        correlationId,
+                        executionId,
+                        result)
+                    : WorkflowPayloadBuilder.CreateAgentTransitionMessage(
+                        correlationId,
+                        executionId,
+                        result);
 
                 await context.SendMessageAsync(payload, cancellationToken: cancellationToken).ConfigureAwait(false);
 

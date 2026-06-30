@@ -3,6 +3,27 @@ using System.Text.Json.Serialization;
 
 namespace CohereRndKnowledgeMining.Api.Host.Workflow;
 
+public sealed class NormalizedDocument
+{
+    [JsonPropertyName("documentId")]
+    public required string DocumentId { get; init; }
+
+    [JsonPropertyName("sourceItemId")]
+    public required string SourceItemId { get; init; }
+
+    [JsonPropertyName("sourceType")]
+    public required string SourceType { get; init; }
+
+    [JsonPropertyName("title")]
+    public required string Title { get; init; }
+
+    [JsonPropertyName("canonicalKey")]
+    public required string CanonicalKey { get; init; }
+
+    [JsonPropertyName("status")]
+    public required string Status { get; init; }
+}
+
 /// <summary>
 /// Structured output contract expected from each Foundry agent at step completion.
 /// Agents must be provisioned externally to return JSON matching this shape.
@@ -41,6 +62,18 @@ public sealed class AgentStructuredOutput
 
     [JsonPropertyName("capturedDecisions")]
     public IReadOnlyList<string>? CapturedDecisions { get; init; }
+
+    [JsonPropertyName("documentsProcessed")]
+    public int? DocumentsProcessed { get; init; }
+
+    [JsonPropertyName("duplicatesRemoved")]
+    public int? DuplicatesRemoved { get; init; }
+
+    [JsonPropertyName("normalizedFormats")]
+    public IReadOnlyList<string>? NormalizedFormats { get; init; }
+
+    [JsonPropertyName("normalizedDocuments")]
+    public IReadOnlyList<NormalizedDocument>? NormalizedDocuments { get; init; }
 }
 
 public sealed class AgentStepResult
@@ -69,6 +102,14 @@ public sealed class AgentStepResult
 
     public IReadOnlyList<string>? CapturedDecisions { get; init; }
 
+    public int? DocumentsProcessed { get; init; }
+
+    public int? DuplicatesRemoved { get; init; }
+
+    public IReadOnlyList<string>? NormalizedFormats { get; init; }
+
+    public IReadOnlyList<NormalizedDocument>? NormalizedDocuments { get; init; }
+
     public required DateTimeOffset CompletedAtUtc { get; init; }
 
     public static AgentStepResult FromStructuredOutput(string agentName, AgentStructuredOutput output) =>
@@ -86,6 +127,10 @@ public sealed class AgentStepResult
             Citations = output.Citations,
             Lineage = output.Lineage,
             CapturedDecisions = output.CapturedDecisions,
+            DocumentsProcessed = output.DocumentsProcessed,
+            DuplicatesRemoved = output.DuplicatesRemoved,
+            NormalizedFormats = output.NormalizedFormats,
+            NormalizedDocuments = output.NormalizedDocuments,
             CompletedAtUtc = DateTimeOffset.UtcNow
         };
 }
@@ -203,7 +248,11 @@ public static class AgentStructuredOutputParser
                 Flags = ReadOptionalStringArray(root, "flags"),
                 Citations = ReadOptionalStringArray(root, "citations"),
                 Lineage = ReadOptionalString(root, "lineage"),
-                CapturedDecisions = ReadOptionalStringArray(root, "capturedDecisions")
+                CapturedDecisions = ReadOptionalStringArray(root, "capturedDecisions"),
+                DocumentsProcessed = ReadOptionalInt(root, "documentsProcessed"),
+                DuplicatesRemoved = ReadOptionalInt(root, "duplicatesRemoved"),
+                NormalizedFormats = ReadOptionalStringArray(root, "normalizedFormats"),
+                NormalizedDocuments = ReadOptionalNormalizedDocuments(root, "normalizedDocuments")
             };
         }
         catch (JsonException)
@@ -303,6 +352,70 @@ public static class AgentStructuredOutputParser
                     items.Add(text);
                 }
             }
+        }
+
+        return items.Count == 0 ? null : items;
+    }
+
+    private static int? ReadOptionalInt(JsonElement root, string propertyName)
+    {
+        if (!TryGetPropertyIgnoreCase(root, propertyName, out JsonElement value))
+        {
+            return null;
+        }
+
+        return value.ValueKind switch
+        {
+            JsonValueKind.Number when value.TryGetInt32(out int number) => number,
+            JsonValueKind.String when int.TryParse(value.GetString(), out int parsed) => parsed,
+            _ => null
+        };
+    }
+
+    private static IReadOnlyList<NormalizedDocument>? ReadOptionalNormalizedDocuments(
+        JsonElement root,
+        string propertyName)
+    {
+        if (!TryGetPropertyIgnoreCase(root, propertyName, out JsonElement value)
+            || value.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var items = new List<NormalizedDocument>();
+        foreach (JsonElement item in value.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            string? documentId = ReadRequiredString(item, "documentId");
+            string? sourceItemId = ReadRequiredString(item, "sourceItemId");
+            string? sourceType = ReadRequiredString(item, "sourceType");
+            string? title = ReadRequiredString(item, "title");
+            string? canonicalKey = ReadRequiredString(item, "canonicalKey");
+            string? status = ReadRequiredString(item, "status");
+
+            if (string.IsNullOrWhiteSpace(documentId) ||
+                string.IsNullOrWhiteSpace(sourceItemId) ||
+                string.IsNullOrWhiteSpace(sourceType) ||
+                string.IsNullOrWhiteSpace(title) ||
+                string.IsNullOrWhiteSpace(canonicalKey) ||
+                string.IsNullOrWhiteSpace(status))
+            {
+                continue;
+            }
+
+            items.Add(new NormalizedDocument
+            {
+                DocumentId = documentId,
+                SourceItemId = sourceItemId,
+                SourceType = sourceType,
+                Title = title,
+                CanonicalKey = canonicalKey,
+                Status = status
+            });
         }
 
         return items.Count == 0 ? null : items;

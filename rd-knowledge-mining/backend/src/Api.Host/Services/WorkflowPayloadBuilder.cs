@@ -84,6 +84,40 @@ public static class WorkflowPayloadBuilder
         return CreateJsonMessage(BuildTransitionPayload(correlationId, executionId, previousResult));
     }
 
+    /// <summary>Block 1 handoff from ingestion-translation to metadata-linking (linking-relevant fields only).</summary>
+    public static ChatMessage CreateIngestionToLinkingTransitionMessage(
+        string correlationId,
+        string executionId,
+        AgentStepResult ingestionResult)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(correlationId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
+        ArgumentNullException.ThrowIfNull(ingestionResult);
+
+        var payload = new
+        {
+            correlationId,
+            sourceId = correlationId,
+            executionId,
+            summary = ingestionResult.Summary,
+            evidence = ingestionResult.Evidence,
+            keyFacts = ingestionResult.KeyFacts,
+            documentsProcessed = ingestionResult.DocumentsProcessed,
+            normalizedFormats = ingestionResult.NormalizedFormats,
+            normalizedDocuments = ingestionResult.NormalizedDocuments?.Select(document => new
+            {
+                documentId = document.DocumentId,
+                sourceItemId = document.SourceItemId,
+                sourceType = document.SourceType,
+                title = document.Title,
+                canonicalKey = document.CanonicalKey,
+                status = document.Status
+            })
+        };
+
+        return CreateJsonMessage(payload);
+    }
+
     private static object BuildTransitionPayload(
         string correlationId,
         string executionId,

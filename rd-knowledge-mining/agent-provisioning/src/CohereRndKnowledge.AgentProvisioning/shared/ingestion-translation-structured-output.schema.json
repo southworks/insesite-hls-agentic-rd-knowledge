@@ -12,31 +12,75 @@
     },
     "evidence": {
       "type": "string",
-      "description": "Key quality and risk findings from ingest processing."
-    },
-    "riskLevel": {
-      "type": "string",
-      "description": "Risk level based on sensitivity and quality issues: low, medium, or high."
+      "description": "Key deduplication and normalization decisions from ingest processing."
     },
     "anomalies": {
       "type": "array",
-      "description": "Specific quality issues found (truncated content, missing fields, unparseable data).",
+      "description": "Structural ingest issues only (truncated content, unparseable data, ambiguous dedup, missing sections needed for normalization). Not PHI/PII or compliance.",
       "items": {
         "type": "string"
       }
     },
     "keyFacts": {
       "type": "array",
-      "description": "Extracted entities for metadata linking (compound codes, phases, endpoints, regions, dataset IDs).",
+      "description": "Extracted identifiers for metadata linking (compound codes, phases, endpoints, dataset IDs, trial IDs, RDOC- IDs).",
       "items": {
         "type": "string"
       }
     },
-    "flags": {
+    "documentsProcessed": {
+      "type": "integer",
+      "description": "Count of unique normalized documents after de-duplication."
+    },
+    "duplicatesRemoved": {
+      "type": "integer",
+      "description": "Number of redundant source items collapsed into an existing canonical document."
+    },
+    "normalizedFormats": {
       "type": "array",
-      "description": "Sensitivity and compliance markers (PHI detected, PII present, confidential data).",
+      "description": "Distinct normalized formats present in the batch (e.g. JATS article, ELN notebook, LIMS CSV).",
       "items": {
         "type": "string"
+      }
+    },
+    "normalizedDocuments": {
+      "type": "array",
+      "description": "Canonical document inventory after de-duplication and normalization.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "description": "Canonical ID, e.g. RDOC-PMC5447962."
+          },
+          "sourceItemId": {
+            "type": "string",
+            "description": "Originating items[] itemId; use first canonical item when duplicates were merged."
+          },
+          "sourceType": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "canonicalKey": {
+            "type": "string",
+            "description": "Primary dedup key: PMC ID, DOI, experiment ID, etc."
+          },
+          "status": {
+            "type": "string",
+            "description": "accepted | duplicate_removed | excluded"
+          }
+        },
+        "required": [
+          "documentId",
+          "sourceItemId",
+          "sourceType",
+          "title",
+          "canonicalKey",
+          "status"
+        ]
       }
     }
   },
@@ -44,9 +88,11 @@
     "summary",
     "decision",
     "evidence",
-    "riskLevel",
     "anomalies",
     "keyFacts",
-    "flags"
+    "documentsProcessed",
+    "duplicatesRemoved",
+    "normalizedFormats",
+    "normalizedDocuments"
   ]
 }
