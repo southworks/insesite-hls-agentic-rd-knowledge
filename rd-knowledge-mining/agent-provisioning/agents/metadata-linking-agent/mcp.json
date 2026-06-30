@@ -1,6 +1,0 @@
-{
-  "enabled": true,
-  "serverName": "rnd-knowledge-mcp",
-  "queryTemplate": "Retrieve external R&D context for: {{input}}",
-  "maxItems": 3
-}

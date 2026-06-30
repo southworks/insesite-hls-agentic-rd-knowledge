@@ -1,6 +1,0 @@
-name: metadata-linking-prompt-agent
-foundryAgentName: metadata-linking-agent
-instructionsFile: instructions.md
-mcpFile: mcp.json
-outputSchemaFile: output-schema.json
-version: 1.0.0
