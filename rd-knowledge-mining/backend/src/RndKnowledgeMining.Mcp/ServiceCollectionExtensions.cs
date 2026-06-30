@@ -18,13 +18,17 @@ public static class ServiceCollectionExtensions
         services.Configure<AzureSearchOptions>(configuration.GetSection(AzureSearchOptions.SectionName));
         services.Configure<AzureFoundryModelsOptions>(configuration.GetSection(AzureFoundryModelsOptions.SectionName));
         services.Configure<McpStartupOptions>(configuration.GetSection(McpStartupOptions.SectionName));
+        services.Configure<FabricLakehouseOptions>(configuration.GetSection(FabricLakehouseOptions.SectionName));
 
         var searchOptions = configuration.GetSection(AzureSearchOptions.SectionName).Get<AzureSearchOptions>()
             ?? new AzureSearchOptions();
         var foundryOptions = configuration.GetSection(AzureFoundryModelsOptions.SectionName).Get<AzureFoundryModelsOptions>()
             ?? new AzureFoundryModelsOptions();
+        var fabricLakehouseOptions = configuration.GetSection(FabricLakehouseOptions.SectionName).Get<FabricLakehouseOptions>()
+            ?? new FabricLakehouseOptions();
 
         ValidateRequiredConfiguration(searchOptions, foundryOptions);
+        ValidateFabricLakehouseConfiguration(fabricLakehouseOptions);
 
         services.AddSingleton(SearchClientFactory.CreateIndexClient(searchOptions));
 
@@ -44,6 +48,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPolicySearchService, AzurePolicySearchService>();
         services.AddSingleton<KnowledgeSearchTools>();
         services.AddSingleton<CurationComplianceTools>();
+        services.AddSingleton<FabricLakehouseClient>(sp =>
+            FabricLakehouseClient.Create(
+                sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<FabricLakehouseOptions>>().Value,
+                sp.GetRequiredService<ILogger<FabricLakehouseClient>>()));
+        services.AddSingleton<RawSourceService>();
+        services.AddSingleton<RawSourceTools>();
         services.AddHostedService<McpStartupInitializer>();
 
         return services;
@@ -69,6 +79,19 @@ public static class ServiceCollectionExtensions
         }
     }
 
+    private static void ValidateFabricLakehouseConfiguration(FabricLakehouseOptions fabricLakehouseOptions)
+    {
+        if (string.IsNullOrWhiteSpace(fabricLakehouseOptions.WorkspaceName))
+        {
+            throw new InvalidOperationException("FabricLakehouse:WorkspaceName is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(fabricLakehouseOptions.LakehouseName))
+        {
+            throw new InvalidOperationException("FabricLakehouse:LakehouseName is required.");
+        }
+    }
+
     public static void PopulateToolDictionary(
         IServiceProvider serviceProvider,
         ConcurrentDictionary<string, McpServerTool[]> toolDictionary)
@@ -77,6 +100,8 @@ public static class ServiceCollectionExtensions
             serviceProvider.GetRequiredService<KnowledgeSearchTools>());
         toolDictionary["curation-compliance"] = CreateTools(
             serviceProvider.GetRequiredService<CurationComplianceTools>());
+        toolDictionary["raw-source"] = CreateTools(
+            serviceProvider.GetRequiredService<RawSourceTools>());
     }
 
     private static McpServerTool[] CreateTools<T>(T target)
