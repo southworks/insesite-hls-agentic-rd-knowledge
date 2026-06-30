@@ -9,6 +9,7 @@ public sealed record SeedScenarioDefinition(
     string Title,
     string Description,
     string StudyId,
+    string SourceId,
     string? SampleQuestion,
     string OutcomeHint,
     StudySummary Study);

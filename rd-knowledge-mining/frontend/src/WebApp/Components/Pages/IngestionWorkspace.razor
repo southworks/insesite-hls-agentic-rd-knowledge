@@ -3,7 +3,7 @@
 @rendermode InteractiveServer
 @inject IngestionWorkspaceState WorkspaceState
 @inject WorkspaceSectionState SectionState
-@inject DatasetSeedCatalogService Catalog
+@inject PortfolioScenarioService Scenarios
 @inject NavigationManager Navigation
 @implements IAsyncDisposable
 
@@ -114,7 +114,7 @@ else
 
     protected override void OnParametersSet()
     {
-        _fallbackStudy = Catalog.GetScenarioByStudyId(StudyId, WorkflowBlock.Ingestion)?.Study
+        _fallbackStudy = Scenarios.GetScenarioByStudyId(StudyId, WorkflowBlock.Ingestion)?.Study
             ?? new StudySummary(StudyId, StudyId, "—", "—", "—", ["Microsoft Fabric"]);
         _studyTitle = _fallbackStudy.Title;
     }

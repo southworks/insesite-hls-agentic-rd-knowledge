@@ -2,7 +2,6 @@
 @rendermode InteractiveServer
 @inject KnowledgePortfolioState PortfolioState
 @inject KnowledgeSessionStore SessionStore
-@inject IRdKnowledgeApiClient ApiClient
 @inject NavigationManager Navigation
 @implements IDisposable
 
@@ -102,7 +101,11 @@ else
     {
         if (_selectedIngestion is null) return;
         _navigating = true;
-        SessionStore.OpenIngestionSession(_selectedIngestion.StudyId, _selectedIngestion.Title, _selectedIngestion.ScenarioId);
+        SessionStore.OpenIngestionSession(
+            _selectedIngestion.StudyId,
+            _selectedIngestion.Title,
+            _selectedIngestion.ScenarioId,
+            _selectedIngestion.SourceId);
         PortfolioState.RefreshSessions();
         Navigation.NavigateTo($"/ingestion/{_selectedIngestion.StudyId}");
         await Task.Delay(300);
@@ -116,16 +119,14 @@ else
         try
         {
             var sessionId = $"query-{_selectedQuery.ScenarioId}";
-            var response = await ApiClient.StartQueryWorkflowAsync(sessionId);
             SessionStore.OpenQuerySession(
                 sessionId,
-                response.ExecutionId,
                 _selectedQuery.Title,
                 _selectedQuery.StudyId,
                 _selectedQuery.SampleQuestion ?? string.Empty,
                 _selectedQuery.ScenarioId);
             PortfolioState.RefreshSessions();
-            Navigation.NavigateTo($"/query/{sessionId}/{response.ExecutionId}");
+            Navigation.NavigateTo($"/query/{sessionId}");
         }
         finally
         {

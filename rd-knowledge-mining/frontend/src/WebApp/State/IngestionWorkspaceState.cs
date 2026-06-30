@@ -11,10 +11,12 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
 {
     private readonly IRdKnowledgeApiClient _apiClient;
     private readonly KnowledgeSessionStore _sessionStore;
+    private readonly PortfolioScenarioService _scenarios;
     private readonly WorkflowPollingOptions _pollingOptions;
     private CancellationTokenSource? _pollingCts;
 
     public string? StudyId { get; private set; }
+    public string? SourceId { get; private set; }
     public string? ExecutionId { get; private set; }
     public IngestionWorkflowProgress? Progress { get; private set; }
     public StudyDocumentsResponse? Documents { get; private set; }
@@ -24,7 +26,8 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
     public string? Error { get; private set; }
 
     public bool CanStartWorkflow =>
-        Progress is null || Progress.Status is WorkflowStatus.Pending or WorkflowStatus.Failed;
+        !string.IsNullOrWhiteSpace(SourceId) &&
+        (Progress is null || Progress.Status is WorkflowStatus.Pending or WorkflowStatus.Failed);
 
     public bool CanSubmitDecision =>
         Progress?.Status == WorkflowStatus.AwaitingHumanApproval;
@@ -34,10 +37,12 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
     public IngestionWorkspaceState(
         IRdKnowledgeApiClient apiClient,
         KnowledgeSessionStore sessionStore,
+        PortfolioScenarioService scenarios,
         IOptions<WorkflowPollingOptions> pollingOptions)
     {
         _apiClient = apiClient;
         _sessionStore = sessionStore;
+        _scenarios = scenarios;
         _pollingOptions = pollingOptions.Value;
     }
 
@@ -45,6 +50,7 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
     {
         StudyId = studyId;
         ExecutionId = executionId;
+        SourceId = ResolveSourceId(studyId);
         IsBusy = true;
         Error = null;
         Notify();
@@ -56,6 +62,7 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
             if (!string.IsNullOrWhiteSpace(executionId))
             {
                 Progress = await _apiClient.GetIngestionStatusAsync(executionId, cancellationToken);
+                SourceId ??= Progress.StudyId;
                 UpdateSession();
                 if (ShouldPoll(Progress.Status))
                 {
@@ -82,8 +89,10 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
 
     public async Task StartWorkflowAsync(CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(StudyId))
+        if (string.IsNullOrWhiteSpace(SourceId))
         {
+            Error = "No ingestion source is configured for this study scenario.";
+            Notify();
             return;
         }
 
@@ -93,7 +102,7 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
 
         try
         {
-            var response = await _apiClient.StartIngestionWorkflowAsync(StudyId, cancellationToken);
+            var response = await _apiClient.StartIngestionWorkflowAsync(SourceId, cancellationToken);
             ExecutionId = response.ExecutionId;
             Progress = await _apiClient.GetIngestionStatusAsync(response.ExecutionId, cancellationToken);
             UpdateSession();
@@ -112,7 +121,7 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
 
     public async Task SubmitDecisionAsync(bool approved, string? notes, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(ExecutionId))
+        if (string.IsNullOrWhiteSpace(ExecutionId) || string.IsNullOrWhiteSpace(SourceId))
         {
             return;
         }
@@ -125,6 +134,7 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
         {
             await _apiClient.SubmitIngestionDecisionAsync(
                 ExecutionId,
+                SourceId,
                 new SubmitIngestionDecisionRequest(approved, notes),
                 cancellationToken);
             Progress = await _apiClient.GetIngestionStatusAsync(ExecutionId, cancellationToken);
@@ -140,6 +150,17 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
             IsBusy = false;
             Notify();
         }
+    }
+
+    private string? ResolveSourceId(string studyId)
+    {
+        var session = _sessionStore.GetSession(studyId);
+        if (!string.IsNullOrWhiteSpace(session?.SourceId))
+        {
+            return session.SourceId;
+        }
+
+        return _scenarios.GetSourceIdByStudyId(studyId, WorkflowBlock.Ingestion);
     }
 
     private void StartPolling()
@@ -217,7 +238,8 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
             return;
         }
 
-        var session = _sessionStore.GetSession(StudyId) ?? _sessionStore.OpenIngestionSession(StudyId, StudyId);
+        var session = _sessionStore.GetSession(StudyId)
+            ?? _sessionStore.OpenIngestionSession(StudyId, StudyId, sourceId: SourceId);
         session.ExecutionId = ExecutionId;
         session.Status = Progress.Status;
         _sessionStore.UpdateSession(session);
