@@ -1,7 +1,0 @@
-{
-  "AzureFoundry": {
-    "ProjectEndpoint": "",
-    "MetadataLinkingPromptAgentName": "metadata-linking-agent",
-    "MetadataLinkingPromptAgentSpecPath": "agents/metadata-linking/agent.json"
-  }
-}
