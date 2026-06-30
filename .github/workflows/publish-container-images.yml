@@ -32,6 +32,8 @@ jobs:
             dockerfile: backend/src/Api.Host/Dockerfile
           - image: coherernd-mcp
             dockerfile: backend/src/RndKnowledgeMining.Mcp/Dockerfile
+          - image: coherernd-web
+            dockerfile: frontend/src/WebApp/Dockerfile
           - image: coherernd-provisioning
             dockerfile: agent-provisioning/Dockerfile
 
