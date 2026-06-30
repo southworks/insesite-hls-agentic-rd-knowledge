@@ -57,6 +57,7 @@ ServiceCollectionExtensions.PopulateToolDictionary(app.Services, toolDictionary)
 
 app.MapMcp("/knowledge-search/mcp");
 app.MapMcp("/curation-compliance/mcp");
+app.MapMcp("/raw-source/mcp");
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.Run();
@@ -71,6 +72,11 @@ static string ResolveServerKey(string path)
     if (path.Contains("/curation-compliance/", StringComparison.OrdinalIgnoreCase))
     {
         return "curation-compliance";
+    }
+
+    if (path.Contains("/raw-source/", StringComparison.OrdinalIgnoreCase))
+    {
+        return "raw-source";
     }
 
     return "knowledge-search";
