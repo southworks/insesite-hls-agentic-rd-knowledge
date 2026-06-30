@@ -4,36 +4,41 @@ Dataset and solution accelerator workspace for an HLS agentic R&D knowledge mini
 
 ## Scenario
 
-This repository will define a compliance-safe dataset for an agentic research knowledge hub. The future dataset will start from a raw layer of public or simulated R&D knowledge artifacts and produce simulated downstream entities that represent how agents ingest, normalize, link, retrieve, curate, and govern research content.
+This repository defines a compliance-safe dataset for an agentic research knowledge hub. The dataset starts from a raw layer of public or simulated R&D knowledge artifacts and produces downstream entities that represent how agents ingest, normalize, link, retrieve, curate, and govern research content.
 
-The scenario is aligned to:
+HLS is **two sequential phases**, each closed by a distinct human actor (see [workflow-summary.md](workflow-summary.md)). Each is started by a controlled UI action, not a free-form chatbot:
 
-- Ingestion and translation of R&D source material
-- Metadata extraction, entity extraction, and version linking
-- Retrieval with Cohere Embed and Cohere Rerank
-- Search and chat over grounded research evidence
-- Curation, compliance review, and human approval decisions
+- **Phase 1 — Ingestion & structuring** — upload documents → ingestion & translation → metadata extraction & linking → **knowledge curator approves** → persistence into the CMS/knowledge base.
+- **Phase 2 — Search & compliance** — UI query → search & chat retrieval → curation & compliance review → **compliance owner approves** → grounded answer with citations.
 
-## Dataset Direction
+The headline demo is stateful: **search an empty KB → ingest → search again** and the grounded answer now appears.
 
-The raw layer is expected to represent artifacts such as research articles, protocols, ELN/LIMS-style records, datasets, results, submissions, partner or vendor repositories, and regional policy references.
+- **Demo inputs:** [`dataset-seed/README.md`](dataset-seed/README.md) — Case 1–4, policies, ingest files
+- **Reference / rebuild:** [`data-generation/README.md`](data-generation/README.md) — corpus, scripts, ground truth
+- **Technical docs:** [`data-generation/docs/HANDOFF.md`](data-generation/docs/HANDOFF.md), [`data-generation/docs/TEST_CASES.md`](data-generation/docs/TEST_CASES.md), [`data-generation/docs/TESTING_GUIDE.md`](data-generation/docs/TESTING_GUIDE.md)
 
-The data source will be selected in a later step after reviewing public candidates that are suitable for healthcare and life sciences R&D knowledge mining, avoid patient-identifiable information, and do not introduce compliance concerns. If no public source fits the scenario cleanly, the raw layer may be generated synthetically using public material only as structural reference.
+## Repository layout
 
-## Repository Scope
+**Demo package** (`dataset-seed/`):
 
-This initial commit intentionally includes only:
+- `cases/case-01-human-review/` … `case-04-demo/` — flat `ingest/` + demo `prompts/`
+- `policies/hls_policies.txt` — governance rules
 
-- `README.md`
-- `.gitignore`
+**Generation & reference** (`data-generation/`):
 
-No datasets, schemas, generated files, source documents, or simulated outputs have been created yet.
+- `corpus/` — canonical raw source files + `source_catalog.json`
+- `ground-truth/` — optional e2e answer keys (`QRY-001.json`, `ING-001.json`, …)
+- `scripts/` — `generate_raw_layer.py`, `build_case_folders.py`, `generate_normalized_layers.py`, `scenarios.py`
+- `docs/` — handoff, testing guide, schemas
+
+Regenerate demo cases:
+
+```bash
+cd data-generation/scripts
+python3 generate_raw_layer.py
+python3 build_case_folders.py
+```
 
 ## Alignment
 
-This repository is intended to follow the same scenario-driven dataset approach used by:
-
-- `southworks/loan-mortgage-agents`
-- `southworks/inesite-agentic-inventory-planning`
-
-Future commits should keep the raw layer and derived entities explicit, auditable, and easy to trace back to the scenario narrative.
+This repository follows the same scenario-driven dataset approach used by `loan-mortgage-agents` and `inesite-agentic-inventory-planning`.
