@@ -1,4 +1,5 @@
 using CohereRndKnowledgeMining.Api.Host.Contracts;
+using CohereRndKnowledgeMining.Api.Host.Options;
 using CohereRndKnowledgeMining.Api.Host.Services.Integrations;
 using CohereRndKnowledgeMining.Api.Host.Workflow;
 using Microsoft.Agents.AI;
@@ -25,6 +26,8 @@ public sealed class IngestionWorkflowService
     private readonly IngestionWorkflowFactory _workflowFactory;
     private readonly InMemoryIngestionWorkflowStore _store;
     private readonly IFabricRawSourceReader _rawSourceReader;
+    private readonly IFabricRawSourceWriter? _rawSourceWriter;
+    private readonly DataSourceMode _dataSourceMode;
     private readonly IVectorKnowledgeWriter _vectorKnowledgeWriter;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly ILogger<IngestionWorkflowService> _logger;
@@ -36,12 +39,16 @@ public sealed class IngestionWorkflowService
         IFabricRawSourceReader rawSourceReader,
         IVectorKnowledgeWriter vectorKnowledgeWriter,
         IHostApplicationLifetime applicationLifetime,
-        ILogger<IngestionWorkflowService> logger)
+        ILogger<IngestionWorkflowService> logger,
+        DataSourceOptions? dataSourceOptions = null,
+        IFabricRawSourceWriter? rawSourceWriter = null)
     {
         _agentProvider = agentProvider;
         _workflowFactory = workflowFactory;
         _store = store;
         _rawSourceReader = rawSourceReader;
+        _rawSourceWriter = rawSourceWriter;
+        _dataSourceMode = dataSourceOptions?.Mode ?? DataSourceMode.Local;
         _vectorKnowledgeWriter = vectorKnowledgeWriter;
         _applicationLifetime = applicationLifetime;
         _logger = logger;
@@ -68,7 +75,7 @@ public sealed class IngestionWorkflowService
         if (items.Count == 0)
         {
             throw new KeyNotFoundException(
-                $"Source '{sourceId}' has no raw R&D knowledge in Microsoft Fabric.");
+                $"Source '{sourceId}' has no raw R&D knowledge items.");
         }
 
         var execution = new WorkflowExecution
@@ -80,7 +87,22 @@ public sealed class IngestionWorkflowService
         };
         _store.Save(execution);
 
-        List<ChatMessage> input = WorkflowPayloadBuilder.CreateInitialMessages(sourceId.Trim(), executionId, items);
+        List<ChatMessage> input;
+        if (_dataSourceMode == DataSourceMode.Fabric && _rawSourceWriter is not null)
+        {
+            _logger.LogInformation(
+                "Fabric mode: uploading {Count} items to OneLake for source {SourceId}.",
+                items.Count, sourceId);
+            await _rawSourceWriter
+                .WriteAsync(sourceId.Trim(), items, cancellationToken)
+                .ConfigureAwait(false);
+            input = WorkflowPayloadBuilder.CreateFabricParamsMessage(sourceId.Trim(), executionId);
+        }
+        else
+        {
+            input = WorkflowPayloadBuilder.CreateInitialMessages(sourceId.Trim(), executionId, items);
+        }
+
         RunInBackground(executionId, input);
 
         return ToResponse(execution);
