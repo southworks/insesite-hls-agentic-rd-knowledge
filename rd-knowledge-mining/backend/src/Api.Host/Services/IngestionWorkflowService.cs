@@ -26,6 +26,7 @@ public sealed class IngestionWorkflowService
     private readonly IngestionWorkflowFactory _workflowFactory;
     private readonly InMemoryIngestionWorkflowStore _store;
     private readonly IngestionSourceDocumentLoader _documentLoader;
+    private readonly IngestionSourceDocumentCache _sourceDocumentCache;
     private readonly IFabricRawSourceWriter? _rawSourceWriter;
     private readonly DataSourceMode _dataSourceMode;
     private readonly IHostApplicationLifetime _applicationLifetime;
@@ -36,6 +37,7 @@ public sealed class IngestionWorkflowService
         IngestionWorkflowFactory workflowFactory,
         InMemoryIngestionWorkflowStore store,
         IngestionSourceDocumentLoader documentLoader,
+        IngestionSourceDocumentCache sourceDocumentCache,
         IHostApplicationLifetime applicationLifetime,
         ILogger<IngestionWorkflowService> logger,
         DataSourceOptions? dataSourceOptions = null,
@@ -45,6 +47,7 @@ public sealed class IngestionWorkflowService
         _workflowFactory = workflowFactory;
         _store = store;
         _documentLoader = documentLoader;
+        _sourceDocumentCache = sourceDocumentCache;
         _rawSourceWriter = rawSourceWriter;
         _dataSourceMode = dataSourceOptions?.Mode ?? DataSourceMode.Local;
         _applicationLifetime = applicationLifetime;
@@ -94,6 +97,7 @@ public sealed class IngestionWorkflowService
             WorkflowCheckpointManager = CheckpointManager.CreateInMemory()
         };
         _store.Save(execution);
+        _sourceDocumentCache.Save(executionId, items);
 
         List<ChatMessage> input = WorkflowPayloadBuilder.CreateInlineIngestionMessage(
             sourceId.Trim(),
@@ -435,6 +439,7 @@ public sealed class IngestionWorkflowService
         execution.CurrentAgent = null;
         execution.PendingApprovalRequest = null;
         execution.PendingCheckpoint = null;
+        _sourceDocumentCache.Remove(execution.ExecutionId);
         Touch(execution);
     }
 
@@ -594,6 +599,7 @@ public sealed class IngestionWorkflowService
         execution.FailureReason = reason;
         execution.PendingApprovalRequest = null;
         execution.PendingCheckpoint = null;
+        _sourceDocumentCache.Remove(execution.ExecutionId);
         Touch(execution);
     }
 

@@ -231,6 +231,11 @@ public static class AgentStructuredOutputParser
                 {
                     rank += 1000 + documents.GetArrayLength();
                 }
+                else if (TryGetPropertyIgnoreCase(root, "documentSummaries", out JsonElement summaries)
+                    && summaries.ValueKind == JsonValueKind.Array)
+                {
+                    rank += 900 + summaries.GetArrayLength();
+                }
 
                 if (TryGetPropertyIgnoreCase(root, "summary", out JsonElement summary)
                     && summary.ValueKind == JsonValueKind.Object)
@@ -377,6 +382,8 @@ public static class AgentStructuredOutputParser
             bool hasIngestionContent =
                 (TryGetPropertyIgnoreCase(root, "documents", out JsonElement documents)
                  && documents.ValueKind == JsonValueKind.Array)
+                || (TryGetPropertyIgnoreCase(root, "documentSummaries", out JsonElement documentSummaries)
+                    && documentSummaries.ValueKind == JsonValueKind.Array)
                 || (TryGetPropertyIgnoreCase(root, "summary", out JsonElement summary)
                     && summary.ValueKind == JsonValueKind.Object)
                 || (TryGetPropertyIgnoreCase(root, "normalizedEntitiesMentioned", out JsonElement entities)

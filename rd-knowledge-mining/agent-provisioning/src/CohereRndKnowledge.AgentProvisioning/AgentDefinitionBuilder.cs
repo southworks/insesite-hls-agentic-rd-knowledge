@@ -41,7 +41,7 @@ public sealed class AgentDefinitionBuilder
 
         if (AgentAssetLoader.UsesInstructionsOnlyOutput(bundle.Manifest))
         {
-            definition["max_tokens"] = 16384;
+            definition["max_tokens"] = 8192;
         }
 
         if (!AgentAssetLoader.UsesInstructionsOnlyOutput(bundle.Manifest))

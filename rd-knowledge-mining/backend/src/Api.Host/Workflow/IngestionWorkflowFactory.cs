@@ -35,10 +35,14 @@ public static class IngestionWorkflowConstants
 public sealed class IngestionWorkflowFactory
 {
     private readonly INormalizedDocumentStore _normalizedDocumentStore;
+    private readonly IngestionSourceDocumentCache _sourceDocumentCache;
 
-    public IngestionWorkflowFactory(INormalizedDocumentStore normalizedDocumentStore)
+    public IngestionWorkflowFactory(
+        INormalizedDocumentStore normalizedDocumentStore,
+        IngestionSourceDocumentCache sourceDocumentCache)
     {
         _normalizedDocumentStore = normalizedDocumentStore;
+        _sourceDocumentCache = sourceDocumentCache;
     }
 
     public AgentWorkflow CreateWorkflow(RndKnowledgeAgents agents, string sourceId, string executionId)
@@ -61,6 +65,7 @@ public sealed class IngestionWorkflowFactory
             executionId: executionId,
             sourceAgentName: IngestionWorkflowConstants.IngestionTranslationAgentName,
             normalizedDocumentStore: _normalizedDocumentStore,
+            sourceDocumentCache: _sourceDocumentCache,
             persistNormalizedDocuments: true);
         var bridge02 = new RichHandoffBridgeExecutor(
             id: "IngestionBridge02",

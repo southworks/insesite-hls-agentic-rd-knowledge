@@ -68,6 +68,7 @@ else
 }
 
 builder.Services.AddNormalizedDocumentStore(builder.Configuration);
+builder.Services.AddSingleton<IngestionSourceDocumentCache>();
 builder.Services.AddSingleton<IngestionSourceDocumentLoader>();
 
 // Foundry agents shared by both blocks.

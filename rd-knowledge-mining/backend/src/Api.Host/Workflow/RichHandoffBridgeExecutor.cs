@@ -17,6 +17,7 @@ internal sealed class RichHandoffBridgeExecutor : ChatProtocolExecutor
     private readonly string _sourceAgentName;
     private readonly string _accumulatedMessagesKey;
     private readonly INormalizedDocumentStore? _normalizedDocumentStore;
+    private readonly IngestionSourceDocumentCache? _sourceDocumentCache;
     private readonly bool _persistNormalizedDocuments;
 
     public RichHandoffBridgeExecutor(
@@ -25,6 +26,7 @@ internal sealed class RichHandoffBridgeExecutor : ChatProtocolExecutor
         string executionId,
         string sourceAgentName,
         INormalizedDocumentStore? normalizedDocumentStore = null,
+        IngestionSourceDocumentCache? sourceDocumentCache = null,
         bool persistNormalizedDocuments = false)
         : base(
             id,
@@ -36,6 +38,7 @@ internal sealed class RichHandoffBridgeExecutor : ChatProtocolExecutor
         _sourceAgentName = sourceAgentName;
         _accumulatedMessagesKey = $"{id}.AccumulatedMessages";
         _normalizedDocumentStore = normalizedDocumentStore;
+        _sourceDocumentCache = sourceDocumentCache;
         _persistNormalizedDocuments = persistNormalizedDocuments;
     }
 
@@ -73,11 +76,18 @@ internal sealed class RichHandoffBridgeExecutor : ChatProtocolExecutor
                 StringComparison.OrdinalIgnoreCase)
             && !string.IsNullOrWhiteSpace(result.RawPayloadJson))
         {
+            string payloadJson = result.RawPayloadJson;
+            if (_sourceDocumentCache?.TryGet(_executionId, out IReadOnlyList<RawKnowledgeItem>? sourceItems) == true
+                && sourceItems is not null)
+            {
+                payloadJson = IngestionHandoffEnricher.Enrich(payloadJson, sourceItems);
+            }
+
             string manifestJson = await _normalizedDocumentStore
                 .PersistIngestionHandoffAsync(
                     _correlationId,
                     _executionId,
-                    result.RawPayloadJson,
+                    payloadJson,
                     cancellationToken)
                 .ConfigureAwait(false);
 
