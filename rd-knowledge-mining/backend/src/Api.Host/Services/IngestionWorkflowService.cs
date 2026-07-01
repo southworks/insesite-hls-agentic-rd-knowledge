@@ -387,7 +387,7 @@ public sealed class IngestionWorkflowService
                 break;
 
             case AgentResponseEvent responseEvent:
-                TryUpdateAgentOutput(execution, responseEvent.ExecutorId, responseEvent.Response, isFinal: true);
+                TryUpdateAgentOutput(execution, responseEvent.ExecutorId, responseEvent.Response, isFinal: false);
                 break;
 
             case ExecutorInvokedEvent invokedEvent:
@@ -396,6 +396,7 @@ public sealed class IngestionWorkflowService
 
             case ExecutorCompletedEvent completedEvent:
                 MarkExecutorCompleted(execution, completedEvent.ExecutorId);
+                TryCaptureRichAgentHandoff(execution, completedEvent.ExecutorId, completedEvent.Data);
                 break;
 
             case ExecutorFailedEvent failedEvent:
@@ -479,31 +480,6 @@ public sealed class IngestionWorkflowService
             return;
         }
 
-        string? agentKey = MapExecutorToAgentKey(executorId);
-        if (agentKey is not null && IsRichPayloadAgentKey(agentKey))
-        {
-            if (!isFinal || data is not AgentResponse response)
-            {
-                return;
-            }
-
-            string finalText = WorkflowTextExtractor.GetFinalAgentTextResponse(response);
-            if (string.IsNullOrWhiteSpace(finalText))
-            {
-                return;
-            }
-
-            string agentName = MapAgentKeyToName(agentKey);
-            if (!AgentStructuredOutputParser.TryParseRichPayload(agentName, finalText, out AgentStepResult? parsed)
-                || parsed is null)
-            {
-                return;
-            }
-
-            SaveFinalRichAgentOutput(execution, agentKey, parsed);
-            return;
-        }
-
         string? rawOutput = data switch
         {
             AgentResponse response => WorkflowTextExtractor.GetAgentResponseText(response),
@@ -523,11 +499,64 @@ public sealed class IngestionWorkflowService
         SaveAgentOutput(execution, executorId, rawOutput, isFinal);
     }
 
+    /// <summary>
+    /// Captures Block 1 handoff JSON only when the agent executor completes, not on intermediate turns.
+    /// </summary>
+    private void TryCaptureRichAgentHandoff(
+        WorkflowExecution execution,
+        string executorId,
+        object? data)
+    {
+        string? agentKey = MapExecutorToAgentKey(executorId);
+        if (agentKey is null || !IsRichPayloadAgentKey(agentKey))
+        {
+            return;
+        }
+
+        string? sourceText = ExtractHandoffSourceText(data);
+        if (string.IsNullOrWhiteSpace(sourceText))
+        {
+            return;
+        }
+
+        string agentName = MapAgentKeyToName(agentKey);
+        if (!AgentStructuredOutputParser.TryParseRichPayload(agentName, sourceText, out AgentStepResult? parsed)
+            || parsed is null)
+        {
+            return;
+        }
+
+        SaveFinalRichAgentOutput(execution, agentKey, parsed);
+    }
+
+    private static string? ExtractHandoffSourceText(object? data) =>
+        data switch
+        {
+            AgentResponse response => WorkflowTextExtractor.CollectHandoffSourceText(response),
+            ChatMessage[] messages => WorkflowTextExtractor.CollectHandoffSourceText(messages),
+            IList<ChatMessage> messages => WorkflowTextExtractor.CollectHandoffSourceText(messages),
+            IEnumerable<ChatMessage> messages => WorkflowTextExtractor.CollectHandoffSourceText(messages),
+            _ => null
+        };
+
     private void SaveFinalRichAgentOutput(
         WorkflowExecution execution,
         string agentKey,
         AgentStepResult parsed)
     {
+        string agentName = MapAgentKeyToName(agentKey);
+        if (!AgentStructuredOutputParser.IsRecognizedHandoffResult(agentName, parsed))
+        {
+            return;
+        }
+
+        if (execution.FinalAgentStepResults.TryGetValue(agentKey, out AgentStepResult? existing)
+            && AgentStructuredOutputParser.RankHandoffResult(agentName, existing)
+                >= AgentStructuredOutputParser.RankHandoffResult(agentName, parsed))
+        {
+            return;
+        }
+
         execution.FinalAgentStepResults[agentKey] = parsed;
         execution.AgentOutputs[agentKey] = parsed.RawPayloadJson ?? string.Empty;
 

@@ -182,14 +182,82 @@ public static class AgentStructuredOutputParser
             return false;
         }
 
-        try
+        if (TryParseRichPayloadCore(agentName, rawOutput, out AgentStepResult parsed))
         {
-            result = ParseRichPayload(agentName, rawOutput);
+            result = parsed;
             return true;
         }
-        catch (InvalidOperationException)
+
+        return false;
+    }
+
+    public static bool IsRecognizedHandoffResult(string agentName, AgentStepResult result)
+    {
+        if (string.IsNullOrWhiteSpace(result.RawPayloadJson))
         {
             return false;
+        }
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(result.RawPayloadJson);
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                && IsRecognizedHandoffPayload(agentName, document.RootElement);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    public static int RankHandoffResult(string agentName, AgentStepResult result)
+    {
+        if (!IsRecognizedHandoffResult(agentName, result)
+            || string.IsNullOrWhiteSpace(result.RawPayloadJson))
+        {
+            return 0;
+        }
+
+        try
+        {
+            using JsonDocument document = JsonDocument.Parse(result.RawPayloadJson);
+            JsonElement root = document.RootElement;
+            int rank = 1;
+
+            if (string.Equals(agentName, AgentWorkflowAgents.IngestionTranslation, StringComparison.OrdinalIgnoreCase))
+            {
+                if (TryGetPropertyIgnoreCase(root, "documents", out JsonElement documents)
+                    && documents.ValueKind == JsonValueKind.Array)
+                {
+                    rank += 1000 + documents.GetArrayLength();
+                }
+
+                if (TryGetPropertyIgnoreCase(root, "summary", out JsonElement summary)
+                    && summary.ValueKind == JsonValueKind.Object)
+                {
+                    rank += 100;
+                }
+            }
+            else if (string.Equals(agentName, AgentWorkflowAgents.MetadataLinking, StringComparison.OrdinalIgnoreCase))
+            {
+                if (TryGetPropertyIgnoreCase(root, "entities", out JsonElement entities)
+                    && entities.ValueKind == JsonValueKind.Array)
+                {
+                    rank += 500 + entities.GetArrayLength();
+                }
+
+                if (TryGetPropertyIgnoreCase(root, "links", out JsonElement links)
+                    && links.ValueKind == JsonValueKind.Array)
+                {
+                    rank += links.GetArrayLength();
+                }
+            }
+
+            return rank;
+        }
+        catch (JsonException)
+        {
+            return 0;
         }
     }
 
@@ -225,6 +293,11 @@ public static class AgentStructuredOutputParser
 
     private static AgentStepResult ParseRichPayload(string agentName, string rawOutput)
     {
+        if (TryParseRichPayloadCore(agentName, rawOutput, out AgentStepResult result))
+        {
+            return result;
+        }
+
         if (string.IsNullOrWhiteSpace(rawOutput))
         {
             throw new InvalidOperationException(
@@ -238,6 +311,24 @@ public static class AgentStructuredOutputParser
                 $"Agent '{agentName}' returned an error instead of JSON: {Truncate(trimmedOutput)}");
         }
 
+        throw new InvalidOperationException(
+            $"Agent '{agentName}' did not return a recognized JSON handoff payload.");
+    }
+
+    private static bool TryParseRichPayloadCore(string agentName, string rawOutput, out AgentStepResult result)
+    {
+        result = null!;
+
+        if (string.IsNullOrWhiteSpace(rawOutput))
+        {
+            return false;
+        }
+
+        if (rawOutput.Trim().Contains("Error (", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
         foreach (string candidate in CollectJsonCandidates(rawOutput))
         {
             try
@@ -249,11 +340,17 @@ public static class AgentStructuredOutputParser
                 }
 
                 JsonElement root = document.RootElement;
+                if (!IsRecognizedHandoffPayload(agentName, root))
+                {
+                    continue;
+                }
+
                 string summary = DeriveRichSummary(agentName, root);
                 string decision = DeriveRichDecision(agentName, root);
                 string evidence = DeriveRichEvidence(root);
                 string canonicalJson = JsonSerializer.Serialize(root, JsonOptions);
-                return AgentStepResult.FromRichPayload(agentName, canonicalJson, summary, decision, evidence);
+                result = AgentStepResult.FromRichPayload(agentName, canonicalJson, summary, decision, evidence);
+                return true;
             }
             catch (JsonException)
             {
@@ -261,8 +358,43 @@ public static class AgentStructuredOutputParser
             }
         }
 
-        throw new InvalidOperationException(
-            $"Agent '{agentName}' did not return a valid JSON object payload.");
+        return false;
+    }
+
+    private static bool IsRecognizedHandoffPayload(string agentName, JsonElement root)
+    {
+        if (string.Equals(agentName, AgentWorkflowAgents.IngestionTranslation, StringComparison.OrdinalIgnoreCase))
+        {
+            bool hasBatchIdentity = TryGetPropertyIgnoreCase(root, "batchId", out _)
+                || TryGetPropertyIgnoreCase(root, "ingestionRunId", out _);
+            bool hasIngestionContent =
+                (TryGetPropertyIgnoreCase(root, "documents", out JsonElement documents)
+                 && documents.ValueKind == JsonValueKind.Array)
+                || (TryGetPropertyIgnoreCase(root, "summary", out JsonElement summary)
+                    && summary.ValueKind == JsonValueKind.Object)
+                || (TryGetPropertyIgnoreCase(root, "normalizedEntitiesMentioned", out JsonElement entities)
+                    && entities.ValueKind == JsonValueKind.Array);
+
+            return hasBatchIdentity && hasIngestionContent;
+        }
+
+        if (string.Equals(agentName, AgentWorkflowAgents.MetadataLinking, StringComparison.OrdinalIgnoreCase))
+        {
+            bool hasRunIdentity = TryGetPropertyIgnoreCase(root, "batchId", out _)
+                || TryGetPropertyIgnoreCase(root, "metadataRunId", out _);
+            bool hasLinkingContent =
+                (TryGetPropertyIgnoreCase(root, "entities", out JsonElement entities)
+                 && entities.ValueKind == JsonValueKind.Array)
+                || (TryGetPropertyIgnoreCase(root, "links", out JsonElement links)
+                    && links.ValueKind == JsonValueKind.Array)
+                || (TryGetPropertyIgnoreCase(root, "embeddingPlan", out JsonElement embeddingPlan)
+                    && embeddingPlan.ValueKind == JsonValueKind.Object
+                    && embeddingPlan.EnumerateObject().Any());
+
+            return hasRunIdentity && hasLinkingContent;
+        }
+
+        return true;
     }
 
     private static string DeriveRichSummary(string agentName, JsonElement root)

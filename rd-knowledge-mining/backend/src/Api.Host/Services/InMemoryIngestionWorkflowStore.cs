@@ -33,7 +33,7 @@ public sealed class WorkflowExecution
 
     public Dictionary<string, string> AgentOutputs { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Parsed Block 1 agent results captured only from final <see cref="Microsoft.Agents.AI.AgentResponse"/> events.</summary>
+    /// <summary>Parsed Block 1 agent results captured when the agent executor completes.</summary>
     public Dictionary<string, AgentStepResult> FinalAgentStepResults { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     public Dictionary<string, StringBuilder> StreamingBuffers { get; } = new(StringComparer.OrdinalIgnoreCase);

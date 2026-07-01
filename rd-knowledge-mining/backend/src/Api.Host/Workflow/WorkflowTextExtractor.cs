@@ -35,7 +35,6 @@ internal static class WorkflowTextExtractor
 
     /// <summary>
     /// Returns the last assistant message text from a completed agent response.
-    /// Ignores tool-call-only assistant turns.
     /// </summary>
     public static string GetFinalAgentTextResponse(AgentResponse response)
     {
@@ -59,6 +58,46 @@ internal static class WorkflowTextExtractor
         }
 
         return string.Empty;
+    }
+
+    /// <summary>
+    /// Collects all assistant text from a completed agent run for handoff JSON extraction.
+    /// </summary>
+    public static string CollectHandoffSourceText(AgentResponse response) =>
+        response.Messages is { Count: > 0 }
+            ? CollectHandoffSourceText(response.Messages)
+            : response.ToString() ?? string.Empty;
+
+    /// <summary>
+    /// Collects all assistant text from workflow messages for handoff JSON extraction.
+    /// </summary>
+    public static string CollectHandoffSourceText(IEnumerable<ChatMessage> messages)
+    {
+        var builder = new StringBuilder();
+        foreach (ChatMessage message in messages)
+        {
+            if (message.Role != ChatRole.Assistant)
+            {
+                continue;
+            }
+
+            string? text = GetAssistantTextOnly(message);
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                continue;
+            }
+
+            if (builder.Length > 0)
+            {
+                builder.AppendLine();
+            }
+
+            builder.Append(text);
+        }
+
+        return builder.Length == 0
+            ? string.Empty
+            : builder.ToString().Trim();
     }
 
     private static string? GetAssistantTextOnly(ChatMessage message)

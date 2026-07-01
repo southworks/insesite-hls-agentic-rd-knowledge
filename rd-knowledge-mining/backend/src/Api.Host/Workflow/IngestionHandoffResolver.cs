@@ -22,7 +22,8 @@ internal static class IngestionHandoffResolver
             cancellationToken.ThrowIfCancellationRequested();
 
             WorkflowExecution execution = store.GetRequired(executionId);
-            if (execution.FinalAgentStepResults.TryGetValue(agentOutputKey, out AgentStepResult? result))
+            if (execution.FinalAgentStepResults.TryGetValue(agentOutputKey, out AgentStepResult? result)
+                && AgentStructuredOutputParser.IsRecognizedHandoffResult(agentName, result))
             {
                 return result;
             }
