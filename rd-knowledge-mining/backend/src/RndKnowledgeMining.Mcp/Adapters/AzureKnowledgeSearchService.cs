@@ -14,6 +14,12 @@ public interface IKnowledgeSearchService
         string sessionId,
         string passageId,
         CancellationToken cancellationToken = default);
+
+    Task<IndexRdKnowledgeResponse> IndexKnowledgeAsync(
+        string sourceId,
+        string executionId,
+        string curatedKnowledgeJson,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IPolicySearchService
@@ -49,4 +55,11 @@ public sealed class AzureKnowledgeSearchService : IKnowledgeSearchService
         string passageId,
         CancellationToken cancellationToken = default) =>
         _knowledgeIndexAdapter.GetLineageAsync(sessionId, passageId, cancellationToken);
+
+    public Task<IndexRdKnowledgeResponse> IndexKnowledgeAsync(
+        string sourceId,
+        string executionId,
+        string curatedKnowledgeJson,
+        CancellationToken cancellationToken = default) =>
+        _knowledgeIndexAdapter.IndexKnowledgeAsync(sourceId, executionId, curatedKnowledgeJson, cancellationToken);
 }

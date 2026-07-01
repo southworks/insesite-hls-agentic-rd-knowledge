@@ -28,7 +28,7 @@ public sealed class IngestionWorkflowService
     private readonly IFabricRawSourceReader _rawSourceReader;
     private readonly IFabricRawSourceWriter? _rawSourceWriter;
     private readonly DataSourceMode _dataSourceMode;
-    private readonly IVectorKnowledgeWriter _vectorKnowledgeWriter;
+    private readonly IMetadataLinkingIndexer _metadataLinkingIndexer;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly ILogger<IngestionWorkflowService> _logger;
 
@@ -37,7 +37,7 @@ public sealed class IngestionWorkflowService
         IngestionWorkflowFactory workflowFactory,
         InMemoryIngestionWorkflowStore store,
         IFabricRawSourceReader rawSourceReader,
-        IVectorKnowledgeWriter vectorKnowledgeWriter,
+        IMetadataLinkingIndexer metadataLinkingIndexer,
         IHostApplicationLifetime applicationLifetime,
         ILogger<IngestionWorkflowService> logger,
         DataSourceOptions? dataSourceOptions = null,
@@ -49,7 +49,7 @@ public sealed class IngestionWorkflowService
         _rawSourceReader = rawSourceReader;
         _rawSourceWriter = rawSourceWriter;
         _dataSourceMode = dataSourceOptions?.Mode ?? DataSourceMode.Local;
-        _vectorKnowledgeWriter = vectorKnowledgeWriter;
+        _metadataLinkingIndexer = metadataLinkingIndexer;
         _applicationLifetime = applicationLifetime;
         _logger = logger;
     }
@@ -224,8 +224,8 @@ public sealed class IngestionWorkflowService
     {
         string curatedKnowledgeJson = GetOutput(execution, MetadataLinkingKey) ?? string.Empty;
 
-        await _vectorKnowledgeWriter
-            .WriteAsync(execution.CorrelationId, execution.ExecutionId, curatedKnowledgeJson, cancellationToken)
+        await _metadataLinkingIndexer
+            .IndexApprovedMetadataAsync(execution.CorrelationId, execution.ExecutionId, curatedKnowledgeJson, cancellationToken)
             .ConfigureAwait(false);
 
         _logger.LogInformation(

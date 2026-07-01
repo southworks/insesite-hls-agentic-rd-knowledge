@@ -40,4 +40,21 @@ public sealed class KnowledgeSearchTools
         ArgumentException.ThrowIfNullOrWhiteSpace(passageId);
         return _knowledgeSearchService.GetLineageAsync(sessionId, passageId, cancellationToken);
     }
+
+    [McpServerTool]
+    [Description("Indexes approved metadata-linking output into Azure AI Search (Vector DB).")]
+    public Task<IndexRdKnowledgeResponse> IndexRdKnowledge(
+        [Description("Source identifier used by the ingestion workflow.")]
+        string sourceId,
+        [Description("Workflow execution identifier.")]
+        string executionId,
+        [Description("Structured metadata-linking JSON output approved by the curator.")]
+        string curatedKnowledgeJson,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(curatedKnowledgeJson);
+        return _knowledgeSearchService.IndexKnowledgeAsync(sourceId, executionId, curatedKnowledgeJson, cancellationToken);
+    }
 }

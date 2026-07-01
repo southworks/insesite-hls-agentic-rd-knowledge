@@ -6,6 +6,9 @@ using CohereRndKnowledgeMining.Api.Host.Workflow;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.Configure<AzureSearchOptions>(builder.Configuration.GetSection(AzureSearchOptions.SectionName));
+builder.Services.Configure<AzureFoundryModelsOptions>(builder.Configuration.GetSection(AzureFoundryModelsOptions.SectionName));
+builder.Services.Configure<McpIntegrationOptions>(builder.Configuration.GetSection(McpIntegrationOptions.SectionName));
 
 builder.Services.Configure<AzureFoundryOptions>(options =>
 {
@@ -59,8 +62,40 @@ else
 // Foundry agents shared by both blocks.
 builder.Services.AddSingleton<FoundryAgentProvider>();
 
-// Stub integrations for Vector DB (TODO: replace with real implementations).
-builder.Services.AddSingleton<IVectorKnowledgeWriter, StubVectorKnowledgeWriter>();
+AzureSearchOptions vectorDbOptions = builder.Configuration.GetSection(AzureSearchOptions.SectionName).Get<AzureSearchOptions>()
+    ?? new AzureSearchOptions();
+AzureFoundryModelsOptions foundryModelOptions = builder.Configuration.GetSection(AzureFoundryModelsOptions.SectionName).Get<AzureFoundryModelsOptions>()
+    ?? new AzureFoundryModelsOptions();
+
+bool vectorWriteReady =
+    !string.IsNullOrWhiteSpace(vectorDbOptions.Endpoint) &&
+    !string.IsNullOrWhiteSpace(foundryModelOptions.EmbedEndpoint);
+
+if (vectorWriteReady)
+{
+    builder.Services.AddHttpClient<FoundryEmbeddingClient>();
+    builder.Services.AddSingleton<IVectorKnowledgeWriter, AzureVectorKnowledgeWriter>();
+}
+else
+{
+    // Keep a local fallback when Vector DB settings are not configured.
+    builder.Services.AddSingleton<IVectorKnowledgeWriter, StubVectorKnowledgeWriter>();
+}
+
+McpIntegrationOptions mcpOptions = builder.Configuration.GetSection(McpIntegrationOptions.SectionName).Get<McpIntegrationOptions>()
+    ?? new McpIntegrationOptions();
+
+if (!string.IsNullOrWhiteSpace(mcpOptions.KnowledgeSearchEndpoint))
+{
+    builder.Services.AddHttpClient<McpKnowledgeIndexingClient>();
+    builder.Services.AddSingleton<IMetadataLinkingIndexer, McpKnowledgeIndexingClient>();
+}
+else
+{
+    builder.Services.AddSingleton<IMetadataLinkingIndexer, FallbackMetadataLinkingIndexer>();
+}
+
+// Block 2 retrieval remains stubbed until MCP-backed retriever wiring is completed.
 builder.Services.AddSingleton<IVectorKnowledgeRetriever, StubVectorKnowledgeRetriever>();
 
 // Block 1 - Ingestion.

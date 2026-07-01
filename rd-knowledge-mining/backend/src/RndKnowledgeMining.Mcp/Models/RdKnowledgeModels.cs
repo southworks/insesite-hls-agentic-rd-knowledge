@@ -24,6 +24,17 @@ public sealed class SearchRdKnowledgeResponse
     public required IReadOnlyList<KnowledgePassageMatch> Matches { get; init; }
 }
 
+public sealed class IndexRdKnowledgeResponse
+{
+    public required string SourceId { get; init; }
+
+    public required string ExecutionId { get; init; }
+
+    public int IndexedDocuments { get; init; }
+
+    public required string Status { get; init; }
+}
+
 public sealed class KnowledgeLineageResponse
 {
     public required string SessionId { get; init; }

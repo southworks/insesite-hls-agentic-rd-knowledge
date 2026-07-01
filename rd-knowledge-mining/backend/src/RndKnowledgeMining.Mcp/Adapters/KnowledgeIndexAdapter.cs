@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Indexes;
 using Azure.Search.Documents.Models;
@@ -143,6 +144,299 @@ public sealed class KnowledgeIndexAdapter
         {
             throw new KeyNotFoundException($"No lineage record was found for passage '{passageId}'.", exception);
         }
+    }
+
+    public async Task<IndexRdKnowledgeResponse> IndexKnowledgeAsync(
+        string sourceId,
+        string executionId,
+        string curatedKnowledgeJson,
+        CancellationToken cancellationToken = default)
+    {
+        MetadataLinkingVectorOutput output = MetadataLinkingVectorOutput.Parse(curatedKnowledgeJson);
+        List<KnowledgeSearchDocument> documents = BuildDocuments(sourceId, executionId, output);
+
+        if (documents.Count == 0)
+        {
+            return new IndexRdKnowledgeResponse
+            {
+                SourceId = sourceId,
+                ExecutionId = executionId,
+                IndexedDocuments = 0,
+                Status = "No content to index"
+            };
+        }
+
+        IReadOnlyList<float[]> embeddings = await _embeddingService
+            .EmbedAsync(documents.Select(document => document.ChunkText).ToArray(), cancellationToken)
+            .ConfigureAwait(false);
+
+        for (int i = 0; i < documents.Count; i++)
+        {
+            documents[i].Embedding = embeddings[i];
+        }
+
+        IndexDocumentsBatch<KnowledgeSearchDocument> batch = IndexDocumentsBatch.MergeOrUpload(documents);
+        await _searchClient.IndexDocumentsAsync(batch, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        return new IndexRdKnowledgeResponse
+        {
+            SourceId = sourceId,
+            ExecutionId = executionId,
+            IndexedDocuments = documents.Count,
+            Status = "Indexed"
+        };
+    }
+
+    private static List<KnowledgeSearchDocument> BuildDocuments(
+        string sourceId,
+        string executionId,
+        MetadataLinkingVectorOutput output)
+    {
+        var documents = new List<KnowledgeSearchDocument>();
+        string normalizedSource = SanitizeId(sourceId);
+        string normalizedExecution = SanitizeId(executionId);
+
+        documents.Add(new KnowledgeSearchDocument
+        {
+            Id = $"{normalizedSource}:{normalizedExecution}:summary",
+            EntityId = $"RDOC-{normalizedSource}",
+            EntityType = "metadata",
+            Title = $"Metadata linking summary for {sourceId}",
+            PassageId = $"{normalizedSource}:{normalizedExecution}:summary",
+            ChunkText = BuildSummaryChunk(output),
+            LinkedEntities = output.EntityIds.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
+            LineageNarrative = BuildLineageNarrative(output.Links)
+        });
+
+        for (int i = 0; i < output.Entities.Count; i++)
+        {
+            MetadataLinkedEntity entity = output.Entities[i];
+            if (string.IsNullOrWhiteSpace(entity.Name))
+            {
+                continue;
+            }
+
+            string entityId = ResolveEntityId(output.EntityIds, entity, i, normalizedSource, normalizedExecution);
+
+            documents.Add(new KnowledgeSearchDocument
+            {
+                Id = $"{normalizedSource}:{normalizedExecution}:entity:{i + 1}",
+                EntityId = entityId,
+                EntityType = NormalizeEntityType(entity.Category),
+                Title = entity.Name,
+                PassageId = $"{entityId}:{i + 1}",
+                ChunkText = BuildEntityChunk(entity, output),
+                LinkedEntities = output.Links
+                    .Where(link => ContainsIgnoreCase(link.FromDocument, entity.Name) || ContainsIgnoreCase(link.ToTarget, entity.Name))
+                    .Select(link => link.ToTarget)
+                    .Where(value => !string.IsNullOrWhiteSpace(value))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray(),
+                LineageNarrative = BuildLineageNarrative(output.Links.Where(link =>
+                    ContainsIgnoreCase(link.FromDocument, entity.Name) ||
+                    ContainsIgnoreCase(link.ToTarget, entity.Name)))
+            });
+        }
+
+        for (int i = 0; i < output.Links.Count; i++)
+        {
+            MetadataEntityLink link = output.Links[i];
+            if (string.IsNullOrWhiteSpace(link.FromDocument) ||
+                string.IsNullOrWhiteSpace(link.ToTarget) ||
+                string.IsNullOrWhiteSpace(link.Relationship))
+            {
+                continue;
+            }
+
+            documents.Add(new KnowledgeSearchDocument
+            {
+                Id = $"{normalizedSource}:{normalizedExecution}:link:{i + 1}",
+                EntityId = $"LINK-{normalizedSource}-{normalizedExecution}-{i + 1}",
+                EntityType = "link",
+                Title = $"{link.FromDocument} -> {link.ToTarget}",
+                PassageId = $"{normalizedSource}:{normalizedExecution}:link:{i + 1}",
+                ChunkText = $"{link.FromDocument} {link.Relationship} {link.ToTarget}.",
+                LinkedEntities = [link.FromDocument, link.ToTarget],
+                LineageNarrative = $"{link.FromDocument} -> {link.ToTarget} ({link.Relationship})"
+            });
+        }
+
+        return documents;
+    }
+
+    private static string BuildSummaryChunk(MetadataLinkingVectorOutput output) =>
+        $"Summary: {output.Summary}{Environment.NewLine}" +
+        $"Decision: {output.Decision}{Environment.NewLine}" +
+        $"Evidence: {output.Evidence}";
+
+    private static string BuildEntityChunk(MetadataLinkedEntity entity, MetadataLinkingVectorOutput output) =>
+        $"Entity: {entity.Name}{Environment.NewLine}" +
+        $"Category: {entity.Category}{Environment.NewLine}" +
+        $"Version: {entity.Version}{Environment.NewLine}" +
+        $"Linking evidence: {output.Evidence}";
+
+    private static string BuildLineageNarrative(IEnumerable<MetadataEntityLink> links)
+    {
+        string[] linkLines = links
+            .Where(link =>
+                !string.IsNullOrWhiteSpace(link.FromDocument) &&
+                !string.IsNullOrWhiteSpace(link.ToTarget) &&
+                !string.IsNullOrWhiteSpace(link.Relationship))
+            .Select(link => $"{link.FromDocument} -> {link.ToTarget} ({link.Relationship})")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return linkLines.Length == 0
+            ? "No lineage relationships were resolved."
+            : string.Join("; ", linkLines);
+    }
+
+    private static string ResolveEntityId(
+        IReadOnlyList<string> outputEntityIds,
+        MetadataLinkedEntity entity,
+        int index,
+        string normalizedSource,
+        string normalizedExecution)
+    {
+        string categoryPrefix = NormalizeCategoryPrefix(entity.Category);
+
+        foreach (string candidate in outputEntityIds)
+        {
+            if (string.IsNullOrWhiteSpace(candidate))
+            {
+                continue;
+            }
+
+            if (candidate.StartsWith(categoryPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return candidate;
+            }
+        }
+
+        return $"{categoryPrefix}{normalizedSource}-{normalizedExecution}-{index + 1}";
+    }
+
+    private static string NormalizeCategoryPrefix(string category)
+    {
+        if (ContainsIgnoreCase(category, "trial"))
+        {
+            return "TRIAL-";
+        }
+
+        if (ContainsIgnoreCase(category, "dataset"))
+        {
+            return "DATASET-";
+        }
+
+        if (ContainsIgnoreCase(category, "compound") || ContainsIgnoreCase(category, "drug"))
+        {
+            return "CMP-";
+        }
+
+        if (ContainsIgnoreCase(category, "label"))
+        {
+            return "LBL-";
+        }
+
+        if (ContainsIgnoreCase(category, "regulatory"))
+        {
+            return "REG-";
+        }
+
+        return "RDOC-";
+    }
+
+    private static string NormalizeEntityType(string category)
+    {
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            return "entity";
+        }
+
+        return category.Trim().ToLowerInvariant().Replace(' ', '-');
+    }
+
+    private static string SanitizeId(string value)
+    {
+        string[] fragments = value
+            .Split([' ', '/', '\\', ':', '.', ',', ';', '(', ')', '[', ']', '{', '}', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries)
+            .Where(fragment => !string.IsNullOrWhiteSpace(fragment))
+            .ToArray();
+
+        string compact = string.Join("-", fragments);
+        return string.IsNullOrWhiteSpace(compact)
+            ? "unknown"
+            : compact.ToUpperInvariant();
+    }
+
+    private static bool ContainsIgnoreCase(string? source, string value) =>
+        !string.IsNullOrWhiteSpace(source) &&
+        source.Contains(value, StringComparison.OrdinalIgnoreCase);
+
+    private sealed class MetadataLinkingVectorOutput
+    {
+        [JsonPropertyName("summary")]
+        public string Summary { get; init; } = string.Empty;
+
+        [JsonPropertyName("decision")]
+        public string Decision { get; init; } = string.Empty;
+
+        [JsonPropertyName("evidence")]
+        public string Evidence { get; init; } = string.Empty;
+
+        [JsonPropertyName("entities")]
+        public IReadOnlyList<MetadataLinkedEntity> Entities { get; init; } = [];
+
+        [JsonPropertyName("links")]
+        public IReadOnlyList<MetadataEntityLink> Links { get; init; } = [];
+
+        [JsonPropertyName("entityIds")]
+        public IReadOnlyList<string> EntityIds { get; init; } = [];
+
+        public static MetadataLinkingVectorOutput Parse(string rawJson)
+        {
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                throw new InvalidOperationException("Metadata-linking output was empty. Expected structured JSON output.");
+            }
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            MetadataLinkingVectorOutput? parsed = JsonSerializer.Deserialize<MetadataLinkingVectorOutput>(rawJson, options);
+            if (parsed is null)
+            {
+                throw new InvalidOperationException("Metadata-linking output could not be parsed.");
+            }
+
+            return parsed;
+        }
+    }
+
+    private sealed class MetadataLinkedEntity
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; init; } = string.Empty;
+
+        [JsonPropertyName("category")]
+        public string Category { get; init; } = string.Empty;
+
+        [JsonPropertyName("version")]
+        public string Version { get; init; } = string.Empty;
+    }
+
+    private sealed class MetadataEntityLink
+    {
+        [JsonPropertyName("fromDocument")]
+        public string FromDocument { get; init; } = string.Empty;
+
+        [JsonPropertyName("toTarget")]
+        public string ToTarget { get; init; } = string.Empty;
+
+        [JsonPropertyName("relationship")]
+        public string Relationship { get; init; } = string.Empty;
     }
 
     private static KnowledgePassageMatch ToMatch(KnowledgeSearchCandidate candidate, double score = 1) =>
