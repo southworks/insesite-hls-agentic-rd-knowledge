@@ -25,7 +25,7 @@ public static class IngestionWorkflowConstants
 
 /// <summary>
 /// Block 1 (Ingestion) workflow: ingestion-translation -> metadata-linking -> Knowledge Curator gate.
-/// On approval the curated payload is yielded as the workflow output; the service then writes it to the Vector DB.
+/// Metadata & Linking indexes into the Vector DB via MCP before the gate; curator approve/deny closes the run.
 /// </summary>
 public sealed class IngestionWorkflowFactory
 {
@@ -71,7 +71,7 @@ public sealed class IngestionWorkflowFactory
             .AddEdge(approvalPort, applyCuratorDecision)
             .WithOutputFrom(applyCuratorDecision)
             .WithName($"rd-ingestion-{executionId}")
-            .WithDescription("Block 1 ingestion workflow with a Knowledge Curator approval gate before persistence.")
+            .WithDescription("Block 1 ingestion workflow: metadata-linking indexes to Vector DB, then Knowledge Curator reviews.")
             .Build();
     }
 
@@ -109,7 +109,7 @@ public sealed class IngestionWorkflowFactory
                     CorrelationId = correlationId,
                     ExecutionId = executionId,
                     ReviewerRole = IngestionWorkflowConstants.ReviewerRole,
-                    Summary = "Ingestion and metadata linking completed. Approve to write the curated knowledge to the Vector DB.",
+                    Summary = "Metadata linking and Vector DB indexing completed. Review linking quality and approve or deny the ingestion run.",
                     ReviewedOutput = rawOutput
                 };
 

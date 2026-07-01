@@ -2,7 +2,7 @@
 
 **User action:** Upload synthetic ELN/LIMS package via ingestion console.
 **Ingest:** 3 synthetic lab-operation files — see flat files in `ingest/`.
-**Expected outcome:** Curator approves with `synthetic_from_public_structure` labeling; entities persisted with provenance label.
+**Expected outcome:** Metadata-linking indexes entities with `synthetic_from_public_structure` provenance; curator approves with required labeling.
 **Legacy ID:** ING-003
 
 ### User Input

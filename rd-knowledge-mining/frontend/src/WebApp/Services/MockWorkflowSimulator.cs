@@ -201,6 +201,20 @@ public sealed class MockWorkflowSimulator
                     <= 4 => WorkflowStatus.Running,
                     _ => WorkflowStatus.AwaitingHumanApproval
                 };
+
+                if (state.PollCount > 4 && !state.VectorDbUpdated)
+                {
+                    _vectorDbSummary = _vectorDbSummary with
+                    {
+                        TotalStudies = _vectorDbSummary.TotalStudies + 1,
+                        TotalDocuments = _vectorDbSummary.TotalDocuments + 12,
+                        TotalEntities = _vectorDbSummary.TotalEntities + 28,
+                        TotalLinks = _vectorDbSummary.TotalLinks + 15,
+                        LastIngestionAt = DateTimeOffset.UtcNow,
+                        LastIngestedStudyId = state.ResourceId
+                    };
+                    state.VectorDbUpdated = true;
+                }
             }
             else
             {
@@ -226,20 +240,6 @@ public sealed class MockWorkflowSimulator
 
             state.HumanDecision = new HumanDecisionRecord(approved, notes, DateTimeOffset.UtcNow);
             state.Status = approved ? WorkflowStatus.Completed : WorkflowStatus.Failed;
-
-            if (approved && state.Block == WorkflowBlock.Ingestion && !state.VectorDbUpdated)
-            {
-                _vectorDbSummary = _vectorDbSummary with
-                {
-                    TotalStudies = _vectorDbSummary.TotalStudies + 1,
-                    TotalDocuments = _vectorDbSummary.TotalDocuments + 12,
-                    TotalEntities = _vectorDbSummary.TotalEntities + 28,
-                    TotalLinks = _vectorDbSummary.TotalLinks + 15,
-                    LastIngestionAt = DateTimeOffset.UtcNow,
-                    LastIngestedStudyId = state.ResourceId
-                };
-                state.VectorDbUpdated = true;
-            }
         }
     }
 

@@ -90,7 +90,7 @@ public sealed class AgentDefinitionBuilder
         if (AgentAssetLoader.UsesJsonObjectOutput(bundle.Manifest))
         {
             builder.AppendLine("Return a single JSON object matching the output structure defined in these instructions.");
-            builder.AppendLine("The workflow API passes the full JSON object to downstream agents and the Knowledge Curator gate.");
+            builder.AppendLine("The workflow API passes the full JSON object to downstream agents and the Knowledge Curator gate after metadata-linking indexes to the Vector DB.");
             builder.AppendLine();
             builder.AppendLine("Formatting rules:");
             builder.AppendLine("- Return raw JSON only. Do not wrap the JSON in markdown code fences.");

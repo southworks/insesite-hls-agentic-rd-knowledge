@@ -103,7 +103,7 @@ Once the backend is stable:
 ### 6. Verify integration
 
 - [ ] `GET /health` succeeds on frontend (`/health`) and API.
-- [ ] Start ingestion run → poll → Knowledge Curator approve → Vector DB summary reflects write via API.
+- [ ] Start ingestion run → poll → Vector DB summary reflects indexing after metadata linking → Knowledge Curator approve/deny closes run.
 - [ ] Send chat messages **without** a fresh ingestion run → citations and lineage come from Vector DB via API.
 - [ ] Curate on demand over accumulated chat → Compliance Reviewer HITL via API.
 - [ ] Block 2 works independently (reads accumulated Vector DB data).

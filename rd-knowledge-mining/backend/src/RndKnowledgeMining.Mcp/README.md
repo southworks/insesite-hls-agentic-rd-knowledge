@@ -6,7 +6,7 @@ MCP tool provider for Block 2 agents (`search-chat-agent`, `curation-compliance-
 
 | MCP endpoint | Tools |
 | --- | --- |
-| `/knowledge-search/mcp` | `search_rd_knowledge`, `get_knowledge_lineage` |
+| `/knowledge-search/mcp` | `search_rd_knowledge`, `get_knowledge_lineage`, `index_rd_knowledge` |
 | `/curation-compliance/mcp` | `get_relevant_policies`, `get_policies_by_refs`, `flag_sensitive_content` |
 
 Health check: `GET /health`
@@ -17,7 +17,7 @@ Default local URL: `http://localhost:5041`
 
 | Index | Populated by |
 | --- | --- |
-| `rd-knowledge-evidence` | Block 1 ingestion workflow (Vector DB write after Knowledge Curator approval) |
+| `rd-knowledge-evidence` | metadata-linking-agent via `index_rd_knowledge` MCP tool (before Knowledge Curator gate) |
 | `rd-policy-knowledge` | Deploy-time or startup policy seed from `rd-knowledge-mining/policies/hls_policies.txt` |
 
 Knowledge documents indexed by Block 1 should include `linkedEntities` and `lineageNarrative` fields so `get_knowledge_lineage` can resolve traceability from Azure AI Search.

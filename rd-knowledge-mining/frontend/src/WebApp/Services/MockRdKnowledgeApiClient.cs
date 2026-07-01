@@ -62,9 +62,9 @@ public sealed class MockRdKnowledgeApiClient(
         var message = stage switch
         {
             IngestionStage.IngestionTranslation => "Reading raw R&D knowledge from Microsoft Fabric and normalizing formats…",
-            IngestionStage.MetadataLinking => "Extracting entities and linking documents to datasets and studies…",
-            IngestionStage.HumanApproval => "Knowledge Curator: review ingested content before writing to Vector DB.",
-            IngestionStage.Completed => "Ingestion approved. Knowledge embedded and saved to Vector DB.",
+            IngestionStage.MetadataLinking => "Extracting entities, linking documents, and indexing to Vector DB…",
+            IngestionStage.HumanApproval => "Knowledge Curator: review linking output (content already indexed to Vector DB).",
+            IngestionStage.Completed => "Ingestion approved. Linking and indexing complete.",
             IngestionStage.Failed => "Ingestion denied or failed.",
             _ => "Preparing ingestion workflow…"
         };

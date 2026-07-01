@@ -1,7 +1,7 @@
 namespace CohereRndKnowledgeMining.Api.Host.Services.Integrations;
 
 /// <summary>
-/// Persists curated, linked knowledge into the Vector DB at the end of Block 1 (after Curator approval).
+/// Persists curated, linked knowledge into the Vector DB. Block 1 indexing is performed by the metadata-linking agent via MCP.
 /// </summary>
 public interface IVectorKnowledgeWriter
 {
