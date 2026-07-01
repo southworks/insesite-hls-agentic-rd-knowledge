@@ -1,0 +1,92 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "summary": {
+      "type": "string",
+      "description": "Concise description of the metadata linking outcome: entities extracted, links created, and embedding preparation status."
+    },
+    "decision": {
+      "type": "string",
+      "description": "Outcome of the metadata linking step."
+    },
+    "evidence": {
+      "type": "string",
+      "description": "Key facts and rationale supporting entity extraction, cross-document links, and retrieval-assisted matches."
+    },
+    "entities": {
+      "type": "array",
+      "description": "Normalized entities extracted from the ingested batch (compounds, phases, endpoints, datasets, specimens, trials).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Canonical entity name or code."
+          },
+          "category": {
+            "type": "string",
+            "description": "Entity type such as Compound, Study phase, Primary endpoint, Dataset, Specimen, or Trial."
+          },
+          "version": {
+            "type": "string",
+            "description": "Version, protocol revision, or effective date when known; otherwise a dash."
+          }
+        },
+        "required": [
+          "name",
+          "category",
+          "version"
+        ]
+      }
+    },
+    "links": {
+      "type": "array",
+      "description": "Relationships between source documents and linked targets (datasets, studies, compounds, trials, labels).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "fromDocument": {
+            "type": "string",
+            "description": "Source document title or identifier from the ingested batch."
+          },
+          "toTarget": {
+            "type": "string",
+            "description": "Linked entity, dataset ID, study code, or persisted entity ID."
+          },
+          "relationship": {
+            "type": "string",
+            "description": "Short relationship label such as references dataset, defines study, or analytical record for compound."
+          }
+        },
+        "required": [
+          "fromDocument",
+          "toTarget",
+          "relationship"
+        ]
+      }
+    },
+    "entityIds": {
+      "type": "array",
+      "description": "Persisted-style entity or link IDs confirmed or produced during linking (RDOC-, TRIAL-, DATASET-, CMP-, LINK-, LBL-, REG-).",
+      "items": {
+        "type": "string"
+      }
+    },
+    "vectorsIndexed": {
+      "type": "integer",
+      "description": "Count of content chunks prepared for Cohere Embed indexing after linking. Use 0 when no embeddable content is ready."
+    }
+  },
+  "required": [
+    "summary",
+    "decision",
+    "evidence",
+    "entities",
+    "links",
+    "entityIds",
+    "vectorsIndexed"
+  ]
+}
