@@ -18,17 +18,34 @@ public static class ServiceCollectionExtensions
         services.Configure<AzureSearchOptions>(configuration.GetSection(AzureSearchOptions.SectionName));
         services.Configure<AzureFoundryModelsOptions>(configuration.GetSection(AzureFoundryModelsOptions.SectionName));
         services.Configure<McpStartupOptions>(configuration.GetSection(McpStartupOptions.SectionName));
-        services.Configure<FabricLakehouseOptions>(configuration.GetSection(FabricLakehouseOptions.SectionName));
+        services.Configure<DataSourceOptions>(configuration.GetSection(DataSourceOptions.SectionName));
+        services.Configure<DatasetOptions>(configuration.GetSection(DatasetOptions.SectionName));
 
         var searchOptions = configuration.GetSection(AzureSearchOptions.SectionName).Get<AzureSearchOptions>()
             ?? new AzureSearchOptions();
         var foundryOptions = configuration.GetSection(AzureFoundryModelsOptions.SectionName).Get<AzureFoundryModelsOptions>()
             ?? new AzureFoundryModelsOptions();
-        var fabricLakehouseOptions = configuration.GetSection(FabricLakehouseOptions.SectionName).Get<FabricLakehouseOptions>()
-            ?? new FabricLakehouseOptions();
+        var dataSourceOptions = configuration.GetSection(DataSourceOptions.SectionName).Get<DataSourceOptions>()
+            ?? new DataSourceOptions();
+        var datasetOptions = configuration.GetSection(DatasetOptions.SectionName).Get<DatasetOptions>()
+            ?? new DatasetOptions();
+
+        var fabricLakehouseOptions = dataSourceOptions.FabricLakehouse ?? new FabricLakehouseOptions();
 
         ValidateRequiredConfiguration(searchOptions, foundryOptions);
-        ValidateFabricLakehouseConfiguration(fabricLakehouseOptions);
+
+        if (dataSourceOptions.Mode == DataSourceMode.Fabric)
+        {
+            ValidateFabricLakehouseConfiguration(fabricLakehouseOptions);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(datasetOptions.RootPath))
+            {
+                throw new InvalidOperationException(
+                    "DataSource:Mode is Local but Dataset:RootPath is missing.");
+            }
+        }
 
         services.AddSingleton(SearchClientFactory.CreateIndexClient(searchOptions));
 
@@ -48,11 +65,23 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPolicySearchService, AzurePolicySearchService>();
         services.AddSingleton<KnowledgeSearchTools>();
         services.AddSingleton<CurationComplianceTools>();
-        services.AddSingleton<FabricLakehouseClient>(sp =>
-            FabricLakehouseClient.Create(
-                sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<FabricLakehouseOptions>>().Value,
-                sp.GetRequiredService<ILogger<FabricLakehouseClient>>()));
-        services.AddSingleton<RawSourceService>();
+
+        if (dataSourceOptions.Mode == DataSourceMode.Fabric)
+        {
+            services.AddSingleton<FabricLakehouseClient>(_ =>
+                FabricLakehouseClient.Create(
+                    fabricLakehouseOptions,
+                    _.GetRequiredService<ILogger<FabricLakehouseClient>>()));
+            services.AddSingleton<IRawSourceService, FabricRawSourceService>();
+        }
+        else
+        {
+            services.AddSingleton<IRawSourceService>(sp =>
+                new LocalRawSourceService(
+                    datasetOptions.RootPath,
+                    sp.GetRequiredService<ILogger<LocalRawSourceService>>()));
+        }
+
         services.AddSingleton<RawSourceTools>();
         services.AddHostedService<McpStartupInitializer>();
 

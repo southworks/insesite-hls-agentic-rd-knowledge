@@ -7,17 +7,17 @@ namespace RndKnowledgeMining.Mcp.Tools;
 
 public sealed class RawSourceTools
 {
-    private readonly RawSourceService _rawSourceService;
+    private readonly IRawSourceService _rawSourceService;
 
-    public RawSourceTools(RawSourceService rawSourceService)
+    public RawSourceTools(IRawSourceService rawSourceService)
     {
         _rawSourceService = rawSourceService;
     }
 
     [McpServerTool]
-    [Description("Lists raw R&D documents uploaded to Microsoft Fabric for the given sourceId. Returns metadata only (itemId, title, sourceType, sourcePath); use read_raw_document to fetch content.")]
+    [Description("Lists raw R&D documents for the given sourceId. Returns metadata only (fileName, sourceType, sourcePath); use read_raw_document to fetch content.")]
     public Task<ListRawDocumentsResponse> ListRawDocuments(
-        [Description("Identifier of the ingestion source/batch (e.g. case-04-demo). Files under Files/raw/{sourceId}/ are returned.")]
+        [Description("Identifier of the ingestion source/batch (e.g. case-04-demo).")]
         string sourceId,
         CancellationToken cancellationToken = default)
     {
@@ -26,16 +26,17 @@ public sealed class RawSourceTools
     }
 
     [McpServerTool]
-    [Description("Reads a single raw R&D document from Microsoft Fabric by sourceId and itemId. Returns the full document content.")]
+    [Description("Reads a single raw R&D document by sourceId and fileName. Returns the full document content.")]
     public Task<ReadRawDocumentResponse> ReadRawDocument(
         [Description("Identifier of the ingestion source/batch (e.g. case-04-demo).")]
         string sourceId,
-        [Description("itemId returned by list_raw_documents (e.g. case-04-demo-001).")]
-        string itemId,
+        [Description("fileName returned by list_raw_documents (e.g. PMC13070087_article.xml).")]
+        string fileName,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(itemId);
-        return _rawSourceService.ReadAsync(sourceId, itemId, cancellationToken);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
+        return _rawSourceService.ReadAsync(sourceId, fileName, cancellationToken);
     }
+
 }
