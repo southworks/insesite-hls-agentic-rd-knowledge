@@ -173,6 +173,26 @@ public static class AgentStructuredOutputParser
         PropertyNameCaseInsensitive = true
     };
 
+    public static bool TryParseRichPayload(string agentName, string rawOutput, out AgentStepResult? result)
+    {
+        result = null;
+
+        if (!AgentWorkflowAgents.UsesRichPayload(agentName) || string.IsNullOrWhiteSpace(rawOutput))
+        {
+            return false;
+        }
+
+        try
+        {
+            result = ParseRichPayload(agentName, rawOutput);
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
     public static AgentStepResult Parse(string agentName, string rawOutput)
     {
         if (AgentWorkflowAgents.UsesRichPayload(agentName))

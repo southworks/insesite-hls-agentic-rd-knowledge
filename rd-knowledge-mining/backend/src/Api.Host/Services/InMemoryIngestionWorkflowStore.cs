@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
+using CohereRndKnowledgeMining.Api.Host.Workflow;
 using Microsoft.Agents.AI.Workflows;
 
 namespace CohereRndKnowledgeMining.Api.Host.Services;
@@ -31,6 +32,9 @@ public sealed class WorkflowExecution
     public Dictionary<string, AgentExecutionState> Agents { get; } = [];
 
     public Dictionary<string, string> AgentOutputs { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Parsed Block 1 agent results captured only from final <see cref="Microsoft.Agents.AI.AgentResponse"/> events.</summary>
+    public Dictionary<string, AgentStepResult> FinalAgentStepResults { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     public Dictionary<string, StringBuilder> StreamingBuffers { get; } = new(StringComparer.OrdinalIgnoreCase);
 

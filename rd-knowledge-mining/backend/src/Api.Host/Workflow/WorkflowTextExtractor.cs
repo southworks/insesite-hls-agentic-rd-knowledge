@@ -27,10 +27,57 @@ internal static class WorkflowTextExtractor
 
     public static string GetAgentResponseText(AgentResponse response)
     {
-        string assistantText = FromAgentResponseBasic(response);
-        return string.IsNullOrWhiteSpace(assistantText)
-            ? FromAgentResponse(response)
-            : assistantText;
+        string finalText = GetFinalAgentTextResponse(response);
+        return string.IsNullOrWhiteSpace(finalText)
+            ? FromAgentResponseBasic(response)
+            : finalText;
+    }
+
+    /// <summary>
+    /// Returns the last assistant message text from a completed agent response.
+    /// Ignores tool-call-only assistant turns.
+    /// </summary>
+    public static string GetFinalAgentTextResponse(AgentResponse response)
+    {
+        if (response.Messages is not { Count: > 0 })
+        {
+            return string.Empty;
+        }
+
+        foreach (ChatMessage message in response.Messages.Reverse())
+        {
+            if (message.Role != ChatRole.Assistant)
+            {
+                continue;
+            }
+
+            string? text = GetAssistantTextOnly(message);
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                return text;
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static string? GetAssistantTextOnly(ChatMessage message)
+    {
+        if (message.Contents is null || message.Contents.Count == 0)
+        {
+            return string.IsNullOrWhiteSpace(message.Text) ? null : message.Text.Trim();
+        }
+
+        List<string> textParts = [];
+        foreach (AIContent content in message.Contents)
+        {
+            if (content is TextContent textContent && !string.IsNullOrWhiteSpace(textContent.Text))
+            {
+                textParts.Add(textContent.Text.Trim());
+            }
+        }
+
+        return textParts.Count == 0 ? null : string.Join('\n', textParts).Trim();
     }
 
     public static string FromChatMessages(IEnumerable<ChatMessage> messages)

@@ -19,8 +19,8 @@ public sealed class IngestionWorkflowService
     private static readonly TimeSpan RunTimeout = TimeSpan.FromMinutes(20);
     private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(30);
 
-    private const string IngestionTranslationKey = "IngestionTranslation";
-    private const string MetadataLinkingKey = "MetadataLinking";
+    private const string IngestionTranslationKey = IngestionWorkflowConstants.IngestionTranslationOutputKey;
+    private const string MetadataLinkingKey = IngestionWorkflowConstants.MetadataLinkingOutputKey;
 
     private readonly FoundryAgentProvider _agentProvider;
     private readonly IngestionWorkflowFactory _workflowFactory;
@@ -396,7 +396,6 @@ public sealed class IngestionWorkflowService
 
             case ExecutorCompletedEvent completedEvent:
                 MarkExecutorCompleted(execution, completedEvent.ExecutorId);
-                TryUpdateAgentOutput(execution, completedEvent.ExecutorId, completedEvent.Data, isFinal: true);
                 break;
 
             case ExecutorFailedEvent failedEvent:
@@ -480,6 +479,31 @@ public sealed class IngestionWorkflowService
             return;
         }
 
+        string? agentKey = MapExecutorToAgentKey(executorId);
+        if (agentKey is not null && IsRichPayloadAgentKey(agentKey))
+        {
+            if (!isFinal || data is not AgentResponse response)
+            {
+                return;
+            }
+
+            string finalText = WorkflowTextExtractor.GetFinalAgentTextResponse(response);
+            if (string.IsNullOrWhiteSpace(finalText))
+            {
+                return;
+            }
+
+            string agentName = MapAgentKeyToName(agentKey);
+            if (!AgentStructuredOutputParser.TryParseRichPayload(agentName, finalText, out AgentStepResult? parsed)
+                || parsed is null)
+            {
+                return;
+            }
+
+            SaveFinalRichAgentOutput(execution, agentKey, parsed);
+            return;
+        }
+
         string? rawOutput = data switch
         {
             AgentResponse response => WorkflowTextExtractor.GetAgentResponseText(response),
@@ -497,6 +521,21 @@ public sealed class IngestionWorkflowService
         }
 
         SaveAgentOutput(execution, executorId, rawOutput, isFinal);
+    }
+
+    private void SaveFinalRichAgentOutput(
+        WorkflowExecution execution,
+        string agentKey,
+        AgentStepResult parsed)
+    {
+        execution.FinalAgentStepResults[agentKey] = parsed;
+        execution.AgentOutputs[agentKey] = parsed.RawPayloadJson ?? string.Empty;
+
+        AgentExecutionState state = GetOrCreateAgentState(execution, agentKey);
+        execution.StreamingBuffers.Remove(agentKey);
+        state.Output = parsed.RawPayloadJson;
+        Touch(execution);
+        _store.Save(execution);
     }
 
     private void SaveAgentOutput(
@@ -583,6 +622,15 @@ public sealed class IngestionWorkflowService
 
         return null;
     }
+
+    private static bool IsRichPayloadAgentKey(string agentKey) =>
+        string.Equals(agentKey, IngestionTranslationKey, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(agentKey, MetadataLinkingKey, StringComparison.OrdinalIgnoreCase);
+
+    private static string MapAgentKeyToName(string agentKey) =>
+        string.Equals(agentKey, MetadataLinkingKey, StringComparison.OrdinalIgnoreCase)
+            ? AgentWorkflowAgents.MetadataLinking
+            : AgentWorkflowAgents.IngestionTranslation;
 
     private void MarkFailed(WorkflowExecution execution, string reason)
     {

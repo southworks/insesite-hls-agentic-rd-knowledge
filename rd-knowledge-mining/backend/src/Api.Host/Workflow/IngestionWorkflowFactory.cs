@@ -21,6 +21,10 @@ public static class IngestionWorkflowConstants
     public const string IngestionTranslationAgentName = "ingestion-translation-agent";
 
     public const string MetadataLinkingAgentName = "metadata-linking-agent";
+
+    public const string IngestionTranslationOutputKey = "IngestionTranslation";
+
+    public const string MetadataLinkingOutputKey = "MetadataLinking";
 }
 
 /// <summary>
@@ -29,6 +33,13 @@ public static class IngestionWorkflowConstants
 /// </summary>
 public sealed class IngestionWorkflowFactory
 {
+    private readonly InMemoryIngestionWorkflowStore _store;
+
+    public IngestionWorkflowFactory(InMemoryIngestionWorkflowStore store)
+    {
+        _store = store;
+    }
+
     public AgentWorkflow CreateWorkflow(RndKnowledgeAgents agents, string sourceId, string executionId)
     {
         RequestPort approvalPort = RequestPort.Create<HumanApprovalPrompt, HumanApprovalDecision>(
@@ -47,12 +58,14 @@ public sealed class IngestionWorkflowFactory
             id: "IngestionBridge01",
             correlationId: sourceId,
             executionId: executionId,
-            sourceAgentName: IngestionWorkflowConstants.IngestionTranslationAgentName);
+            sourceAgentName: IngestionWorkflowConstants.IngestionTranslationAgentName,
+            store: _store);
         FunctionExecutor<IList<ChatMessage>> bridge02 = CreatePayloadBridgeExecutor(
             id: "IngestionBridge02",
             correlationId: sourceId,
             executionId: executionId,
-            sourceAgentName: IngestionWorkflowConstants.MetadataLinkingAgentName);
+            sourceAgentName: IngestionWorkflowConstants.MetadataLinkingAgentName,
+            store: _store);
         FunctionExecutor<ChatMessage> requestCuratorApproval = CreateCuratorApprovalRequestExecutor(
             id: "IngestionCuratorApprovalRequest",
             correlationId: sourceId,
@@ -157,14 +170,23 @@ public sealed class IngestionWorkflowFactory
         string id,
         string correlationId,
         string executionId,
-        string sourceAgentName)
+        string sourceAgentName,
+        InMemoryIngestionWorkflowStore store)
     {
         return new FunctionExecutor<IList<ChatMessage>>(
             id: id,
-            handlerAsync: async (messages, context, cancellationToken) =>
+            handlerAsync: async (_, context, cancellationToken) =>
             {
-                string rawOutput = WorkflowTextExtractor.FromLastAssistantMessage(messages);
-                AgentStepResult result = ParseBridgeOutput(sourceAgentName, rawOutput);
+                string agentOutputKey = IngestionHandoffResolver.MapAgentNameToOutputKey(sourceAgentName);
+                AgentStepResult result = await IngestionHandoffResolver
+                    .WaitForFinalAgentStepResultAsync(
+                        store,
+                        executionId,
+                        agentOutputKey,
+                        sourceAgentName,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+
                 ChatMessage payload = WorkflowPayloadBuilder.CreateRichAgentHandoffMessage(
                     correlationId,
                     executionId,
