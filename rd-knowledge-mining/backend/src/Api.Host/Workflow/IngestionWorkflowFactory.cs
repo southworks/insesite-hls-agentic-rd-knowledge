@@ -47,12 +47,12 @@ public sealed class IngestionWorkflowFactory
         var ingestionTranslation = agents.IngestionTranslation.BindAsExecutor(agentHostOptions);
         var metadataLinking = agents.MetadataLinking.BindAsExecutor(agentHostOptions);
 
-        FunctionExecutor<IList<ChatMessage>> bridge01 = CreatePayloadBridgeExecutor(
+        var bridge01 = new RichHandoffBridgeExecutor(
             id: "IngestionBridge01",
             correlationId: sourceId,
             executionId: executionId,
             sourceAgentName: IngestionWorkflowConstants.IngestionTranslationAgentName);
-        FunctionExecutor<IList<ChatMessage>> bridge02 = CreatePayloadBridgeExecutor(
+        var bridge02 = new RichHandoffBridgeExecutor(
             id: "IngestionBridge02",
             correlationId: sourceId,
             executionId: executionId,
@@ -155,48 +155,6 @@ public sealed class IngestionWorkflowFactory
                 await context.YieldOutputAsync(curatedKnowledge.Text, cancellationToken).ConfigureAwait(false);
             },
             sentMessageTypes: []);
-    }
-
-    private static FunctionExecutor<IList<ChatMessage>> CreatePayloadBridgeExecutor(
-        string id,
-        string correlationId,
-        string executionId,
-        string sourceAgentName)
-    {
-        return new FunctionExecutor<IList<ChatMessage>>(
-            id: id,
-            handlerAsync: async (messages, context, cancellationToken) =>
-            {
-                string rawOutput = ExtractBridgeOutput(sourceAgentName, messages);
-                AgentStepResult result = ParseBridgeOutput(sourceAgentName, rawOutput);
-                ChatMessage payload = WorkflowPayloadBuilder.CreateRichAgentHandoffMessage(
-                    correlationId,
-                    executionId,
-                    sourceAgentName,
-                    result);
-
-                await context.SendMessageAsync(payload, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                await context.SendMessageAsync(new TurnToken(emitEvents: true), cancellationToken: cancellationToken).ConfigureAwait(false);
-            },
-            sentMessageTypes: [typeof(ChatMessage), typeof(TurnToken)]);
-    }
-
-    private static string ExtractBridgeOutput(string sourceAgentName, IList<ChatMessage> messages)
-    {
-        string fromLast = WorkflowTextExtractor.FromLastAssistantMessage(messages);
-        if (AgentStructuredOutputParser.TryParseRichPayload(sourceAgentName, fromLast, out _))
-        {
-            return fromLast;
-        }
-
-        string aggregated = WorkflowTextExtractor.CollectHandoffSourceText(messages);
-        if (AgentStructuredOutputParser.TryParseRichPayload(sourceAgentName, aggregated, out _))
-        {
-            return aggregated;
-        }
-
-        return !string.IsNullOrWhiteSpace(fromLast) ? fromLast : aggregated;
     }
 
     private static AgentStepResult ParseBridgeOutput(string sourceAgentName, string rawOutput) =>

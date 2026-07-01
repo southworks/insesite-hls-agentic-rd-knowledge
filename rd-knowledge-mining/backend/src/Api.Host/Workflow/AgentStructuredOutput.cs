@@ -314,7 +314,7 @@ public static class AgentStructuredOutputParser
         throw new InvalidOperationException(
             LooksLikeIncompleteToolRound(trimmedOutput)
                 ? $"Agent '{agentName}' returned MCP tool-call output instead of the completed JSON handoff payload. " +
-                  "Ensure the agent uses instructions_only (not json_object) in Foundry provisioning so tool rounds can complete before the final JSON response."
+                  "The agent must finish all MCP tool rounds and emit the final handoff JSON before the workflow bridge forwards to the next step."
                 : $"Agent '{agentName}' did not return a recognized JSON handoff payload.");
     }
 
