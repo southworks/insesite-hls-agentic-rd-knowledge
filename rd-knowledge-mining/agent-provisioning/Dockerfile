@@ -12,7 +12,7 @@ RUN dotnet publish "CohereRndKnowledge.AgentProvisioning.csproj" -c Release -o /
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-COPY --from=build /src/agent-provisioning/agents /app/agents
-COPY --from=build /src/agent-provisioning/shared /app/shared
-COPY --from=build /src/agent-provisioning/config/provisioning.json /app/config/provisioning.json
+COPY --from=build /src/agent-provisioning/src/CohereRndKnowledge.AgentProvisioning/agents /app/agents
+COPY --from=build /src/agent-provisioning/src/CohereRndKnowledge.AgentProvisioning/shared /app/shared
+COPY --from=build /src/agent-provisioning/src/CohereRndKnowledge.AgentProvisioning/config/provisioning.json /app/config/provisioning.json
 ENTRYPOINT ["dotnet", "CohereRndKnowledge.AgentProvisioning.dll", "--config", "/app/config/provisioning.json", "--agents", "/app/agents"]

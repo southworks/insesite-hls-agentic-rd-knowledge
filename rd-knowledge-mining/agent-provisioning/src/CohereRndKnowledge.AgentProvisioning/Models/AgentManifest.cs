@@ -8,7 +8,16 @@ public sealed class AgentManifest
 
     public required string InstructionsFile { get; init; }
 
-    public required string OutputSchemaFile { get; init; }
+    /// <summary>
+    /// Path to JSON Schema for strict Foundry output (required when <see cref="OutputFormat"/> is strict_schema).
+    /// </summary>
+    public string? OutputSchemaFile { get; init; }
+
+    /// <summary>
+    /// strict_schema — enforce agent-specific JSON Schema (Search &amp; Chat, Curation).
+    /// json_object — JSON object only; domain shape is defined in instructions.md (Block 1 agents).
+    /// </summary>
+    public string OutputFormat { get; init; } = "strict_schema";
 
     public required IReadOnlyList<string> AllowedDecisions { get; init; }
 

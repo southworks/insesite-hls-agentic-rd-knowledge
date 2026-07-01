@@ -17,6 +17,17 @@ public sealed class AgentDefinitionBuilder
     {
         string serverUrl = $"{settings.McpBaseUrl.TrimEnd('/')}{NormalizePath(bundle.Mcp.Path)}";
 
+        JsonObject textFormat = AgentAssetLoader.UsesJsonObjectOutput(bundle.Manifest)
+            ? new JsonObject { ["type"] = "json_object" }
+            : new JsonObject
+            {
+                ["type"] = "json_schema",
+                ["name"] = "AgentStructuredOutput",
+                ["description"] = "Structured agent output consumed by the R&D knowledge mining workflow API.",
+                ["schema"] = JsonNode.Parse(bundle.OutputSchemaJson),
+                ["strict"] = true
+            };
+
         JsonObject definition = new()
         {
             ["kind"] = "prompt",
@@ -39,14 +50,7 @@ public sealed class AgentDefinitionBuilder
             },
             ["text"] = new JsonObject
             {
-                ["format"] = new JsonObject
-                {
-                    ["type"] = "json_schema",
-                    ["name"] = "AgentStructuredOutput",
-                    ["description"] = "Structured agent output consumed by the R&D knowledge mining workflow API.",
-                    ["schema"] = JsonNode.Parse(bundle.OutputSchemaJson),
-                    ["strict"] = true
-                }
+                ["format"] = textFormat
             }
         };
 
@@ -83,7 +87,17 @@ public sealed class AgentDefinitionBuilder
         builder.AppendLine(bundle.Instructions);
         builder.AppendLine();
         builder.AppendLine("## Structured Output Contract");
-        if (UsesSearchChatStructuredOutput(bundle))
+        if (AgentAssetLoader.UsesJsonObjectOutput(bundle.Manifest))
+        {
+            builder.AppendLine("Return a single JSON object matching the output structure defined in these instructions.");
+            builder.AppendLine("The workflow API passes the full JSON object to downstream agents and the Knowledge Curator gate.");
+            builder.AppendLine();
+            builder.AppendLine("Formatting rules:");
+            builder.AppendLine("- Return raw JSON only. Do not wrap the JSON in markdown code fences.");
+            builder.AppendLine("- Do not include extra text before or after the JSON.");
+            builder.AppendLine("- Domain fields (documents, entities, links, etc.) are defined above, not by a separate JSON Schema.");
+        }
+        else if (UsesSearchChatStructuredOutput(bundle))
         {
             builder.AppendLine("Return JSON only with these required properties: summary, decision, evidence, citations, lineage, raw_source_trace.");
             builder.AppendLine("The API requires all of these properties.");
@@ -107,33 +121,6 @@ public sealed class AgentDefinitionBuilder
             builder.AppendLine("- evidence must be a plain string, not an object or array.");
             builder.AppendLine("- flags, capturedDecisions, policyRefs, and citations must be arrays of strings. Use empty arrays when none apply.");
             builder.AppendLine("- sensitive_content_found and required_human_review must be booleans.");
-        }
-        else if (UsesIngestionTranslationStructuredOutput(bundle))
-        {
-            builder.AppendLine("Return JSON only with these required properties: summary, decision, evidence, anomalies, keyFacts, documentsProcessed, duplicatesRemoved, normalizedFormats, normalizedDocuments.");
-            builder.AppendLine("The API requires all of these properties.");
-            builder.AppendLine();
-            builder.AppendLine("Formatting rules:");
-            builder.AppendLine("- Return raw JSON only. Do not wrap the JSON in markdown code fences.");
-            builder.AppendLine("- Do not include extra text before or after the JSON.");
-            builder.AppendLine("- summary, decision, and evidence must be plain strings.");
-            builder.AppendLine("- anomalies, keyFacts, normalizedFormats must be arrays of strings. Use empty arrays when none apply.");
-            builder.AppendLine("- documentsProcessed and duplicatesRemoved must be integers.");
-            builder.AppendLine("- normalizedDocuments must be an array of objects with required properties: documentId, sourceItemId, sourceType, title, canonicalKey, status. Use an empty array when no documents are accepted.");
-        }
-        else if (UsesMetadataLinkingStructuredOutput(bundle))
-        {
-            builder.AppendLine("Return JSON only with these required properties: summary, decision, evidence, entities, links, entityIds, vectorsIndexed.");
-            builder.AppendLine("The API requires all of these properties.");
-            builder.AppendLine();
-            builder.AppendLine("Formatting rules:");
-            builder.AppendLine("- Return raw JSON only. Do not wrap the JSON in markdown code fences.");
-            builder.AppendLine("- Do not include extra text before or after the JSON.");
-            builder.AppendLine("- summary, decision, and evidence must be plain strings.");
-            builder.AppendLine("- entities must be an array of objects with required properties: name, category, version.");
-            builder.AppendLine("- links must be an array of objects with required properties: fromDocument, toTarget, relationship.");
-            builder.AppendLine("- entityIds must be an array of strings. Use an empty array when none apply.");
-            builder.AppendLine("- vectorsIndexed must be an integer.");
         }
         else
         {
@@ -165,12 +152,6 @@ public sealed class AgentDefinitionBuilder
 
     private static bool UsesCurationComplianceStructuredOutput(AgentAssetBundle bundle) =>
         bundle.OutputSchemaJson.Contains("\"sensitive_content_found\"", StringComparison.Ordinal);
-
-    private static bool UsesIngestionTranslationStructuredOutput(AgentAssetBundle bundle) =>
-        bundle.OutputSchemaJson.Contains("\"normalizedDocuments\"", StringComparison.Ordinal);
-
-    private static bool UsesMetadataLinkingStructuredOutput(AgentAssetBundle bundle) =>
-        bundle.OutputSchemaJson.Contains("\"entities\"", StringComparison.Ordinal);
 
     private static string NormalizePath(string path)
     {

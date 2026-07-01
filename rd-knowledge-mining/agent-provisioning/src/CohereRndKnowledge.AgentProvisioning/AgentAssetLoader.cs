@@ -92,16 +92,37 @@ public sealed class AgentAssetLoader
             throw new InvalidOperationException($"Agent '{manifest.Name}' instructions file is empty.");
         }
 
-        string outputSchemaPath = ResolvePath(agentDirectory, manifest.OutputSchemaFile);
-        EnsureFileExists(outputSchemaPath);
-        string outputSchemaJson = File.ReadAllText(outputSchemaPath).Trim();
-        if (string.IsNullOrWhiteSpace(outputSchemaJson))
+        bool usesJsonObjectOutput = UsesJsonObjectOutput(manifest);
+        string outputSchemaJson = string.Empty;
+        if (usesJsonObjectOutput)
         {
-            throw new InvalidOperationException(
-                $"Agent '{manifest.Name}' output schema file '{outputSchemaPath}' is empty.");
+            if (!string.IsNullOrWhiteSpace(manifest.OutputSchemaFile))
+            {
+                string outputSchemaPath = ResolvePath(agentDirectory, manifest.OutputSchemaFile);
+                EnsureFileExists(outputSchemaPath);
+                outputSchemaJson = File.ReadAllText(outputSchemaPath).Trim();
+                ValidateJsonObject(outputSchemaPath, outputSchemaJson);
+            }
         }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(manifest.OutputSchemaFile))
+            {
+                throw new InvalidOperationException(
+                    $"Agent '{manifest.Name}' must declare outputSchemaFile when outputFormat is strict_schema.");
+            }
 
-        ValidateJsonObject(outputSchemaPath, outputSchemaJson);
+            string outputSchemaPath = ResolvePath(agentDirectory, manifest.OutputSchemaFile);
+            EnsureFileExists(outputSchemaPath);
+            outputSchemaJson = File.ReadAllText(outputSchemaPath).Trim();
+            if (string.IsNullOrWhiteSpace(outputSchemaJson))
+            {
+                throw new InvalidOperationException(
+                    $"Agent '{manifest.Name}' output schema file '{outputSchemaPath}' is empty.");
+            }
+
+            ValidateJsonObject(outputSchemaPath, outputSchemaJson);
+        }
 
         return new AgentAssetBundle
         {
@@ -126,6 +147,12 @@ public sealed class AgentAssetLoader
             Path.Combine(AppContext.BaseDirectory, "agents"),
             Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "agents")),
             Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "agent-provisioning", "agents")),
+            Path.GetFullPath(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "agent-provisioning",
+                "src",
+                "CohereRndKnowledge.AgentProvisioning",
+                "agents")),
             Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "agents"))
         ];
 
@@ -184,4 +211,7 @@ public sealed class AgentAssetLoader
             throw new InvalidOperationException($"Required file was not found: '{path}'.");
         }
     }
+
+    internal static bool UsesJsonObjectOutput(AgentManifest manifest) =>
+        string.Equals(manifest.OutputFormat, "json_object", StringComparison.OrdinalIgnoreCase);
 }

@@ -86,9 +86,10 @@ public sealed class IngestionWorkflowFactory
             {
                 string rawOutput = WorkflowTextExtractor.FromMessage(message);
                 AgentStepResult result = ParseBridgeOutput(IngestionWorkflowConstants.MetadataLinkingAgentName, rawOutput);
-                ChatMessage payload = WorkflowPayloadBuilder.CreateAgentTransitionMessage(
+                ChatMessage payload = WorkflowPayloadBuilder.CreateRichAgentHandoffMessage(
                     correlationId,
                     executionId,
+                    IngestionWorkflowConstants.MetadataLinkingAgentName,
                     result);
 
                 await context.QueueStateUpdateAsync(
@@ -143,10 +144,9 @@ public sealed class IngestionWorkflowFactory
                     throw new InvalidOperationException("Pending metadata-linking result was not available when resuming the ingestion workflow.");
                 }
 
-                ChatMessage curatedKnowledge = WorkflowPayloadBuilder.CreateAgentTransitionMessage(
-                    correlationId,
-                    executionId,
-                    pendingResult);
+                ChatMessage curatedKnowledge = new(
+                    ChatRole.Assistant,
+                    pendingResult.RawPayloadJson ?? string.Empty);
 
                 await context.YieldOutputAsync(curatedKnowledge.Text, cancellationToken).ConfigureAwait(false);
             },
@@ -165,18 +165,11 @@ public sealed class IngestionWorkflowFactory
             {
                 string rawOutput = WorkflowTextExtractor.FromLastAssistantMessage(messages);
                 AgentStepResult result = ParseBridgeOutput(sourceAgentName, rawOutput);
-                ChatMessage payload = string.Equals(
+                ChatMessage payload = WorkflowPayloadBuilder.CreateRichAgentHandoffMessage(
+                    correlationId,
+                    executionId,
                     sourceAgentName,
-                    IngestionWorkflowConstants.IngestionTranslationAgentName,
-                    StringComparison.OrdinalIgnoreCase)
-                    ? WorkflowPayloadBuilder.CreateIngestionToLinkingTransitionMessage(
-                        correlationId,
-                        executionId,
-                        result)
-                    : WorkflowPayloadBuilder.CreateAgentTransitionMessage(
-                        correlationId,
-                        executionId,
-                        result);
+                    result);
 
                 await context.SendMessageAsync(payload, cancellationToken: cancellationToken).ConfigureAwait(false);
 

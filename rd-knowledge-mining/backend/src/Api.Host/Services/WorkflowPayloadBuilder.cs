@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using CohereRndKnowledgeMining.Api.Host.Workflow;
 using Microsoft.Extensions.AI;
 
@@ -54,41 +55,40 @@ public static class WorkflowPayloadBuilder
         ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
         ArgumentNullException.ThrowIfNull(previousResult);
 
+        if (!string.IsNullOrWhiteSpace(previousResult.RawPayloadJson))
+        {
+            return CreateRichAgentHandoffMessage(correlationId, executionId, previousResult.AgentName, previousResult);
+        }
+
         return CreateJsonMessage(BuildTransitionPayload(correlationId, executionId, previousResult));
     }
 
-    /// <summary>Block 1 handoff from ingestion-translation to metadata-linking (linking-relevant fields only).</summary>
-    public static ChatMessage CreateIngestionToLinkingTransitionMessage(
+    /// <summary>Block 1 handoff: merge workflow context with the full prior-agent JSON payload.</summary>
+    public static ChatMessage CreateRichAgentHandoffMessage(
         string correlationId,
         string executionId,
-        AgentStepResult ingestionResult)
+        string priorAgentName,
+        AgentStepResult priorResult)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(correlationId);
         ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
-        ArgumentNullException.ThrowIfNull(ingestionResult);
+        ArgumentException.ThrowIfNullOrWhiteSpace(priorAgentName);
+        ArgumentNullException.ThrowIfNull(priorResult);
 
-        var payload = new
+        if (string.IsNullOrWhiteSpace(priorResult.RawPayloadJson))
         {
-            correlationId,
-            sourceId = correlationId,
-            executionId,
-            summary = ingestionResult.Summary,
-            evidence = ingestionResult.Evidence,
-            keyFacts = ingestionResult.KeyFacts,
-            documentsProcessed = ingestionResult.DocumentsProcessed,
-            normalizedFormats = ingestionResult.NormalizedFormats,
-            normalizedDocuments = ingestionResult.NormalizedDocuments?.Select(document => new
-            {
-                documentId = document.DocumentId,
-                sourceItemId = document.SourceItemId,
-                sourceType = document.SourceType,
-                title = document.Title,
-                canonicalKey = document.CanonicalKey,
-                status = document.Status
-            })
-        };
+            throw new ArgumentException(
+                "Rich agent handoff requires RawPayloadJson on the prior step result.",
+                nameof(priorResult));
+        }
 
-        return CreateJsonMessage(payload);
+        string json = MergeWorkflowContext(
+            correlationId,
+            executionId,
+            priorAgentName,
+            priorResult.RawPayloadJson);
+
+        return new ChatMessage(ChatRole.User, json);
     }
 
     private static object BuildTransitionPayload(
@@ -110,6 +110,42 @@ public static class WorkflowPayloadBuilder
             citations = previousResult.Citations,
             capturedDecisions = previousResult.CapturedDecisions
         };
+
+    private static string MergeWorkflowContext(
+        string correlationId,
+        string executionId,
+        string priorAgentName,
+        string rawPayloadJson)
+    {
+        using JsonDocument document = JsonDocument.Parse(rawPayloadJson);
+        if (document.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidOperationException("Rich agent payload must be a JSON object.");
+        }
+
+        JsonObject merged = new()
+        {
+            ["correlationId"] = correlationId,
+            ["sourceId"] = correlationId,
+            ["executionId"] = executionId,
+            ["priorAgent"] = priorAgentName
+        };
+
+        foreach (JsonProperty property in document.RootElement.EnumerateObject())
+        {
+            if (property.NameEquals("correlationId")
+                || property.NameEquals("sourceId")
+                || property.NameEquals("executionId")
+                || property.NameEquals("priorAgent"))
+            {
+                continue;
+            }
+
+            merged[property.Name] = JsonNode.Parse(property.Value.GetRawText());
+        }
+
+        return merged.ToJsonString(CompactJsonOptions);
+    }
 
     private static ChatMessage CreateJsonMessage(object payload)
     {

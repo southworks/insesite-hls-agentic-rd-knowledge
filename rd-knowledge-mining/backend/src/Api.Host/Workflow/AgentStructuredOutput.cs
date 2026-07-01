@@ -3,6 +3,17 @@ using System.Text.Json.Serialization;
 
 namespace CohereRndKnowledgeMining.Api.Host.Workflow;
 
+public static class AgentWorkflowAgents
+{
+    public const string IngestionTranslation = "ingestion-translation-agent";
+
+    public const string MetadataLinking = "metadata-linking-agent";
+
+    public static bool UsesRichPayload(string agentName) =>
+        string.Equals(agentName, IngestionTranslation, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(agentName, MetadataLinking, StringComparison.OrdinalIgnoreCase);
+}
+
 public sealed class NormalizedDocument
 {
     [JsonPropertyName("documentId")]
@@ -110,6 +121,9 @@ public sealed class AgentStepResult
 
     public IReadOnlyList<NormalizedDocument>? NormalizedDocuments { get; init; }
 
+    /// <summary>Full agent JSON for Block 1 rich payloads passed through workflow hand-offs.</summary>
+    public string? RawPayloadJson { get; init; }
+
     public required DateTimeOffset CompletedAtUtc { get; init; }
 
     public static AgentStepResult FromStructuredOutput(string agentName, AgentStructuredOutput output) =>
@@ -131,6 +145,23 @@ public sealed class AgentStepResult
             DuplicatesRemoved = output.DuplicatesRemoved,
             NormalizedFormats = output.NormalizedFormats,
             NormalizedDocuments = output.NormalizedDocuments,
+            RawPayloadJson = null,
+            CompletedAtUtc = DateTimeOffset.UtcNow
+        };
+
+    public static AgentStepResult FromRichPayload(
+        string agentName,
+        string rawPayloadJson,
+        string summary,
+        string decision,
+        string evidence) =>
+        new()
+        {
+            AgentName = agentName,
+            Summary = summary,
+            Decision = decision,
+            Evidence = evidence,
+            RawPayloadJson = rawPayloadJson,
             CompletedAtUtc = DateTimeOffset.UtcNow
         };
 }
@@ -144,6 +175,11 @@ public static class AgentStructuredOutputParser
 
     public static AgentStepResult Parse(string agentName, string rawOutput)
     {
+        if (AgentWorkflowAgents.UsesRichPayload(agentName))
+        {
+            return ParseRichPayload(agentName, rawOutput);
+        }
+
         AgentStructuredOutput? structured = TryParseStructuredOutput(rawOutput);
         if (structured is not null)
         {
@@ -165,6 +201,162 @@ public static class AgentStructuredOutputParser
 
         throw new InvalidOperationException(
             $"Agent '{agentName}' did not return valid structured JSON. Expected properties: summary, decision, evidence.");
+    }
+
+    private static AgentStepResult ParseRichPayload(string agentName, string rawOutput)
+    {
+        if (string.IsNullOrWhiteSpace(rawOutput))
+        {
+            throw new InvalidOperationException(
+                $"Agent '{agentName}' returned empty output. Expected a JSON object.");
+        }
+
+        string trimmedOutput = rawOutput.Trim();
+        if (trimmedOutput.Contains("Error (", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"Agent '{agentName}' returned an error instead of JSON: {Truncate(trimmedOutput)}");
+        }
+
+        foreach (string candidate in CollectJsonCandidates(rawOutput))
+        {
+            try
+            {
+                using JsonDocument document = JsonDocument.Parse(candidate);
+                if (document.RootElement.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                JsonElement root = document.RootElement;
+                string summary = DeriveRichSummary(agentName, root);
+                string decision = DeriveRichDecision(agentName, root);
+                string evidence = DeriveRichEvidence(root);
+                string canonicalJson = JsonSerializer.Serialize(root, JsonOptions);
+                return AgentStepResult.FromRichPayload(agentName, canonicalJson, summary, decision, evidence);
+            }
+            catch (JsonException)
+            {
+                // try next candidate
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Agent '{agentName}' did not return a valid JSON object payload.");
+    }
+
+    private static string DeriveRichSummary(string agentName, JsonElement root)
+    {
+        if (TryGetPropertyIgnoreCase(root, "summary", out JsonElement summaryElement))
+        {
+            if (summaryElement.ValueKind == JsonValueKind.String)
+            {
+                string? text = summaryElement.GetString();
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    return text;
+                }
+            }
+            else if (summaryElement.ValueKind == JsonValueKind.Object)
+            {
+                int? accepted = ReadOptionalInt(summaryElement, "documentsAccepted");
+                int? received = ReadOptionalInt(summaryElement, "documentsReceived");
+                if (accepted.HasValue && received.HasValue)
+                {
+                    return $"{accepted.Value}/{received.Value} documents accepted";
+                }
+
+                return summaryElement.GetRawText();
+            }
+        }
+
+        if (TryGetPropertyIgnoreCase(root, "batchId", out JsonElement batchId)
+            && batchId.ValueKind == JsonValueKind.String)
+        {
+            string? batch = batchId.GetString();
+            if (!string.IsNullOrWhiteSpace(batch))
+            {
+                return $"Batch {batch}";
+            }
+        }
+
+        return $"{agentName} completed";
+    }
+
+    private static string DeriveRichDecision(string agentName, JsonElement root)
+    {
+        string? explicitDecision = ReadOptionalString(root, "decision");
+        if (!string.IsNullOrWhiteSpace(explicitDecision))
+        {
+            return explicitDecision;
+        }
+
+        if (HasReviewFlagAtOrAbove(root, "high"))
+        {
+            return agentName switch
+            {
+                AgentWorkflowAgents.IngestionTranslation => "Human Review Needed",
+                AgentWorkflowAgents.MetadataLinking => "Human Review Needed",
+                _ => "Human Review Needed"
+            };
+        }
+
+        return agentName switch
+        {
+            AgentWorkflowAgents.IngestionTranslation => "Ingestion Complete",
+            AgentWorkflowAgents.MetadataLinking => "Linking Complete",
+            _ => "Complete"
+        };
+    }
+
+    private static string DeriveRichEvidence(JsonElement root)
+    {
+        string? explicitEvidence = ReadEvidence(root, "evidence");
+        if (!string.IsNullOrWhiteSpace(explicitEvidence))
+        {
+            return explicitEvidence;
+        }
+
+        if (TryGetPropertyIgnoreCase(root, "reviewFlags", out JsonElement reviewFlags)
+            && reviewFlags.ValueKind == JsonValueKind.Array
+            && reviewFlags.GetArrayLength() > 0)
+        {
+            return reviewFlags.GetRawText();
+        }
+
+        return "See full agent payload.";
+    }
+
+    private static bool HasReviewFlagAtOrAbove(JsonElement root, string minimumSeverity)
+    {
+        if (!TryGetPropertyIgnoreCase(root, "reviewFlags", out JsonElement reviewFlags)
+            || reviewFlags.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        foreach (JsonElement flag in reviewFlags.EnumerateArray())
+        {
+            if (flag.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            string? severity = ReadOptionalString(flag, "severity");
+            if (string.IsNullOrWhiteSpace(severity))
+            {
+                continue;
+            }
+
+            if (string.Equals(severity, "high", StringComparison.OrdinalIgnoreCase)
+                || (string.Equals(minimumSeverity, "medium", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(severity, "medium", StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static AgentStructuredOutput? TryParseStructuredOutput(string rawOutput)
