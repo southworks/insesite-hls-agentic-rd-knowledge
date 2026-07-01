@@ -33,9 +33,6 @@ public sealed class WorkflowExecution
 
     public Dictionary<string, string> AgentOutputs { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Parsed Block 1 agent results captured when the agent executor completes.</summary>
-    public Dictionary<string, AgentStepResult> FinalAgentStepResults { get; } = new(StringComparer.OrdinalIgnoreCase);
-
     public Dictionary<string, StringBuilder> StreamingBuffers { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     public CheckpointManager? WorkflowCheckpointManager { get; set; }

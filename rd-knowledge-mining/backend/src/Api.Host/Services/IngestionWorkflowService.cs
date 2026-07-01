@@ -387,7 +387,7 @@ public sealed class IngestionWorkflowService
                 break;
 
             case AgentResponseEvent responseEvent:
-                TryUpdateAgentOutput(execution, responseEvent.ExecutorId, responseEvent.Response, isFinal: false);
+                TryUpdateAgentOutput(execution, responseEvent.ExecutorId, responseEvent.Response, isFinal: true);
                 break;
 
             case ExecutorInvokedEvent invokedEvent:
@@ -396,7 +396,7 @@ public sealed class IngestionWorkflowService
 
             case ExecutorCompletedEvent completedEvent:
                 MarkExecutorCompleted(execution, completedEvent.ExecutorId);
-                TryCaptureRichAgentHandoff(execution, completedEvent.ExecutorId, completedEvent.Data);
+                TryUpdateAgentOutput(execution, completedEvent.ExecutorId, completedEvent.Data, isFinal: true);
                 break;
 
             case ExecutorFailedEvent failedEvent:
@@ -499,74 +499,6 @@ public sealed class IngestionWorkflowService
         SaveAgentOutput(execution, executorId, rawOutput, isFinal);
     }
 
-    /// <summary>
-    /// Captures Block 1 handoff JSON only when the agent executor completes, not on intermediate turns.
-    /// </summary>
-    private void TryCaptureRichAgentHandoff(
-        WorkflowExecution execution,
-        string executorId,
-        object? data)
-    {
-        string? agentKey = MapExecutorToAgentKey(executorId);
-        if (agentKey is null || !IsRichPayloadAgentKey(agentKey))
-        {
-            return;
-        }
-
-        string? sourceText = ExtractHandoffSourceText(data);
-        if (string.IsNullOrWhiteSpace(sourceText))
-        {
-            return;
-        }
-
-        string agentName = MapAgentKeyToName(agentKey);
-        if (!AgentStructuredOutputParser.TryParseRichPayload(agentName, sourceText, out AgentStepResult? parsed)
-            || parsed is null)
-        {
-            return;
-        }
-
-        SaveFinalRichAgentOutput(execution, agentKey, parsed);
-    }
-
-    private static string? ExtractHandoffSourceText(object? data) =>
-        data switch
-        {
-            AgentResponse response => WorkflowTextExtractor.CollectHandoffSourceText(response),
-            ChatMessage[] messages => WorkflowTextExtractor.CollectHandoffSourceText(messages),
-            IList<ChatMessage> messages => WorkflowTextExtractor.CollectHandoffSourceText(messages),
-            IEnumerable<ChatMessage> messages => WorkflowTextExtractor.CollectHandoffSourceText(messages),
-            _ => null
-        };
-
-    private void SaveFinalRichAgentOutput(
-        WorkflowExecution execution,
-        string agentKey,
-        AgentStepResult parsed)
-    {
-        string agentName = MapAgentKeyToName(agentKey);
-        if (!AgentStructuredOutputParser.IsRecognizedHandoffResult(agentName, parsed))
-        {
-            return;
-        }
-
-        if (execution.FinalAgentStepResults.TryGetValue(agentKey, out AgentStepResult? existing)
-            && AgentStructuredOutputParser.RankHandoffResult(agentName, existing)
-                >= AgentStructuredOutputParser.RankHandoffResult(agentName, parsed))
-        {
-            return;
-        }
-
-        execution.FinalAgentStepResults[agentKey] = parsed;
-        execution.AgentOutputs[agentKey] = parsed.RawPayloadJson ?? string.Empty;
-
-        AgentExecutionState state = GetOrCreateAgentState(execution, agentKey);
-        execution.StreamingBuffers.Remove(agentKey);
-        state.Output = parsed.RawPayloadJson;
-        Touch(execution);
-        _store.Save(execution);
-    }
-
     private void SaveAgentOutput(
         WorkflowExecution execution,
         string executorId,
@@ -651,15 +583,6 @@ public sealed class IngestionWorkflowService
 
         return null;
     }
-
-    private static bool IsRichPayloadAgentKey(string agentKey) =>
-        string.Equals(agentKey, IngestionTranslationKey, StringComparison.OrdinalIgnoreCase)
-        || string.Equals(agentKey, MetadataLinkingKey, StringComparison.OrdinalIgnoreCase);
-
-    private static string MapAgentKeyToName(string agentKey) =>
-        string.Equals(agentKey, MetadataLinkingKey, StringComparison.OrdinalIgnoreCase)
-            ? AgentWorkflowAgents.MetadataLinking
-            : AgentWorkflowAgents.IngestionTranslation;
 
     private void MarkFailed(WorkflowExecution execution, string reason)
     {

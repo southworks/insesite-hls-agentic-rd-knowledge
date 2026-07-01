@@ -33,13 +33,6 @@ public static class IngestionWorkflowConstants
 /// </summary>
 public sealed class IngestionWorkflowFactory
 {
-    private readonly InMemoryIngestionWorkflowStore _store;
-
-    public IngestionWorkflowFactory(InMemoryIngestionWorkflowStore store)
-    {
-        _store = store;
-    }
-
     public AgentWorkflow CreateWorkflow(RndKnowledgeAgents agents, string sourceId, string executionId)
     {
         RequestPort approvalPort = RequestPort.Create<HumanApprovalPrompt, HumanApprovalDecision>(
@@ -58,14 +51,12 @@ public sealed class IngestionWorkflowFactory
             id: "IngestionBridge01",
             correlationId: sourceId,
             executionId: executionId,
-            sourceAgentName: IngestionWorkflowConstants.IngestionTranslationAgentName,
-            store: _store);
+            sourceAgentName: IngestionWorkflowConstants.IngestionTranslationAgentName);
         FunctionExecutor<IList<ChatMessage>> bridge02 = CreatePayloadBridgeExecutor(
             id: "IngestionBridge02",
             correlationId: sourceId,
             executionId: executionId,
-            sourceAgentName: IngestionWorkflowConstants.MetadataLinkingAgentName,
-            store: _store);
+            sourceAgentName: IngestionWorkflowConstants.MetadataLinkingAgentName);
         FunctionExecutor<ChatMessage> requestCuratorApproval = CreateCuratorApprovalRequestExecutor(
             id: "IngestionCuratorApprovalRequest",
             correlationId: sourceId,
@@ -170,23 +161,14 @@ public sealed class IngestionWorkflowFactory
         string id,
         string correlationId,
         string executionId,
-        string sourceAgentName,
-        InMemoryIngestionWorkflowStore store)
+        string sourceAgentName)
     {
         return new FunctionExecutor<IList<ChatMessage>>(
             id: id,
-            handlerAsync: async (_, context, cancellationToken) =>
+            handlerAsync: async (messages, context, cancellationToken) =>
             {
-                string agentOutputKey = IngestionHandoffResolver.MapAgentNameToOutputKey(sourceAgentName);
-                AgentStepResult result = await IngestionHandoffResolver
-                    .WaitForFinalAgentStepResultAsync(
-                        store,
-                        executionId,
-                        agentOutputKey,
-                        sourceAgentName,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-
+                string rawOutput = ExtractBridgeOutput(messages);
+                AgentStepResult result = ParseBridgeOutput(sourceAgentName, rawOutput);
                 ChatMessage payload = WorkflowPayloadBuilder.CreateRichAgentHandoffMessage(
                     correlationId,
                     executionId,
@@ -198,6 +180,17 @@ public sealed class IngestionWorkflowFactory
                 await context.SendMessageAsync(new TurnToken(emitEvents: true), cancellationToken: cancellationToken).ConfigureAwait(false);
             },
             sentMessageTypes: [typeof(ChatMessage), typeof(TurnToken)]);
+    }
+
+    private static string ExtractBridgeOutput(IList<ChatMessage> messages)
+    {
+        string aggregated = WorkflowTextExtractor.CollectHandoffSourceText(messages);
+        if (!string.IsNullOrWhiteSpace(aggregated))
+        {
+            return aggregated;
+        }
+
+        return WorkflowTextExtractor.FromLastAssistantMessage(messages);
     }
 
     private static AgentStepResult ParseBridgeOutput(string sourceAgentName, string rawOutput) =>
