@@ -18,7 +18,7 @@ query an EMPTY KB (no answer) -> ingest -> query the POPULATED KB (grounded answ
 ## What we materialize (and what we don't)
 
 The demo *traverses every agent and both human actors*, but only **demo upload payloads** are
-materialized under `dataset-seed/cases/` — exactly the inesite pattern:
+materialized under `rd-knowledge-mining/backend/dataset-seed/cases/` — exactly the inesite pattern:
 
   - Ingestion scenarios -> flat files in `<case>/ingest/` (built by `build_case_folders.py`).
   - Search scenarios in the headline demo -> query text in `case-04-demo/prompts/`.
@@ -27,7 +27,7 @@ materialized under `dataset-seed/cases/` — exactly the inesite pattern:
 Generators import this module so rollups and demo folders stay aligned:
 
   - generate_normalized_layers.py  -> ground-truth/{ING,QRY}-XXX.json
-  - build_case_folders.py          -> dataset-seed/cases/*/ingest/ + prompts/
+  - build_case_folders.py          -> rd-knowledge-mining/backend/dataset-seed/cases/*/ingest/ + prompts/
 
 Trackable prefixes: ING-### (ingestion phase) and QRY-### (query/search phase), like APP-XXX in loan.
 
@@ -415,5 +415,5 @@ def demo_prefix(scenario_id: str) -> int:
 
 
 def case_folder(scenario: dict) -> str:
-    """Demo folder name under dataset-seed/cases/."""
+    """Demo folder name under rd-knowledge-mining/backend/dataset-seed/cases/."""
     return CASE_FOLDERS[scenario["scenario_id"]]

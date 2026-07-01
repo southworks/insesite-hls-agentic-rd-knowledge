@@ -1,6 +1,6 @@
 # Scenario Organization
 
-Demo-first layout: each case is a self-contained folder under `dataset-seed/cases/`.
+Demo-first layout: each case is a self-contained folder under `rd-knowledge-mining/backend/dataset-seed/cases/`.
 
 ## Case folders
 
@@ -35,3 +35,7 @@ python3 build_case_folders.py
 ```
 
 Scenario definitions: [`scenarios.py`](../scripts/scenarios.py)
+
+## How to add a scenario
+
+Add the new `ING-XXX` or `QRY-XXX` definition in `data-generation/scripts/scenarios.py`, update the relevant folder or prompt mapping, run `build_case_folders.py`, review changes under `rd-knowledge-mining/backend/dataset-seed/`, and redeploy the assets that embed the dataset.
