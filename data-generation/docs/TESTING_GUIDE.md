@@ -1,11 +1,11 @@
 # Testing Guide
 
-Run demos using files under `dataset-seed/cases/`. No per-stage folder tree is required.
+Run demos using files under `rd-knowledge-mining/backend/dataset-seed/cases/`. No per-stage folder tree is required.
 
 ## Quick start
 
-1. Load `dataset-seed/policies/hls_policies.txt` into your RAG pipeline.
-2. Pick a case from [`dataset-seed/README.md`](../../dataset-seed/README.md).
+1. Load `rd-knowledge-mining/backend/dataset-seed/policies/hls_policies.txt` into your RAG pipeline.
+2. Pick a case from [`rd-knowledge-mining/backend/dataset-seed/README.md`](../../rd-knowledge-mining/backend/dataset-seed/README.md).
 3. Upload flat files from `<case>/ingest/` when the case requires ingest.
 4. For the headline demo (`case-04-demo`), run steps 1→3 in order using `prompts/` and `ingest/`.
 
@@ -36,3 +36,7 @@ python3 build_case_folders.py
 ```
 
 Optional: `python3 generate_agent_documents.py` before `build_case_folders.py` if ING-004 agent-input txt must be refreshed.
+
+## How to add a scenario
+
+Add the scenario in `data-generation/scripts/scenarios.py`, regenerate the runtime dataset package, review `rd-knowledge-mining/backend/dataset-seed/`, and rebuild/redeploy. The backend is intentionally not changed by this workflow.

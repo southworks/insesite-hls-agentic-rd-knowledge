@@ -9,7 +9,7 @@
     "corpus/raw_manifest.json"
   ],
   "required_human_review": true,
-  "scenario_folder": "dataset-seed/cases/case-03-sensitive-denied",
+  "scenario_folder": "rd-knowledge-mining/backend/dataset-seed/cases/case-03-sensitive-denied",
   "scenario_id": "ING-004",
   "scenario_kind": "e2e_phase_path",
   "source_system": "hls_knowledge_mining_ground_truth",
