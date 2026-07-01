@@ -30,4 +30,4 @@ python3 generate_normalized_layers.py  # ground-truth/
 
 ## How to add a scenario
 
-Add or modify scenarios in `data-generation/scripts/scenarios.py`, update `CASE_FOLDERS` or `DEMO_PROMPT_FILES`, regenerate the runtime dataset package, review the diff under `rd-knowledge-mining/backend/dataset-seed/`, and redeploy the dataset-bearing assets.
+See [`../README.md`](../README.md#how-to-add-a-scenario).

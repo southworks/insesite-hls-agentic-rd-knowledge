@@ -28,4 +28,4 @@ Review changes under `rd-knowledge-mining/backend/dataset-seed/` before committi
 
 ## How to add a scenario
 
-Add the scenario in `data-generation/scripts/scenarios.py`, update `CASE_FOLDERS` or `DEMO_PROMPT_FILES`, regenerate the runtime dataset package, review the diff, then rebuild and redeploy the assets that embed it.
+See [`../README.md`](../README.md#how-to-add-a-scenario).

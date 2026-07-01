@@ -38,4 +38,4 @@ Scenario definitions: [`scenarios.py`](../scripts/scenarios.py)
 
 ## How to add a scenario
 
-Add the new `ING-XXX` or `QRY-XXX` definition in `data-generation/scripts/scenarios.py`, update the relevant folder or prompt mapping, run `build_case_folders.py`, review changes under `rd-knowledge-mining/backend/dataset-seed/`, and redeploy the assets that embed the dataset.
+See [`../README.md`](../README.md#how-to-add-a-scenario).

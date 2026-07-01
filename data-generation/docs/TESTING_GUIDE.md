@@ -39,4 +39,4 @@ Optional: `python3 generate_agent_documents.py` before `build_case_folders.py` i
 
 ## How to add a scenario
 
-Add the scenario in `data-generation/scripts/scenarios.py`, regenerate the runtime dataset package, review `rd-knowledge-mining/backend/dataset-seed/`, and rebuild/redeploy. The backend is intentionally not changed by this workflow.
+See [`../README.md`](../README.md#how-to-add-a-scenario).
