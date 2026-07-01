@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Azure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -11,20 +10,16 @@ namespace RndKnowledgeMining.Mcp.Adapters;
 /// Lists and reads raw R&amp;D documents from Microsoft Fabric OneLake scoped to a sourceId.
 /// Documents live under <c>{RawRoot}/{sourceId}/</c> in the configured lakehouse.
 /// </summary>
-public sealed class RawSourceService
+public sealed class FabricRawSourceService : IRawSourceService
 {
-    private static readonly Regex ItemIdPattern = new(
-        @"^(?<sourceId>.+)-(?<index>\d{3,})$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
     private readonly FabricLakehouseClient _client;
     private readonly string _rawRoot;
-    private readonly ILogger<RawSourceService> _logger;
+    private readonly ILogger<FabricRawSourceService> _logger;
 
-    public RawSourceService(
+    public FabricRawSourceService(
         FabricLakehouseClient client,
         IOptions<FabricLakehouseOptions> options,
-        ILogger<RawSourceService> logger)
+        ILogger<FabricRawSourceService> logger)
     {
         _client = client;
         _rawRoot = options.Value.RawRoot.Trim('/');
@@ -38,7 +33,7 @@ public sealed class RawSourceService
         var files = await ListSourceFilesAsync(sourceId, cancellationToken).ConfigureAwait(false);
 
         var documents = files
-            .Select((file, index) => BuildSummary(sourceId, file, index))
+            .Select(file => BuildSummary(sourceId, file))
             .ToList();
 
         _logger.LogInformation(
@@ -53,36 +48,11 @@ public sealed class RawSourceService
         };
     }
 
-    public async Task<ReadRawDocumentResponse> ReadAsync(string sourceId, string itemId, CancellationToken cancellationToken)
+    public async Task<ReadRawDocumentResponse> ReadAsync(string sourceId, string fileName, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(itemId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
-        var files = await ListSourceFilesAsync(sourceId, cancellationToken).ConfigureAwait(false);
-        var match = ItemIdPattern.Match(itemId);
-        if (!match.Success)
-        {
-            throw new ArgumentException(
-                $"itemId '{itemId}' is not in the expected format '{{sourceId}}-{{index}}' (e.g. '{sourceId}-001').",
-                nameof(itemId));
-        }
-
-        if (!match.Groups["sourceId"].Value.Equals(sourceId, StringComparison.Ordinal))
-        {
-            throw new ArgumentException(
-                $"itemId '{itemId}' does not belong to sourceId '{sourceId}'.",
-                nameof(itemId));
-        }
-
-        if (!int.TryParse(match.Groups["index"].Value, out var index) || index < 1 || index > files.Count)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(itemId),
-                $"itemId '{itemId}' references index {index} but only {files.Count} document(s) are available for source '{sourceId}'.");
-        }
-
-        var file = files[index - 1];
-        var fileName = file[(file.LastIndexOf('/') + 1)..];
         var relativePath = $"{_rawRoot}/{sourceId}/{fileName}";
 
         string content;
@@ -93,12 +63,11 @@ public sealed class RawSourceService
         catch (FileNotFoundException)
         {
             throw new FileNotFoundException(
-                $"Fabric file '{relativePath}' was not found for itemId '{itemId}'.");
+                $"Fabric file '{relativePath}' was not found for source '{sourceId}'.");
         }
 
         return new ReadRawDocumentResponse
         {
-            ItemId = itemId,
             Title = fileName,
             SourceType = RawSourceTypeInference.InferSourceType(fileName),
             SourcePath = relativePath,
@@ -134,13 +103,12 @@ public sealed class RawSourceService
         return files;
     }
 
-    private RawDocumentSummary BuildSummary(string sourceId, string path, int index)
+    private RawDocumentSummary BuildSummary(string sourceId, string path)
     {
         var fileName = path[(path.LastIndexOf('/') + 1)..];
         return new RawDocumentSummary
         {
-            ItemId = $"{sourceId}-{index + 1:D3}",
-            Title = fileName,
+            FileName = fileName,
             SourceType = RawSourceTypeInference.InferSourceType(fileName),
             SourcePath = $"{_rawRoot}/{sourceId}/{fileName}"
         };

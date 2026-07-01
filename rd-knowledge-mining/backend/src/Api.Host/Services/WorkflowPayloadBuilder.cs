@@ -14,42 +14,15 @@ public static class WorkflowPayloadBuilder
         WriteIndented = false
     };
 
-    /// <summary>Block 1 entry payload: the raw R&D knowledge items read from Fabric.</summary>
-    public static List<ChatMessage> CreateInitialMessages(
-        string sourceId,
-        string executionId,
-        IReadOnlyList<RawKnowledgeItem> items)
-    {
-        var payload = new
-        {
-            sourceId,
-            executionId,
-            items = items.Select(item => new
-            {
-                itemId = item.ItemId,
-                title = item.Title,
-                sourceType = item.SourceType,
-                sourcePath = item.SourcePath,
-                content = item.Content
-            })
-        };
-
-        return [CreateJsonMessage(payload)];
-    }
-
-    /// <summary>
-    /// Block 1 entry payload when data has been uploaded to Fabric. The agent receives
-    /// only a reference pointer and must use MCP tools to retrieve the raw documents.
-    /// </summary>
-    public static List<ChatMessage> CreateFabricParamsMessage(
+    /// <summary>Block 1 entry payload: a location pointer for the agent to retrieve raw files via MCP.</summary>
+    public static List<ChatMessage> CreateLocationPointerMessage(
         string sourceId,
         string executionId)
     {
         var payload = new
         {
             sourceId,
-            executionId,
-            dataSource = "fabric"
+            executionId
         };
 
         return [CreateJsonMessage(payload)];

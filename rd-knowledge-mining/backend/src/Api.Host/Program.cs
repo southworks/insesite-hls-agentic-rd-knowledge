@@ -36,7 +36,7 @@ if (dsOptions.Mode == DataSourceMode.Fabric)
     builder.Services.AddSingleton(fabOpts);
     builder.Services.AddSingleton(sp =>
         FabricLakehouseClient.Create(fabOpts, sp.GetRequiredService<ILogger<FabricLakehouseClient>>()));
-    builder.Services.AddSingleton<IFabricRawSourceReader, LocalRawSourceReader>();
+    builder.Services.AddSingleton<IFabricRawSourceReader, FabricRawSourceReader>();
     builder.Services.AddSingleton<IFabricRawSourceWriter, FabricRawSourceWriter>();
     builder.Services.AddSingleton(dsOptions);
     builder.Services.Configure<DatasetOptions>(builder.Configuration.GetSection(DatasetOptions.SectionName));
@@ -52,7 +52,6 @@ else
     }
 
     builder.Services.Configure<DatasetOptions>(builder.Configuration.GetSection(DatasetOptions.SectionName));
-    builder.Services.AddSingleton<IFabricRawSourceReader, LocalRawSourceReader>();
     builder.Services.AddSingleton(dsOptions);
 }
 

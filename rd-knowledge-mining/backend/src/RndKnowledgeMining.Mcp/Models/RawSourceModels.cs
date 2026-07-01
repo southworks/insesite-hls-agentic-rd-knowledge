@@ -6,9 +6,7 @@ namespace RndKnowledgeMining.Mcp.Models;
 /// </summary>
 public sealed class RawDocumentSummary
 {
-    public required string ItemId { get; init; }
-
-    public required string Title { get; init; }
+    public required string FileName { get; init; }
 
     /// <summary>article, protocol, eln_lims, dataset, result, submission, partner_repo, region_policy, ...</summary>
     public required string SourceType { get; init; }
@@ -25,8 +23,6 @@ public sealed class ListRawDocumentsResponse
 
 public sealed class ReadRawDocumentResponse
 {
-    public required string ItemId { get; init; }
-
     public required string Title { get; init; }
 
     public required string SourceType { get; init; }
