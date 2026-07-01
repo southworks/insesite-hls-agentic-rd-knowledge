@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Build dataset-seed/cases/ demo folders from corpus exports.
+Build rd-knowledge-mining/backend/dataset-seed/cases/ demo folders from corpus exports.
 
 Each case folder matches the committed demo layout:
 
-    dataset-seed/cases/case-XX_<path>/
+    rd-knowledge-mining/backend/dataset-seed/cases/case-XX_<path>/
       README.md                     (preserved — not overwritten)
       ingest/                       flat Fabric upload payload
 
-    dataset-seed/cases/case-04-demo/
+    rd-knowledge-mining/backend/dataset-seed/cases/case-04-demo/
       ingest/                       ING-001 upload files
       prompts/                      QRY-001 and QRY-002 query text
 
@@ -37,7 +37,8 @@ from scenarios import (
 SCRIPTS = Path(__file__).resolve().parent
 DATA_GEN = SCRIPTS.parent
 REPO = DATA_GEN.parent
-CASES_DIR = REPO / "dataset-seed" / "cases"
+RUNTIME_SEED = REPO / "rd-knowledge-mining" / "backend" / "dataset-seed"
+CASES_DIR = RUNTIME_SEED / "cases"
 
 SKIP_INGEST_NAMES = {"europe_pmc_metadata.json", "pmc_oa_license.xml"}
 
@@ -153,7 +154,10 @@ def main() -> None:
     prompt_count = rebuild_demo_prompts()
     print(f"cases/{DEMO_CASE}/prompts: {prompt_count} files")
 
-    print(f"\nDone — {ingest_total} ingest files and {prompt_count} prompts under dataset-seed/cases/")
+    print(
+        f"\nDone — {ingest_total} ingest files and {prompt_count} prompts "
+        f"under {CASES_DIR.relative_to(REPO)}/"
+    )
     if all_warnings:
         print("\nWarnings:")
         for w in all_warnings:

@@ -1,6 +1,6 @@
 # Agent Handoff Map
 
-Five data-consuming agents plus two human gates and persistence. Demo upload payloads live in `dataset-seed/cases/`; full stage contracts live in `ground-truth/<ID>.json`.
+Five data-consuming agents plus two human gates and persistence. Demo upload payloads live in `rd-knowledge-mining/backend/dataset-seed/cases/`; full stage contracts live in `data-generation/ground-truth/<ID>.json`.
 
 ## Phase 1 — Ingestion & structuring
 
@@ -43,3 +43,7 @@ python3 generate_raw_layer.py
 python3 build_case_folders.py
 python3 generate_normalized_layers.py   # optional
 ```
+
+## How to add a scenario
+
+Add the scenario in `data-generation/scripts/scenarios.py`, regenerate `rd-knowledge-mining/backend/dataset-seed/`, review the data-package diff, then rebuild and redeploy. Backend code is not part of this data-generation workflow.

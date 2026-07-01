@@ -37,8 +37,8 @@ All governance rules for the demo are in [`policies/hls_policies.txt`](policies/
 
 ## Reference material
 
-Generation scripts, corpus, and ground truth live in [`../data-generation/`](../data-generation/). Legacy scenario IDs (`ING-*`, `QRY-*`) are preserved there for validation and rebuild.
+Generation scripts, corpus, and ground truth live in [`../../../data-generation/`](../../../data-generation/). Legacy scenario IDs (`ING-*`, `QRY-*`) are preserved there for validation and rebuild.
 
-## Team note (structural change)
+## How to add a scenario
 
-Demo folders use **Case 1–4** naming under `cases/`. Rebuild with `data-generation/scripts/build_case_folders.py` after refreshing the corpus.
+Add or modify scenarios in [`../../../data-generation/`](../../../data-generation/), not by hand-editing only this runtime package. After updating `data-generation/scripts/scenarios.py`, run `build_case_folders.py`, review the generated changes under this folder carefully, rebuild the images or deployment package that embeds it, and redeploy. Backend code is intentionally out of scope for data-generation changes.
