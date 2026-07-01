@@ -312,8 +312,15 @@ public static class AgentStructuredOutputParser
         }
 
         throw new InvalidOperationException(
-            $"Agent '{agentName}' did not return a recognized JSON handoff payload.");
+            LooksLikeIncompleteToolRound(trimmedOutput)
+                ? $"Agent '{agentName}' returned MCP tool-call output instead of the completed JSON handoff payload. " +
+                  "Ensure the agent uses instructions_only (not json_object) in Foundry provisioning so tool rounds can complete before the final JSON response."
+                : $"Agent '{agentName}' did not return a recognized JSON handoff payload.");
     }
+
+    private static bool LooksLikeIncompleteToolRound(string rawOutput) =>
+        rawOutput.Contains("tool_call_id", StringComparison.OrdinalIgnoreCase)
+        || rawOutput.Contains("tool_name", StringComparison.OrdinalIgnoreCase);
 
     private static bool TryParseRichPayloadCore(string agentName, string rawOutput, out AgentStepResult result)
     {

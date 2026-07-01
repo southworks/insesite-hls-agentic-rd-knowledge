@@ -167,7 +167,7 @@ public sealed class IngestionWorkflowFactory
             id: id,
             handlerAsync: async (messages, context, cancellationToken) =>
             {
-                string rawOutput = ExtractBridgeOutput(messages);
+                string rawOutput = ExtractBridgeOutput(sourceAgentName, messages);
                 AgentStepResult result = ParseBridgeOutput(sourceAgentName, rawOutput);
                 ChatMessage payload = WorkflowPayloadBuilder.CreateRichAgentHandoffMessage(
                     correlationId,
@@ -182,15 +182,21 @@ public sealed class IngestionWorkflowFactory
             sentMessageTypes: [typeof(ChatMessage), typeof(TurnToken)]);
     }
 
-    private static string ExtractBridgeOutput(IList<ChatMessage> messages)
+    private static string ExtractBridgeOutput(string sourceAgentName, IList<ChatMessage> messages)
     {
+        string fromLast = WorkflowTextExtractor.FromLastAssistantMessage(messages);
+        if (AgentStructuredOutputParser.TryParseRichPayload(sourceAgentName, fromLast, out _))
+        {
+            return fromLast;
+        }
+
         string aggregated = WorkflowTextExtractor.CollectHandoffSourceText(messages);
-        if (!string.IsNullOrWhiteSpace(aggregated))
+        if (AgentStructuredOutputParser.TryParseRichPayload(sourceAgentName, aggregated, out _))
         {
             return aggregated;
         }
 
-        return WorkflowTextExtractor.FromLastAssistantMessage(messages);
+        return !string.IsNullOrWhiteSpace(fromLast) ? fromLast : aggregated;
     }
 
     private static AgentStepResult ParseBridgeOutput(string sourceAgentName, string rawOutput) =>

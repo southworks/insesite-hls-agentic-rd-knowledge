@@ -15,7 +15,7 @@ public sealed class AgentManifest
 
     /// <summary>
     /// strict_schema — enforce agent-specific JSON Schema (Search &amp; Chat, Curation).
-    /// json_object — JSON object only; domain shape is defined in instructions.md (Block 1 agents).
+    /// instructions_only — rich JSON shape in instructions.md; no Foundry text.format (required for MCP multi-turn agents).
     /// </summary>
     public string OutputFormat { get; init; } = "strict_schema";
 

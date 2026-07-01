@@ -92,9 +92,10 @@ public sealed class AgentAssetLoader
             throw new InvalidOperationException($"Agent '{manifest.Name}' instructions file is empty.");
         }
 
+        bool usesInstructionsOnlyOutput = UsesInstructionsOnlyOutput(manifest);
         bool usesJsonObjectOutput = UsesJsonObjectOutput(manifest);
         string outputSchemaJson = string.Empty;
-        if (usesJsonObjectOutput)
+        if (usesInstructionsOnlyOutput || usesJsonObjectOutput)
         {
             if (!string.IsNullOrWhiteSpace(manifest.OutputSchemaFile))
             {
@@ -214,4 +215,7 @@ public sealed class AgentAssetLoader
 
     internal static bool UsesJsonObjectOutput(AgentManifest manifest) =>
         string.Equals(manifest.OutputFormat, "json_object", StringComparison.OrdinalIgnoreCase);
+
+    internal static bool UsesInstructionsOnlyOutput(AgentManifest manifest) =>
+        string.Equals(manifest.OutputFormat, "instructions_only", StringComparison.OrdinalIgnoreCase);
 }
