@@ -74,7 +74,7 @@ public sealed class LocalRawSourceService : IRawSourceService
         }
 
         var sourceType = RawSourceTypeInference.InferSourceType(fileName);
-        string content = File.ReadAllText(filePath).Trim();
+        string content = RawDocumentContentPreparer.PrepareForAgent(fileName, File.ReadAllText(filePath).Trim());
 
         return Task.FromResult(new ReadRawDocumentResponse
         {

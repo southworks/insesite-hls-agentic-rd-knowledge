@@ -71,7 +71,7 @@ public sealed class FabricRawSourceService : IRawSourceService
             Title = fileName,
             SourceType = RawSourceTypeInference.InferSourceType(fileName),
             SourcePath = relativePath,
-            Content = content.Trim()
+            Content = RawDocumentContentPreparer.PrepareForAgent(fileName, content.Trim())
         };
     }
 

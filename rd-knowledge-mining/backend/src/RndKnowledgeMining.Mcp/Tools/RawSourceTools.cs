@@ -26,7 +26,7 @@ public sealed class RawSourceTools
     }
 
     [McpServerTool]
-    [Description("Reads a single raw R&D document by sourceId and fileName. Returns the full document content.")]
+    [Description("Reads a single raw R&D document by sourceId and fileName. JATS article XML is returned as compact pre-extracted JSON (metadata, abstract, section summaries); other files return text content.")]
     public Task<ReadRawDocumentResponse> ReadRawDocument(
         [Description("Identifier of the ingestion source/batch (e.g. case-04-demo).")]
         string sourceId,

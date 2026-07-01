@@ -39,6 +39,11 @@ public sealed class AgentDefinitionBuilder
             }
         };
 
+        if (AgentAssetLoader.UsesInstructionsOnlyOutput(bundle.Manifest))
+        {
+            definition["max_tokens"] = 16384;
+        }
+
         if (!AgentAssetLoader.UsesInstructionsOnlyOutput(bundle.Manifest))
         {
             JsonObject textFormat = AgentAssetLoader.UsesJsonObjectOutput(bundle.Manifest)
