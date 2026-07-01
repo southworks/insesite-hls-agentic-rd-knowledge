@@ -15,6 +15,12 @@ public static class WorkflowPayloadBuilder
         WriteIndented = false
     };
 
+    /// <summary>
+    /// Foundry json_object agents reject input unless the message text contains "json".
+    /// </summary>
+    private const string JsonObjectInputPrefix =
+        "Process the following JSON workflow input and respond with a single JSON object.\n\n";
+
     /// <summary>Block 1 entry payload: a location pointer for the agent to retrieve raw files via MCP.</summary>
     public static List<ChatMessage> CreateLocationPointerMessage(
         string sourceId,
@@ -26,7 +32,7 @@ public static class WorkflowPayloadBuilder
             executionId
         };
 
-        return [CreateJsonMessage(payload)];
+        return [CreateJsonInputMessage(JsonSerializer.Serialize(payload, CompactJsonOptions))];
     }
 
     /// <summary>Block 2 Curate entry payload: all accumulated Search &amp; Chat responses.</summary>
@@ -88,7 +94,7 @@ public static class WorkflowPayloadBuilder
             priorAgentName,
             priorResult.RawPayloadJson);
 
-        return new ChatMessage(ChatRole.User, json);
+        return CreateJsonInputMessage(json);
     }
 
     private static object BuildTransitionPayload(
@@ -152,4 +158,7 @@ public static class WorkflowPayloadBuilder
         string json = JsonSerializer.Serialize(payload, CompactJsonOptions);
         return new ChatMessage(ChatRole.User, json);
     }
+
+    private static ChatMessage CreateJsonInputMessage(string jsonPayload) =>
+        new(ChatRole.User, JsonObjectInputPrefix + jsonPayload);
 }
