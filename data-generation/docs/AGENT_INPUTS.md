@@ -23,4 +23,4 @@ python3 generate_agent_documents.py
 python3 build_case_folders.py   # ING-004 uses txt under agent_inputs/curation_decisions/
 ```
 
-Demo ingest uses flat upload files in `rd-knowledge-mining/backend/dataset-seed/cases/*/ingest/` — not the full agent_inputs tree.
+Demo ingest uses flat upload files in `dataset-seed/cases/*/ingest/` — not the full agent_inputs tree.
