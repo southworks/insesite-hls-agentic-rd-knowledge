@@ -37,6 +37,8 @@ public static class ServiceCollectionExtensions
         if (dataSourceOptions.Mode == DataSourceMode.Fabric)
         {
             ValidateFabricLakehouseConfiguration(fabricLakehouseOptions);
+            services.Configure<FabricLakehouseOptions>(
+                configuration.GetSection($"{DataSourceOptions.SectionName}:{FabricLakehouseOptions.SectionName}"));
         }
         else
         {
@@ -65,6 +67,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IPolicySearchService, AzurePolicySearchService>();
         services.AddSingleton<KnowledgeSearchTools>();
         services.AddSingleton<CurationComplianceTools>();
+        services.AddNormalizedDocumentStore(configuration);
 
         if (dataSourceOptions.Mode == DataSourceMode.Fabric)
         {

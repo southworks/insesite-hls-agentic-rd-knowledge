@@ -8,10 +8,14 @@ namespace RndKnowledgeMining.Mcp.Tools;
 public sealed class KnowledgeSearchTools
 {
     private readonly IKnowledgeSearchService _knowledgeSearchService;
+    private readonly INormalizedDocumentStore _normalizedDocumentStore;
 
-    public KnowledgeSearchTools(IKnowledgeSearchService knowledgeSearchService)
+    public KnowledgeSearchTools(
+        IKnowledgeSearchService knowledgeSearchService,
+        INormalizedDocumentStore normalizedDocumentStore)
     {
         _knowledgeSearchService = knowledgeSearchService;
+        _normalizedDocumentStore = normalizedDocumentStore;
     }
 
     [McpServerTool]
@@ -39,5 +43,36 @@ public sealed class KnowledgeSearchTools
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
         ArgumentException.ThrowIfNullOrWhiteSpace(passageId);
         return _knowledgeSearchService.GetLineageAsync(sessionId, passageId, cancellationToken);
+    }
+
+    [McpServerTool]
+    [Description("Lists normalized ingestion documents persisted for a Block 1 batch. Returns documentId metadata only; use read_normalized_document to fetch each document JSON.")]
+    public Task<ListNormalizedDocumentsResponse> ListNormalizedDocuments(
+        [Description("Ingestion source/batch id (e.g. case-01-human-review).")]
+        string sourceId,
+        [Description("Workflow execution id for the ingestion run.")]
+        string executionId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
+        return _normalizedDocumentStore.ListAsync(sourceId, executionId, cancellationToken);
+    }
+
+    [McpServerTool]
+    [Description("Reads one normalized ingestion document JSON persisted after ingestion-translation completes.")]
+    public Task<ReadNormalizedDocumentResponse> ReadNormalizedDocument(
+        [Description("Ingestion source/batch id (e.g. case-01-human-review).")]
+        string sourceId,
+        [Description("Workflow execution id for the ingestion run.")]
+        string executionId,
+        [Description("Canonical documentId from list_normalized_documents (e.g. doc-pmc5447962).")]
+        string documentId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(documentId);
+        return _normalizedDocumentStore.ReadAsync(sourceId, executionId, documentId, cancellationToken);
     }
 }

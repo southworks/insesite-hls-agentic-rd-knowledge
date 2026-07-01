@@ -74,6 +74,9 @@ resource mcpApp 'Microsoft.App/containerApps@2024-03-01' = {
             memory: '1Gi'
           }
           env: concat(mcpContainerEnv, [
+            { name: 'AZURE_STORAGE_BLOB_SERVICE_URI', value: blobServiceUri }
+            { name: 'AzureStorage__ContainerName', value: documentsContainerName }
+            { name: 'AzureStorage__NormalizedPrefix', value: 'normalized' }
             { name: 'McpStartup__EnsureSearchIndexesOnStartup', value: 'true' }
             { name: 'McpStartup__SeedPoliciesOnStartup', value: 'false' }
           ])
@@ -134,6 +137,7 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'AzureSearch__PolicyIndexName', value: 'rd-policy-knowledge' }
             { name: 'AzureSearch__VectorDimensions', value: '1024' }
             { name: 'AzureStorage__ContainerName', value: documentsContainerName }
+            { name: 'AzureStorage__NormalizedPrefix', value: 'normalized' }
             { name: 'AzureFoundryModels__EmbedDeploymentName', value: embedDeploymentName }
             { name: 'AzureFoundryModels__RerankDeploymentName', value: rerankDeploymentName }
             { name: 'AzureFoundryModels__EmbedModelName', value: embedModelName }

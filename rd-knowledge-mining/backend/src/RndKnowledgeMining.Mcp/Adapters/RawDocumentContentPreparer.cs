@@ -1,6 +1,6 @@
 namespace RndKnowledgeMining.Mcp.Adapters;
 
-internal static class RawDocumentContentPreparer
+public static class RawDocumentContentPreparer
 {
     private const int MaxRawPreviewChars = 80_000;
 

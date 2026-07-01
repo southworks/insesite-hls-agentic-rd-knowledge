@@ -1,6 +1,7 @@
 using CohereRndKnowledgeMining.Api.Host.Services;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
+using RndKnowledgeMining.Mcp.Adapters;
 
 namespace CohereRndKnowledgeMining.Api.Host.Workflow;
 
@@ -15,12 +16,16 @@ internal sealed class RichHandoffBridgeExecutor : ChatProtocolExecutor
     private readonly string _executionId;
     private readonly string _sourceAgentName;
     private readonly string _accumulatedMessagesKey;
+    private readonly INormalizedDocumentStore? _normalizedDocumentStore;
+    private readonly bool _persistNormalizedDocuments;
 
     public RichHandoffBridgeExecutor(
         string id,
         string correlationId,
         string executionId,
-        string sourceAgentName)
+        string sourceAgentName,
+        INormalizedDocumentStore? normalizedDocumentStore = null,
+        bool persistNormalizedDocuments = false)
         : base(
             id,
             new ChatProtocolExecutorOptions { AutoSendTurnToken = false },
@@ -30,6 +35,8 @@ internal sealed class RichHandoffBridgeExecutor : ChatProtocolExecutor
         _executionId = executionId;
         _sourceAgentName = sourceAgentName;
         _accumulatedMessagesKey = $"{id}.AccumulatedMessages";
+        _normalizedDocumentStore = normalizedDocumentStore;
+        _persistNormalizedDocuments = persistNormalizedDocuments;
     }
 
     protected override async ValueTask TakeTurnAsync(
@@ -49,17 +56,44 @@ internal sealed class RichHandoffBridgeExecutor : ChatProtocolExecutor
             cancellationToken: cancellationToken).ConfigureAwait(false);
 
         string rawOutput = ExtractBridgeOutput(_sourceAgentName, accumulated);
-        if (!AgentStructuredOutputParser.TryParseRichPayload(_sourceAgentName, rawOutput, out _))
+        if (!AgentStructuredOutputParser.TryParseRichPayload(_sourceAgentName, rawOutput, out AgentStepResult? parsedResult)
+            || parsedResult is null)
         {
             return;
         }
 
         AgentStepResult result = AgentStructuredOutputParser.Parse(_sourceAgentName, rawOutput);
-        ChatMessage payload = WorkflowPayloadBuilder.CreateRichAgentHandoffMessage(
-            _correlationId,
-            _executionId,
-            _sourceAgentName,
-            result);
+        ChatMessage payload;
+
+        if (_persistNormalizedDocuments
+            && _normalizedDocumentStore is not null
+            && string.Equals(
+                _sourceAgentName,
+                IngestionWorkflowConstants.IngestionTranslationAgentName,
+                StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(result.RawPayloadJson))
+        {
+            string manifestJson = await _normalizedDocumentStore
+                .PersistIngestionHandoffAsync(
+                    _correlationId,
+                    _executionId,
+                    result.RawPayloadJson,
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            payload = WorkflowPayloadBuilder.CreateMetadataLinkingHandoffMessage(
+                _correlationId,
+                _executionId,
+                manifestJson);
+        }
+        else
+        {
+            payload = WorkflowPayloadBuilder.CreateRichAgentHandoffMessage(
+                _correlationId,
+                _executionId,
+                _sourceAgentName,
+                result);
+        }
 
         await context.SendMessageAsync(payload, cancellationToken: cancellationToken).ConfigureAwait(false);
         await context.SendMessageAsync(new TurnToken(emitEvents: true), cancellationToken: cancellationToken)

@@ -2,6 +2,9 @@ using CohereRndKnowledgeMining.Api.Host.Options;
 using CohereRndKnowledgeMining.Api.Host.Services;
 using CohereRndKnowledgeMining.Api.Host.Services.Integrations;
 using CohereRndKnowledgeMining.Api.Host.Workflow;
+using RndKnowledgeMining.Mcp.Adapters;
+using ApiFabricLakehouseClient = CohereRndKnowledgeMining.Api.Host.Services.Integrations.FabricLakehouseClient;
+using McpFabricLakehouseOptions = RndKnowledgeMining.Mcp.Options.FabricLakehouseOptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,11 +38,20 @@ if (dsOptions.Mode == DataSourceMode.Fabric)
 
     builder.Services.AddSingleton(fabOpts);
     builder.Services.AddSingleton(sp =>
-        FabricLakehouseClient.Create(fabOpts, sp.GetRequiredService<ILogger<FabricLakehouseClient>>()));
+        ApiFabricLakehouseClient.Create(fabOpts, sp.GetRequiredService<ILogger<ApiFabricLakehouseClient>>()));
     builder.Services.AddSingleton<IFabricRawSourceReader, FabricRawSourceReader>();
     builder.Services.AddSingleton<IFabricRawSourceWriter, FabricRawSourceWriter>();
     builder.Services.AddSingleton(dsOptions);
     builder.Services.Configure<DatasetOptions>(builder.Configuration.GetSection(DatasetOptions.SectionName));
+
+    var mcpFabricOpts = builder.Configuration.GetSection("DataSource:FabricLakehouse").Get<McpFabricLakehouseOptions>()
+        ?? new McpFabricLakehouseOptions();
+    builder.Services.Configure<McpFabricLakehouseOptions>(
+        builder.Configuration.GetSection("DataSource:FabricLakehouse"));
+    builder.Services.AddSingleton(sp =>
+        RndKnowledgeMining.Mcp.Adapters.FabricLakehouseClient.Create(
+            mcpFabricOpts,
+            sp.GetRequiredService<ILogger<RndKnowledgeMining.Mcp.Adapters.FabricLakehouseClient>>()));
 }
 else
 {
@@ -54,6 +66,9 @@ else
     builder.Services.Configure<DatasetOptions>(builder.Configuration.GetSection(DatasetOptions.SectionName));
     builder.Services.AddSingleton(dsOptions);
 }
+
+builder.Services.AddNormalizedDocumentStore(builder.Configuration);
+builder.Services.AddSingleton<IngestionSourceDocumentLoader>();
 
 // Foundry agents shared by both blocks.
 builder.Services.AddSingleton<FoundryAgentProvider>();

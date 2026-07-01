@@ -25,7 +25,7 @@ public sealed class IngestionWorkflowService
     private readonly FoundryAgentProvider _agentProvider;
     private readonly IngestionWorkflowFactory _workflowFactory;
     private readonly InMemoryIngestionWorkflowStore _store;
-    private readonly IFabricRawSourceReader? _rawSourceReader;
+    private readonly IngestionSourceDocumentLoader _documentLoader;
     private readonly IFabricRawSourceWriter? _rawSourceWriter;
     private readonly DataSourceMode _dataSourceMode;
     private readonly IHostApplicationLifetime _applicationLifetime;
@@ -35,16 +35,16 @@ public sealed class IngestionWorkflowService
         FoundryAgentProvider agentProvider,
         IngestionWorkflowFactory workflowFactory,
         InMemoryIngestionWorkflowStore store,
+        IngestionSourceDocumentLoader documentLoader,
         IHostApplicationLifetime applicationLifetime,
         ILogger<IngestionWorkflowService> logger,
         DataSourceOptions? dataSourceOptions = null,
-        IFabricRawSourceReader? rawSourceReader = null,
         IFabricRawSourceWriter? rawSourceWriter = null)
     {
         _agentProvider = agentProvider;
         _workflowFactory = workflowFactory;
         _store = store;
-        _rawSourceReader = rawSourceReader;
+        _documentLoader = documentLoader;
         _rawSourceWriter = rawSourceWriter;
         _dataSourceMode = dataSourceOptions?.Mode ?? DataSourceMode.Local;
         _applicationLifetime = applicationLifetime;
@@ -66,20 +66,21 @@ public sealed class IngestionWorkflowService
             throw new InvalidOperationException("ExecutionId is required.");
         }
 
-        if (_dataSourceMode == DataSourceMode.Fabric && _rawSourceReader is not null && _rawSourceWriter is not null)
+        IReadOnlyList<RawKnowledgeItem> items =
+            await _documentLoader.LoadAsync(sourceId.Trim(), cancellationToken).ConfigureAwait(false);
+
+        if (items.Count == 0)
         {
-            IReadOnlyList<RawKnowledgeItem> items =
-                await _rawSourceReader.ReadAsync(sourceId, cancellationToken).ConfigureAwait(false);
+            throw new KeyNotFoundException(
+                $"Source '{sourceId}' has no raw R&D knowledge items.");
+        }
 
-            if (items.Count == 0)
-            {
-                throw new KeyNotFoundException(
-                    $"Source '{sourceId}' has no raw R&D knowledge items.");
-            }
-
+        if (_dataSourceMode == DataSourceMode.Fabric && _rawSourceWriter is not null)
+        {
             _logger.LogInformation(
                 "Fabric mode: uploading {Count} items to OneLake for source {SourceId}.",
-                items.Count, sourceId);
+                items.Count,
+                sourceId);
             await _rawSourceWriter
                 .WriteAsync(sourceId.Trim(), items, cancellationToken)
                 .ConfigureAwait(false);
@@ -94,7 +95,10 @@ public sealed class IngestionWorkflowService
         };
         _store.Save(execution);
 
-        List<ChatMessage> input = WorkflowPayloadBuilder.CreateLocationPointerMessage(sourceId.Trim(), executionId);
+        List<ChatMessage> input = WorkflowPayloadBuilder.CreateInlineIngestionMessage(
+            sourceId.Trim(),
+            executionId,
+            items);
 
         RunInBackground(executionId, input);
 

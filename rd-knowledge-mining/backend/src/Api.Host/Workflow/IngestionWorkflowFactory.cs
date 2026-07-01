@@ -2,6 +2,7 @@ using CohereRndKnowledgeMining.Api.Host.Services;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
+using RndKnowledgeMining.Mcp.Adapters;
 using AgentWorkflow = Microsoft.Agents.AI.Workflows.Workflow;
 
 namespace CohereRndKnowledgeMining.Api.Host.Workflow;
@@ -33,6 +34,13 @@ public static class IngestionWorkflowConstants
 /// </summary>
 public sealed class IngestionWorkflowFactory
 {
+    private readonly INormalizedDocumentStore _normalizedDocumentStore;
+
+    public IngestionWorkflowFactory(INormalizedDocumentStore normalizedDocumentStore)
+    {
+        _normalizedDocumentStore = normalizedDocumentStore;
+    }
+
     public AgentWorkflow CreateWorkflow(RndKnowledgeAgents agents, string sourceId, string executionId)
     {
         RequestPort approvalPort = RequestPort.Create<HumanApprovalPrompt, HumanApprovalDecision>(
@@ -51,7 +59,9 @@ public sealed class IngestionWorkflowFactory
             id: "IngestionBridge01",
             correlationId: sourceId,
             executionId: executionId,
-            sourceAgentName: IngestionWorkflowConstants.IngestionTranslationAgentName);
+            sourceAgentName: IngestionWorkflowConstants.IngestionTranslationAgentName,
+            normalizedDocumentStore: _normalizedDocumentStore,
+            persistNormalizedDocuments: true);
         var bridge02 = new RichHandoffBridgeExecutor(
             id: "IngestionBridge02",
             correlationId: sourceId,

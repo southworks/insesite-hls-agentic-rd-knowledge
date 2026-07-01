@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using CohereRndKnowledgeMining.Api.Host.Workflow;
 using Microsoft.Extensions.AI;
+using RndKnowledgeMining.Mcp.Adapters;
 
 namespace CohereRndKnowledgeMining.Api.Host.Services;
 
@@ -21,7 +22,78 @@ public static class WorkflowPayloadBuilder
     private const string JsonObjectInputPrefix =
         "Process the following JSON workflow input and respond with a single JSON object.\n\n";
 
-    /// <summary>Block 1 entry payload: a location pointer for the agent to retrieve raw files via MCP.</summary>
+    /// <summary>Block 1 entry payload: preloaded documents for inline normalization (no MCP reads required).</summary>
+    public static List<ChatMessage> CreateInlineIngestionMessage(
+        string sourceId,
+        string executionId,
+        IReadOnlyList<RawKnowledgeItem> items)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+
+        var documents = items
+            .Select(item => new
+            {
+                fileName = item.Title,
+                sourceType = item.SourceType,
+                sourcePath = item.SourcePath,
+                content = RawDocumentContentPreparer.PrepareForAgent(item.Title, item.Content)
+            })
+            .ToList();
+
+        var payload = new
+        {
+            mode = "inline",
+            sourceId,
+            executionId,
+            documentsReceived = documents.Count,
+            documents
+        };
+
+        return [CreateJsonInputMessage(JsonSerializer.Serialize(payload, CompactJsonOptions))];
+    }
+
+    /// <summary>Block 1 slim handoff to metadata-linking after normalized documents are persisted.</summary>
+    public static ChatMessage CreateMetadataLinkingHandoffMessage(
+        string correlationId,
+        string executionId,
+        string manifestJson)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(correlationId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(manifestJson);
+
+        using JsonDocument manifestDocument = JsonDocument.Parse(manifestJson);
+        if (manifestDocument.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidOperationException("Normalized manifest must be a JSON object.");
+        }
+
+        JsonObject merged = new()
+        {
+            ["correlationId"] = correlationId,
+            ["sourceId"] = correlationId,
+            ["executionId"] = executionId,
+            ["priorAgent"] = AgentWorkflowAgents.IngestionTranslation,
+            ["handoffMode"] = "normalized-storage"
+        };
+
+        foreach (JsonProperty property in manifestDocument.RootElement.EnumerateObject())
+        {
+            if (property.NameEquals("correlationId")
+                || property.NameEquals("sourceId")
+                || property.NameEquals("executionId")
+                || property.NameEquals("priorAgent"))
+            {
+                continue;
+            }
+
+            merged[property.Name] = JsonNode.Parse(property.Value.GetRawText());
+        }
+
+        return CreateJsonInputMessage(merged.ToJsonString(CompactJsonOptions));
+    }
+
+    /// <summary>Block 1 legacy entry payload: a location pointer for MCP raw reads.</summary>
     public static List<ChatMessage> CreateLocationPointerMessage(
         string sourceId,
         string executionId)

@@ -112,6 +112,16 @@ resource apiDocumentIntelligenceRole 'Microsoft.Authorization/roleAssignments@20
   }
 }
 
+resource mcpStorageRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(storageAccount.id, mcpIdentity.id, 'StorageBlobDataContributor', nameSuffix)
+  scope: storageAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+    principalId: mcpIdentity.properties.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 resource mcpSearchContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(searchService.id, mcpIdentity.id, 'SearchServiceContributor', nameSuffix)
   scope: searchService
