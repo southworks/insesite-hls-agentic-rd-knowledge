@@ -107,6 +107,64 @@ public sealed class KnowledgeIndexAdapter
         };
     }
 
+    public async Task<IndexRdKnowledgeResponse> IndexAsync(
+        string sessionId,
+        string entityId,
+        string entityType,
+        string title,
+        string chunkText,
+        IReadOnlyList<string>? linkedEntities = null,
+        string? lineageNarrative = null,
+        string? passageId = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityType);
+        ArgumentException.ThrowIfNullOrWhiteSpace(title);
+        ArgumentException.ThrowIfNullOrWhiteSpace(chunkText);
+
+        var normalizedPassageId = NormalizePassageId(entityId, chunkText, passageId);
+        var normalizedLinkedEntities = (linkedEntities ?? [])
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Select(item => item.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var embedding = (await _embeddingService.EmbedAsync([chunkText], cancellationToken)).Single();
+
+        var document = new KnowledgeSearchDocument
+        {
+            Id = normalizedPassageId,
+            EntityId = entityId.Trim(),
+            EntityType = entityType.Trim(),
+            Title = title.Trim(),
+            PassageId = normalizedPassageId,
+            ChunkText = chunkText.Trim(),
+            LinkedEntities = normalizedLinkedEntities,
+            LineageNarrative = string.IsNullOrWhiteSpace(lineageNarrative) ? string.Empty : lineageNarrative.Trim(),
+            Embedding = embedding
+        };
+
+        var batch = IndexDocumentsBatch.MergeOrUpload([document]);
+        var response = await _searchClient.IndexDocumentsAsync(batch, cancellationToken: cancellationToken);
+
+        var result = response.Value.Results.SingleOrDefault();
+        if (result is null || !result.Succeeded)
+        {
+            throw new InvalidOperationException(
+                $"Failed to index passage '{normalizedPassageId}' for entity '{entityId}'.");
+        }
+
+        return new IndexRdKnowledgeResponse
+        {
+            SessionId = sessionId.Trim(),
+            EntityId = entityId.Trim(),
+            PassageId = normalizedPassageId,
+            Indexed = true
+        };
+    }
+
     public async Task<KnowledgeLineageResponse> GetLineageAsync(
         string sessionId,
         string passageId,
@@ -174,6 +232,19 @@ public sealed class KnowledgeIndexAdapter
             JsonElement element when element.ValueKind == JsonValueKind.String => element.GetString(),
             _ => value.ToString()
         };
+    }
+
+    private static string NormalizePassageId(string entityId, string chunkText, string? passageId)
+    {
+        if (!string.IsNullOrWhiteSpace(passageId))
+        {
+            return passageId.Trim();
+        }
+
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(chunkText.Trim())));
+
+        return $"{entityId.Trim()}:{hash[..12].ToLowerInvariant()}";
     }
 
     private sealed class KnowledgeSearchCandidate
