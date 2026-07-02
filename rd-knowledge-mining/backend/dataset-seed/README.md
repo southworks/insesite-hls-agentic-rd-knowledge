@@ -37,8 +37,4 @@ All governance rules for the demo are in [`policies/hls_policies.txt`](policies/
 
 ## Reference material
 
-Generation scripts, corpus, and ground truth live in [`../data-generation/`](../data-generation/). Legacy scenario IDs (`ING-*`, `QRY-*`) are preserved there for validation and rebuild.
-
-## Team note (structural change)
-
-Demo folders use **Case 1–4** naming under `cases/`. Rebuild with `data-generation/scripts/build_case_folders.py` after refreshing the corpus.
+Generation scripts, corpus, and ground truth live in [`../../../data-generation/`](../../../data-generation/). See [`../../../data-generation/README.md`](../../../data-generation/README.md#how-runtime-discovers-scenarios) to regenerate demo data or add a scenario.

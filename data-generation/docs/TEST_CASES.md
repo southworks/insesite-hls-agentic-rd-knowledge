@@ -1,6 +1,6 @@
 # Test Cases
 
-Scenario definitions live in [`../scripts/scenarios.py`](../scripts/scenarios.py). Demo folders are built by [`build_case_folders.py`](../scripts/build_case_folders.py).
+Scenario definitions live in [`../scripts/scenarios.py`](../scripts/scenarios.py). Demo folders are built by [`build_case_folders.py`](../scripts/build_case_folders.py) into `rd-knowledge-mining/backend/dataset-seed/cases/`.
 
 ## Scenario index
 
@@ -24,6 +24,10 @@ Each rollup includes every stage (agents, gates, persistence) with expected deci
 ```bash
 cd data-generation/scripts
 python3 generate_raw_layer.py          # corpus/ (needs network on first run)
-python3 build_case_folders.py          # dataset-seed/cases/
+python3 build_case_folders.py          # rd-knowledge-mining/backend/dataset-seed/cases/
 python3 generate_normalized_layers.py  # ground-truth/
 ```
+
+## How to add a scenario
+
+See [`../README.md`](../README.md#how-to-add-a-scenario).

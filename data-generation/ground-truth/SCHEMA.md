@@ -5,7 +5,7 @@ End-to-end ground truth for HLS's **two sequential phases** — one rollup per s
 - `ING-XXX.json` — PHASE 1 (ingestion & structuring)
 - `QRY-XXX.json` — PHASE 2 (search & compliance)
 
-Demo upload payloads live under `dataset-seed/cases/` (built by `build_case_folders.py`).
+Demo upload payloads live under `rd-knowledge-mining/backend/dataset-seed/cases/` (built by `build_case_folders.py`).
 Ground-truth rollups are optional validation answer keys under `ground-truth/`.
 
 ## Scenario-level fields
@@ -15,7 +15,7 @@ Ground-truth rollups are optional validation answer keys under `ground-truth/`.
 - `scenario_kind` = `e2e_phase_path`
 - `flow` = `ingestion` | `search`,  `phase` = `1` | `2`
 - `title`, `path`
-- `scenario_folder` — demo case path under `dataset-seed/cases/`
+- `scenario_folder` — demo case path under `rd-knowledge-mining/backend/dataset-seed/cases/`
 - `trigger` — controlled UI action that starts the phase
 - `kb_state` (search only) = `empty` | `populated`
 - `stages`, `final_outcome`, `required_human_review`, `raw_sources`

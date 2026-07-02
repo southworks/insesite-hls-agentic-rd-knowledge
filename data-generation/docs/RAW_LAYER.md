@@ -20,7 +20,7 @@ corpus/
 | Script | Output |
 |--------|--------|
 | `generate_raw_layer.py` | Rebuilds `corpus/` from `source_catalog.json` (network) |
-| `build_case_folders.py` | Slices/uploads into `dataset-seed/cases/*/ingest/` |
+| `build_case_folders.py` | Slices/uploads into `rd-knowledge-mining/backend/dataset-seed/cases/*/ingest/` |
 | `generate_agent_documents.py` | Optional evidence cards under `corpus/*/agent_inputs/` |
 | `generate_normalized_layers.py` | Optional `ground-truth/` rollups |
 
@@ -33,6 +33,10 @@ python3 build_case_folders.py
 ```
 
 Entities are derived in memory during ground-truth generation — there is no on-disk `entity-catalog/`.
+
+## How to add a scenario
+
+See [`../README.md`](../README.md#how-to-add-a-scenario).
 
 ## Privacy posture
 
