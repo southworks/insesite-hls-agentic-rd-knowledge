@@ -10,6 +10,11 @@ Demo-first layout: each case is a self-contained folder under `rd-knowledge-mini
 | `case-02-approval-labeling` | ING-003 | Synthetic ELN/LIMS with required labeling |
 | `case-03-sensitive-denied` | ING-004 | Patient-derived candidate denied |
 | `case-04-demo` | QRY-001, ING-001, QRY-002 | Stateful headline demo |
+| `case-05-insufficient-data` | ING-005 | Empty/truncated batch — insufficient data |
+| `case-06-approve-after-review` | ING-007 | Messy pool — curator approves with exclusions |
+| `case-07-eu-policy-query` | QRY-003 | EU policy gap — compliance flag |
+| `case-08-clarification-query` | QRY-004 | Ambiguous query — clarification needed |
+| `case-09-multi-turn-query` | QRY-005 | Multi-turn grounded session + Curate |
 
 ## case-04-demo structure
 
@@ -21,6 +26,10 @@ case-04-demo/
     03-grounded-query-prompt.txt   QRY-002
   README.md
 ```
+
+## Agent capability coverage
+
+See [`TEST_CASES.md`](TEST_CASES.md#what-each-scenario-tests) for which agent decisions each scenario exercises.
 
 ## Ground truth
 

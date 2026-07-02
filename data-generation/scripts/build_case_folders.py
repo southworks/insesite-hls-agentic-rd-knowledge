@@ -29,6 +29,7 @@ from generate_normalized_layers import (
 )
 from scenarios import (
     CASE_FOLDERS,
+    CASE_QUERY_PROMPTS,
     DEMO_CASE,
     DEMO_PROMPT_FILES,
     SCENARIOS_BY_ID,
@@ -129,6 +130,27 @@ def rebuild_demo_prompts() -> int:
     return count
 
 
+def rebuild_query_case_prompts(scenario_id: str, case_name: str) -> int:
+    filenames = CASE_QUERY_PROMPTS[scenario_id]
+    scenario = SCENARIOS_BY_ID[scenario_id]
+    prompt_stages = [s for s in scenario["stages"] if s.get("prompt")]
+    if len(filenames) != len(prompt_stages):
+        raise ValueError(
+            f"{scenario_id}: expected {len(filenames)} prompt files, found {len(prompt_stages)} prompt stages"
+        )
+
+    prompts_dir = CASES_DIR / case_name / "prompts"
+    if prompts_dir.exists():
+        shutil.rmtree(prompts_dir)
+    prompts_dir.mkdir(parents=True)
+
+    count = 0
+    for filename, stage in zip(filenames, prompt_stages):
+        (prompts_dir / filename).write_text(stage["prompt"].strip() + "\n", encoding="utf-8")
+        count += 1
+    return count
+
+
 def main() -> None:
     if not RAW.is_dir():
         raise RuntimeError("Corpus is missing. Run generate_raw_layer.py first.")
@@ -139,6 +161,8 @@ def main() -> None:
     ingest_total = 0
 
     for scenario_id, case_name in CASE_FOLDERS.items():
+        if SCENARIOS_BY_ID[scenario_id]["flow"] != "ingestion":
+            continue
         count, warnings = rebuild_ingest(case_name, scenario_id, entity_index)
         rel = f"cases/{case_name}"
         flag = f"  WARN {len(warnings)}" if warnings else ""
@@ -153,6 +177,12 @@ def main() -> None:
 
     prompt_count = rebuild_demo_prompts()
     print(f"cases/{DEMO_CASE}/prompts: {prompt_count} files")
+
+    for scenario_id in CASE_QUERY_PROMPTS:
+        case_name = CASE_FOLDERS[scenario_id]
+        q_count = rebuild_query_case_prompts(scenario_id, case_name)
+        print(f"cases/{case_name}/prompts: {q_count} files")
+        prompt_count += q_count
 
     print(
         f"\nDone — {ingest_total} ingest files and {prompt_count} prompts "
