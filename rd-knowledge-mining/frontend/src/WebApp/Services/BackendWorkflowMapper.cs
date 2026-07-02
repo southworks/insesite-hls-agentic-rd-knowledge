@@ -138,12 +138,27 @@ public static class AgentOutputParser
             result => !string.IsNullOrWhiteSpace(result?.Answer),
             AgentOutputSchemaMapper.MapSearchChat);
 
-    public static CurationComplianceResult? ParseCurationCompliance(string? raw) =>
-        ParseWithSchemaFallback(
+    public static CurationComplianceResult? ParseCurationCompliance(string? raw)
+    {
+        var parsed = ParseWithSchemaFallback(
             raw,
             json => JsonSerializer.Deserialize<CurationComplianceResult>(json, JsonOptions),
-            result => !string.IsNullOrWhiteSpace(result?.Summary) && result.Flags is not null,
+            result => !string.IsNullOrWhiteSpace(result?.Summary)
+                && result.Flags is not null
+                && result.PromptedOwners is not null,
             AgentOutputSchemaMapper.MapCurationCompliance);
+
+        return NormalizeCurationCompliance(parsed);
+    }
+
+    private static CurationComplianceResult? NormalizeCurationCompliance(CurationComplianceResult? result) =>
+        result is null
+            ? null
+            : result with
+            {
+                Flags = result.Flags ?? [],
+                PromptedOwners = result.PromptedOwners ?? []
+            };
 
     private static T? ParseWithSchemaFallback<T>(
         string? raw,
