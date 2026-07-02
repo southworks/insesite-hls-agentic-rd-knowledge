@@ -1,6 +1,6 @@
 # Agent Handoff Map
 
-Five data-consuming agents plus two human gates and persistence. Demo upload payloads live in `dataset-seed/cases/`; full stage contracts live in `ground-truth/<ID>.json`.
+Five data-consuming agents plus two human gates and persistence. Demo upload payloads live in `rd-knowledge-mining/backend/dataset-seed/cases/`; full stage contracts live in `data-generation/ground-truth/<ID>.json`.
 
 ## Phase 1 — Ingestion & structuring
 
@@ -27,7 +27,12 @@ Five data-consuming agents plus two human gates and persistence. Demo upload pay
 | ING-002 | `cases/case-01-human-review/` |
 | ING-003 | `cases/case-02-approval-labeling/` |
 | ING-004 | `cases/case-03-sensitive-denied/` |
+| ING-005 | `cases/case-05-insufficient-data/` |
+| ING-007 | `cases/case-06-approve-after-review/` |
 | ING-001, QRY-001, QRY-002 | `cases/case-04-demo/` |
+| QRY-003 | `cases/case-07-eu-policy-query/` |
+| QRY-004 | `cases/case-08-clarification-query/` |
+| QRY-005 | `cases/case-09-multi-turn-query/` |
 
 ## Validation
 
@@ -43,3 +48,7 @@ python3 generate_raw_layer.py
 python3 build_case_folders.py
 python3 generate_normalized_layers.py   # optional
 ```
+
+## How to add a scenario
+
+See [`../README.md`](../README.md#how-to-add-a-scenario).

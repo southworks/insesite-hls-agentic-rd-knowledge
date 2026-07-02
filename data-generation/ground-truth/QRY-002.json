@@ -10,7 +10,7 @@
     "corpus/raw_manifest.json"
   ],
   "required_human_review": false,
-  "scenario_folder": "dataset-seed/cases/case-04-demo",
+  "scenario_folder": "rd-knowledge-mining/backend/dataset-seed/cases/case-04-demo",
   "scenario_id": "QRY-002",
   "scenario_kind": "e2e_phase_path",
   "source_system": "hls_knowledge_mining_ground_truth",

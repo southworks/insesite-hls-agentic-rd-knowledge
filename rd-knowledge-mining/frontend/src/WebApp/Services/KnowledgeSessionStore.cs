@@ -19,6 +19,7 @@ public sealed class KnowledgeSession
     public required WorkflowBlock Block { get; init; }
     public required string Title { get; set; }
     public required string StudyId { get; init; }
+    public string? SourceId { get; init; }
     public string? ScenarioId { get; init; }
     public string? SampleQuestion { get; set; }
     public string? ExecutionId { get; set; }
@@ -32,7 +33,11 @@ public sealed class KnowledgeSessionStore
     private readonly Dictionary<string, KnowledgeSession> _ingestionSessions = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, KnowledgeSession> _querySessions = new(StringComparer.OrdinalIgnoreCase);
 
-    public KnowledgeSession OpenIngestionSession(string studyId, string title, string? scenarioId = null)
+    public KnowledgeSession OpenIngestionSession(
+        string studyId,
+        string title,
+        string? scenarioId = null,
+        string? sourceId = null)
     {
         var session = new KnowledgeSession
         {
@@ -40,6 +45,7 @@ public sealed class KnowledgeSessionStore
             Block = WorkflowBlock.Ingestion,
             Title = title,
             StudyId = studyId,
+            SourceId = sourceId,
             ScenarioId = scenarioId,
             ExecutionId = null,
             ChatMessageCount = 0,
@@ -51,7 +57,6 @@ public sealed class KnowledgeSessionStore
 
     public KnowledgeSession OpenQuerySession(
         string sessionId,
-        string executionId,
         string title,
         string studyScope,
         string question,
@@ -65,11 +70,11 @@ public sealed class KnowledgeSessionStore
             StudyId = studyScope,
             ScenarioId = scenarioId,
             SampleQuestion = question,
-            ExecutionId = executionId,
+            ExecutionId = null,
             ChatMessageCount = 0,
             Status = WorkflowStatus.Pending
         };
-        _querySessions[executionId] = session;
+        _querySessions[sessionId] = session;
         return session;
     }
 
@@ -78,12 +83,10 @@ public sealed class KnowledgeSessionStore
             ? ingestionSession
             : null;
 
-    public KnowledgeSession? GetQuerySession(string executionId) =>
-        _querySessions.TryGetValue(executionId, out var session) ? session : null;
+    public KnowledgeSession? GetQuerySession(string sessionId) =>
+        _querySessions.TryGetValue(sessionId, out var session) ? session : null;
 
-    public KnowledgeSession? GetQuerySessionBySessionId(string sessionId) =>
-        _querySessions.Values.FirstOrDefault(s =>
-            s.SessionId.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
+    public KnowledgeSession? GetQuerySessionBySessionId(string sessionId) => GetQuerySession(sessionId);
 
     public void UpdateSession(KnowledgeSession session)
     {
@@ -91,9 +94,9 @@ public sealed class KnowledgeSessionStore
         {
             _ingestionSessions[session.SessionId] = session;
         }
-        else if (session.ExecutionId is not null)
+        else
         {
-            _querySessions[session.ExecutionId] = session;
+            _querySessions[session.SessionId] = session;
         }
     }
 

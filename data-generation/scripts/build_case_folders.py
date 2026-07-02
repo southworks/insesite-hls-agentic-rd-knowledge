@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Build dataset-seed/cases/ demo folders from corpus exports.
+Build rd-knowledge-mining/backend/dataset-seed/cases/ demo folders from corpus exports.
 
 Each case folder matches the committed demo layout:
 
-    dataset-seed/cases/case-XX_<path>/
+    rd-knowledge-mining/backend/dataset-seed/cases/case-XX_<path>/
       README.md                     (preserved — not overwritten)
       ingest/                       flat Fabric upload payload
 
-    dataset-seed/cases/case-04-demo/
+    rd-knowledge-mining/backend/dataset-seed/cases/case-04-demo/
       ingest/                       ING-001 upload files
       prompts/                      QRY-001 and QRY-002 query text
 
@@ -29,6 +29,7 @@ from generate_normalized_layers import (
 )
 from scenarios import (
     CASE_FOLDERS,
+    CASE_QUERY_PROMPTS,
     DEMO_CASE,
     DEMO_PROMPT_FILES,
     SCENARIOS_BY_ID,
@@ -37,7 +38,8 @@ from scenarios import (
 SCRIPTS = Path(__file__).resolve().parent
 DATA_GEN = SCRIPTS.parent
 REPO = DATA_GEN.parent
-CASES_DIR = REPO / "dataset-seed" / "cases"
+RUNTIME_SEED = REPO / "rd-knowledge-mining" / "backend" / "dataset-seed"
+CASES_DIR = RUNTIME_SEED / "cases"
 
 SKIP_INGEST_NAMES = {"europe_pmc_metadata.json", "pmc_oa_license.xml"}
 
@@ -128,6 +130,27 @@ def rebuild_demo_prompts() -> int:
     return count
 
 
+def rebuild_query_case_prompts(scenario_id: str, case_name: str) -> int:
+    filenames = CASE_QUERY_PROMPTS[scenario_id]
+    scenario = SCENARIOS_BY_ID[scenario_id]
+    prompt_stages = [s for s in scenario["stages"] if s.get("prompt")]
+    if len(filenames) != len(prompt_stages):
+        raise ValueError(
+            f"{scenario_id}: expected {len(filenames)} prompt files, found {len(prompt_stages)} prompt stages"
+        )
+
+    prompts_dir = CASES_DIR / case_name / "prompts"
+    if prompts_dir.exists():
+        shutil.rmtree(prompts_dir)
+    prompts_dir.mkdir(parents=True)
+
+    count = 0
+    for filename, stage in zip(filenames, prompt_stages):
+        (prompts_dir / filename).write_text(stage["prompt"].strip() + "\n", encoding="utf-8")
+        count += 1
+    return count
+
+
 def main() -> None:
     if not RAW.is_dir():
         raise RuntimeError("Corpus is missing. Run generate_raw_layer.py first.")
@@ -138,6 +161,8 @@ def main() -> None:
     ingest_total = 0
 
     for scenario_id, case_name in CASE_FOLDERS.items():
+        if SCENARIOS_BY_ID[scenario_id]["flow"] != "ingestion":
+            continue
         count, warnings = rebuild_ingest(case_name, scenario_id, entity_index)
         rel = f"cases/{case_name}"
         flag = f"  WARN {len(warnings)}" if warnings else ""
@@ -153,7 +178,16 @@ def main() -> None:
     prompt_count = rebuild_demo_prompts()
     print(f"cases/{DEMO_CASE}/prompts: {prompt_count} files")
 
-    print(f"\nDone — {ingest_total} ingest files and {prompt_count} prompts under dataset-seed/cases/")
+    for scenario_id in CASE_QUERY_PROMPTS:
+        case_name = CASE_FOLDERS[scenario_id]
+        q_count = rebuild_query_case_prompts(scenario_id, case_name)
+        print(f"cases/{case_name}/prompts: {q_count} files")
+        prompt_count += q_count
+
+    print(
+        f"\nDone — {ingest_total} ingest files and {prompt_count} prompts "
+        f"under {CASES_DIR.relative_to(REPO)}/"
+    )
     if all_warnings:
         print("\nWarnings:")
         for w in all_warnings:

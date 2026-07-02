@@ -15,11 +15,6 @@ public sealed record SendChatMessageRequest(
     string Question,
     string? StudyScope);
 
-public sealed record StartQueryWorkflowResponse(
-    string ExecutionId,
-    string SessionId,
-    WorkflowStatus Status);
-
 public sealed record QuerySessionState(
     string SessionId,
     string? StudyScope,

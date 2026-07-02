@@ -9,9 +9,43 @@ public sealed record SeedScenarioDefinition(
     string Title,
     string Description,
     string StudyId,
+    string SourceId,
     string? SampleQuestion,
     string OutcomeHint,
-    StudySummary Study);
+    StudySummary Study,
+    string? LegacyScenarioId = null,
+    string? CaseFolder = null,
+    string? FinalOutcome = null);
+
+public static class ScenarioBackendPayload
+{
+    public static string DescribeStartPayload(SeedScenarioDefinition scenario)
+    {
+        if (scenario.Block.Equals("Ingestion", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"POST /api/rd-knowledge/ingestion/start → {{ \"sourceId\": \"{scenario.SourceId}\" }}";
+        }
+
+        var sessionId = $"query-{scenario.ScenarioId}";
+        var question = scenario.SampleQuestion ?? "(user question)";
+        return $"POST /api/rd-knowledge/query/ask → {{ \"sessionId\": \"{sessionId}\", \"question\": \"{Truncate(question, 80)}\" }}";
+    }
+
+    public static IReadOnlyList<string> UiOnlyFields { get; } =
+    [
+        "title",
+        "description",
+        "studyId",
+        "scenarioId",
+        "legacyScenarioId",
+        "outcomeHint",
+        "finalOutcome",
+        "study (compound, phase, endpoints)"
+    ];
+
+    private static string Truncate(string value, int maxLength) =>
+        value.Length <= maxLength ? value : string.Concat(value.AsSpan(0, maxLength), "…");
+}
 
 public sealed class ScenarioPickerFilter
 {
@@ -28,7 +62,8 @@ public sealed class ScenarioPickerFilter
             filtered = filtered.Where(s =>
                 s.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                 s.Description.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                s.StudyId.Contains(query, StringComparison.OrdinalIgnoreCase));
+                s.StudyId.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                (s.LegacyScenarioId?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
         }
 
         if (!string.IsNullOrWhiteSpace(outcomeFilter))

@@ -12,26 +12,26 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
     private readonly IRdKnowledgeApiClient _apiClient;
     private readonly KnowledgeSessionStore _sessionStore;
     private readonly WorkflowPollingOptions _pollingOptions;
-    private CancellationTokenSource? _chatPollingCts;
     private CancellationTokenSource? _curationPollingCts;
 
     public string? SessionId { get; private set; }
-    public string? ExecutionId { get; private set; }
+    public string? CurationExecutionId { get; private set; }
     public string Question { get; private set; } = string.Empty;
     public string? StudyScope { get; private set; }
     public QuerySessionState? Session { get; private set; }
     public CurationWorkflowProgress? CurationProgress { get; private set; }
     public bool IsBusy { get; private set; }
-    public bool IsChatPolling { get; private set; }
     public bool IsCurationPolling { get; private set; }
     public string? Error { get; private set; }
 
     public bool CanSendMessage =>
-        !IsBusy && !IsChatPolling && Session?.IsChatRunning != true &&
-        CurationProgress?.Status is not (WorkflowStatus.Running or WorkflowStatus.AwaitingHumanApproval);
+        !IsBusy &&
+        !string.IsNullOrWhiteSpace(SessionId) &&
+        CurationProgress?.Status is not (WorkflowStatus.Running or WorkflowStatus.AwaitingHumanApproval or WorkflowStatus.Completed);
 
     public bool CanStartCuration =>
-        !IsBusy && Session?.Messages.Count > 0 && Session.IsChatRunning != true &&
+        !IsBusy &&
+        Session?.Messages.Count > 0 &&
         CurationProgress?.Status is not (WorkflowStatus.Running or WorkflowStatus.AwaitingHumanApproval or WorkflowStatus.Completed);
 
     public bool CanSubmitDecision =>
@@ -49,53 +49,47 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
         _pollingOptions = pollingOptions.Value;
     }
 
-    public async Task LoadAsync(string sessionId, string? executionId, CancellationToken cancellationToken = default)
+    public async Task LoadAsync(string sessionId, string? curationExecutionId, CancellationToken cancellationToken = default)
     {
         SessionId = sessionId;
-        ExecutionId = executionId;
+        CurationExecutionId = curationExecutionId;
         IsBusy = true;
         Error = null;
         Notify();
 
         try
         {
-            var stored = executionId is not null
-                ? _sessionStore.GetQuerySession(executionId)
-                : _sessionStore.GetQuerySessionBySessionId(sessionId);
+            var stored = _sessionStore.GetQuerySession(sessionId);
             Question = stored?.SampleQuestion ?? string.Empty;
             StudyScope = stored?.StudyId;
 
-            if (!string.IsNullOrWhiteSpace(executionId))
+            Session = await _apiClient.GetQuerySessionAsync(sessionId, cancellationToken);
+            StudyScope = Session.StudyScope ?? StudyScope;
+            CurationExecutionId ??= Session.CurationExecutionId;
+            UpdateSessionFromQueryState();
+
+            if (Session.Messages.Count == 0 && !string.IsNullOrWhiteSpace(stored?.SampleQuestion))
             {
-                Session = await _apiClient.GetQuerySessionAsync(executionId, cancellationToken);
-                StudyScope = Session.StudyScope ?? StudyScope;
+                Session = await _apiClient.SendChatMessageAsync(
+                    sessionId,
+                    new SendChatMessageRequest(stored.SampleQuestion, StudyScope),
+                    cancellationToken);
+                Question = string.Empty;
                 UpdateSessionFromQueryState();
+            }
 
-                if (Session.IsChatRunning)
+            if (!string.IsNullOrWhiteSpace(CurationExecutionId))
+            {
+                CurationProgress = await _apiClient.GetCurationStatusAsync(CurationExecutionId, cancellationToken);
+                UpdateSessionFromCurationProgress();
+                if (ShouldPollCuration(CurationProgress.Status))
                 {
-                    StartChatPolling();
-                }
-
-                if (Session.CurationExecutionId is not null)
-                {
-                    CurationProgress = await _apiClient.GetCurationStatusAsync(executionId, cancellationToken);
-                    UpdateSessionFromCurationProgress();
-                    if (ShouldPollCuration(CurationProgress.Status))
-                    {
-                        StartCurationPolling();
-                    }
-                }
-                else
-                {
-                    StopCurationPolling();
-                    CurationProgress = null;
+                    StartCurationPolling();
                 }
             }
             else
             {
-                StopChatPolling();
                 StopCurationPolling();
-                Session = null;
                 CurationProgress = null;
             }
         }
@@ -112,7 +106,7 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
 
     public async Task SendMessageAsync(CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(ExecutionId) || string.IsNullOrWhiteSpace(Question) || !CanSendMessage)
+        if (string.IsNullOrWhiteSpace(SessionId) || string.IsNullOrWhiteSpace(Question) || !CanSendMessage)
         {
             return;
         }
@@ -124,12 +118,11 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
         try
         {
             Session = await _apiClient.SendChatMessageAsync(
-                ExecutionId,
+                SessionId,
                 new SendChatMessageRequest(Question, StudyScope),
                 cancellationToken);
             UpdateSessionFromQueryState();
             Question = string.Empty;
-            StartChatPolling();
         }
         catch (Exception ex)
         {
@@ -144,7 +137,7 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
 
     public async Task StartCurationAsync(CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(ExecutionId) || !CanStartCuration)
+        if (string.IsNullOrWhiteSpace(SessionId) || !CanStartCuration)
         {
             return;
         }
@@ -155,9 +148,10 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
 
         try
         {
-            await _apiClient.StartCurationAsync(ExecutionId, cancellationToken);
-            CurationProgress = await _apiClient.GetCurationStatusAsync(ExecutionId, cancellationToken);
-            Session = await _apiClient.GetQuerySessionAsync(ExecutionId, cancellationToken);
+            var response = await _apiClient.StartCurationAsync(SessionId, cancellationToken);
+            CurationExecutionId = response.CurationExecutionId;
+            CurationProgress = await _apiClient.GetCurationStatusAsync(CurationExecutionId, cancellationToken);
+            Session = await _apiClient.GetQuerySessionAsync(SessionId, cancellationToken);
             UpdateSessionFromCurationProgress();
             UpdateSessionFromQueryState();
             StartCurationPolling();
@@ -175,7 +169,7 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
 
     public async Task SubmitDecisionAsync(bool approved, string? notes, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(ExecutionId))
+        if (string.IsNullOrWhiteSpace(SessionId) || string.IsNullOrWhiteSpace(CurationExecutionId))
         {
             return;
         }
@@ -187,11 +181,12 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
         try
         {
             await _apiClient.SubmitCurationDecisionAsync(
-                ExecutionId,
+                SessionId,
+                CurationExecutionId,
                 new SubmitQueryDecisionRequest(approved, notes),
                 cancellationToken);
-            CurationProgress = await _apiClient.GetCurationStatusAsync(ExecutionId, cancellationToken);
-            Session = await _apiClient.GetQuerySessionAsync(ExecutionId, cancellationToken);
+            CurationProgress = await _apiClient.GetCurationStatusAsync(CurationExecutionId, cancellationToken);
+            Session = await _apiClient.GetQuerySessionAsync(SessionId, cancellationToken);
             UpdateSessionFromCurationProgress();
             UpdateSessionFromQueryState();
             StopCurationPolling();
@@ -213,21 +208,6 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
         Notify();
     }
 
-    private void StartChatPolling()
-    {
-        StopChatPolling();
-        _chatPollingCts = new CancellationTokenSource();
-        _ = ChatPollLoopAsync(_chatPollingCts.Token);
-    }
-
-    private void StopChatPolling()
-    {
-        _chatPollingCts?.Cancel();
-        _chatPollingCts?.Dispose();
-        _chatPollingCts = null;
-        IsChatPolling = false;
-    }
-
     private void StartCurationPolling()
     {
         StopCurationPolling();
@@ -241,53 +221,6 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
         _curationPollingCts?.Dispose();
         _curationPollingCts = null;
         IsCurationPolling = false;
-    }
-
-    private async Task ChatPollLoopAsync(CancellationToken cancellationToken)
-    {
-        IsChatPolling = true;
-        var started = DateTimeOffset.UtcNow;
-        var maxDuration = TimeSpan.FromMinutes(_pollingOptions.MaxDurationMinutes);
-
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                if (DateTimeOffset.UtcNow - started > maxDuration)
-                {
-                    break;
-                }
-
-                if (string.IsNullOrWhiteSpace(ExecutionId))
-                {
-                    break;
-                }
-
-                await Task.Delay(TimeSpan.FromSeconds(_pollingOptions.IntervalSeconds), cancellationToken);
-                Session = await _apiClient.GetQuerySessionAsync(ExecutionId, cancellationToken);
-                UpdateSessionFromQueryState();
-                Notify();
-
-                if (Session.IsChatRunning != true)
-                {
-                    break;
-                }
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // Expected on dispose.
-        }
-        catch (Exception ex)
-        {
-            Error = ex.Message;
-            Notify();
-        }
-        finally
-        {
-            IsChatPolling = false;
-            Notify();
-        }
     }
 
     private async Task CurationPollLoopAsync(CancellationToken cancellationToken)
@@ -305,13 +238,13 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
                     break;
                 }
 
-                if (string.IsNullOrWhiteSpace(ExecutionId))
+                if (string.IsNullOrWhiteSpace(CurationExecutionId) || string.IsNullOrWhiteSpace(SessionId))
                 {
                     break;
                 }
 
-                CurationProgress = await _apiClient.GetCurationStatusAsync(ExecutionId, cancellationToken);
-                Session = await _apiClient.GetQuerySessionAsync(ExecutionId, cancellationToken);
+                CurationProgress = await _apiClient.GetCurationStatusAsync(CurationExecutionId, cancellationToken);
+                Session = await _apiClient.GetQuerySessionAsync(SessionId, cancellationToken);
                 UpdateSessionFromCurationProgress();
                 UpdateSessionFromQueryState();
                 Notify();
@@ -345,37 +278,37 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
 
     private void UpdateSessionFromQueryState()
     {
-        if (ExecutionId is null || Session is null)
+        if (SessionId is null || Session is null)
         {
             return;
         }
 
-        var session = _sessionStore.GetQuerySession(ExecutionId);
+        var session = _sessionStore.GetQuerySession(SessionId);
         if (session is null)
         {
             return;
         }
 
         session.ChatMessageCount = Session.Messages.Count;
-        session.ExecutionId = ExecutionId;
+        session.ExecutionId = CurationExecutionId;
         session.Status = CurationProgress?.Status ?? (Session.Messages.Count > 0 ? WorkflowStatus.Running : WorkflowStatus.Pending);
         _sessionStore.UpdateSession(session);
     }
 
     private void UpdateSessionFromCurationProgress()
     {
-        if (ExecutionId is null || CurationProgress is null)
+        if (SessionId is null || CurationProgress is null)
         {
             return;
         }
 
-        var session = _sessionStore.GetQuerySession(ExecutionId);
+        var session = _sessionStore.GetQuerySession(SessionId);
         if (session is null)
         {
             return;
         }
 
-        session.ExecutionId = ExecutionId;
+        session.ExecutionId = CurationExecutionId;
         session.Status = CurationProgress.Status;
         _sessionStore.UpdateSession(session);
     }
@@ -384,7 +317,6 @@ public sealed class QueryWorkspaceState : IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
-        StopChatPolling();
         StopCurationPolling();
         return ValueTask.CompletedTask;
     }

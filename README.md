@@ -13,13 +13,13 @@ HLS is **two sequential phases**, each closed by a distinct human actor (see [wo
 
 The headline demo is stateful: **search an empty KB → ingest → search again** and the grounded answer now appears.
 
-- **Demo inputs:** [`dataset-seed/README.md`](dataset-seed/README.md) — Case 1–4, policies, ingest files
-- **Reference / rebuild:** [`data-generation/README.md`](data-generation/README.md) — corpus, scripts, ground truth
+- **Demo inputs:** [`rd-knowledge-mining/backend/dataset-seed/README.md`](rd-knowledge-mining/backend/dataset-seed/README.md) — Case 1–4, policies, ingest files
+- **Reference / rebuild:** [`data-generation/README.md`](data-generation/README.md) — corpus, scripts, ground truth; [how runtime discovers scenarios](data-generation/README.md#how-runtime-discovers-scenarios)
 - **Technical docs:** [`data-generation/docs/HANDOFF.md`](data-generation/docs/HANDOFF.md), [`data-generation/docs/TEST_CASES.md`](data-generation/docs/TEST_CASES.md), [`data-generation/docs/TESTING_GUIDE.md`](data-generation/docs/TESTING_GUIDE.md)
 
 ## Repository layout
 
-**Demo package** (`dataset-seed/`):
+**Demo package** (`rd-knowledge-mining/backend/dataset-seed/`):
 
 - `cases/case-01-human-review/` … `case-04-demo/` — flat `ingest/` + demo `prompts/`
 - `policies/hls_policies.txt` — governance rules
@@ -31,13 +31,7 @@ The headline demo is stateful: **search an empty KB → ingest → search again*
 - `scripts/` — `generate_raw_layer.py`, `build_case_folders.py`, `generate_normalized_layers.py`, `scenarios.py`
 - `docs/` — handoff, testing guide, schemas
 
-Regenerate demo cases:
-
-```bash
-cd data-generation/scripts
-python3 generate_raw_layer.py
-python3 build_case_folders.py
-```
+See [`data-generation/README.md`](data-generation/README.md#how-runtime-discovers-scenarios) to regenerate demo cases or add a scenario. The backend runtime location is intentional: review generated diffs under `rd-knowledge-mining/backend/dataset-seed/` before rebuilding and redeploying.
 
 ## Alignment
 

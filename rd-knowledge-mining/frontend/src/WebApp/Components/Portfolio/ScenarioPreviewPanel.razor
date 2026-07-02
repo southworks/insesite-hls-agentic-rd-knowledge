@@ -4,13 +4,33 @@
         <h3 class="card-title">@Scenario.Title</h3>
         <p>@Scenario.Description</p>
         <dl class="detail-list">
-            <div><dt>Study</dt><dd>@Scenario.StudyId</dd></div>
+            @if (!string.IsNullOrWhiteSpace(Scenario.LegacyScenarioId))
+            {
+                <div><dt>Legacy ID</dt><dd>@Scenario.LegacyScenarioId</dd></div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Scenario.CaseFolder))
+            {
+                <div><dt>Case folder</dt><dd><code>@Scenario.CaseFolder</code></dd></div>
+            }
+            <div><dt>Study / route id</dt><dd>@Scenario.StudyId</dd></div>
             <div><dt>Expected outcome</dt><dd>@Scenario.OutcomeHint</dd></div>
+            @if (!string.IsNullOrWhiteSpace(Scenario.FinalOutcome))
+            {
+                <div><dt>Final outcome</dt><dd><code>@Scenario.FinalOutcome</code></dd></div>
+            }
             @if (!string.IsNullOrWhiteSpace(Scenario.SampleQuestion))
             {
                 <div><dt>Sample question</dt><dd>@Scenario.SampleQuestion</dd></div>
             }
         </dl>
+
+        <div class="backend-payload-card">
+            <h4 class="card-subtitle">Backend payload</h4>
+            <p class="meta-line">Only the fields below are sent to Api.Host when the workflow starts. All other scenario metadata is UI-only.</p>
+            <pre class="payload-preview"><code>@ScenarioBackendPayload.DescribeStartPayload(Scenario)</code></pre>
+            <p class="meta-line muted">UI-only: @string.Join(", ", ScenarioBackendPayload.UiOnlyFields)</p>
+        </div>
+
         <LoadingButton IsLoading="IsRunning" OnClick="OnRun">@RunButtonLabel</LoadingButton>
     </div>
 }

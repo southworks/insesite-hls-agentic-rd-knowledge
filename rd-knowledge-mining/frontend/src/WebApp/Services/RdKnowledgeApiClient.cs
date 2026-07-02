@@ -1,11 +1,11 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Cohere.AgenticRDKnowledge.Shared.Contracts.Backend;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Ingestion;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Query;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Studies;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.VectorDb;
-using Cohere.AgenticRDKnowledge.Shared.Contracts.Backend;
 
 namespace Cohere.AgenticRDKnowledge.WebApp.Services;
 
@@ -13,90 +13,172 @@ public interface IRdKnowledgeApiClient
 {
     Task<VectorDbStoreSummary> GetVectorDbStoreSummaryAsync(CancellationToken cancellationToken = default);
     Task<StudyDocumentsResponse> GetStudyDocumentsAsync(string studyId, CancellationToken cancellationToken = default);
-    Task<StartIngestionWorkflowResponse> StartIngestionWorkflowAsync(string studyId, CancellationToken cancellationToken = default);
+    Task<StartIngestionWorkflowResponse> StartIngestionWorkflowAsync(string sourceId, CancellationToken cancellationToken = default);
     Task<IngestionWorkflowProgress> GetIngestionStatusAsync(string executionId, CancellationToken cancellationToken = default);
-    Task<SubmitIngestionDecisionResponse> SubmitIngestionDecisionAsync(string executionId, SubmitIngestionDecisionRequest request, CancellationToken cancellationToken = default);
-    Task<StartQueryWorkflowResponse> StartQueryWorkflowAsync(string sessionId, CancellationToken cancellationToken = default);
-    Task<QuerySessionState> GetQuerySessionAsync(string executionId, CancellationToken cancellationToken = default);
-    Task<QuerySessionState> SendChatMessageAsync(string executionId, SendChatMessageRequest request, CancellationToken cancellationToken = default);
-    Task<StartCurationResponse> StartCurationAsync(string executionId, CancellationToken cancellationToken = default);
+    Task<SubmitIngestionDecisionResponse> SubmitIngestionDecisionAsync(string executionId, string sourceId, SubmitIngestionDecisionRequest request, CancellationToken cancellationToken = default);
+    Task<QuerySessionState> GetQuerySessionAsync(string sessionId, CancellationToken cancellationToken = default);
+    Task<QuerySessionState> SendChatMessageAsync(string sessionId, SendChatMessageRequest request, CancellationToken cancellationToken = default);
+    Task<StartCurationResponse> StartCurationAsync(string sessionId, CancellationToken cancellationToken = default);
     Task<CurationWorkflowProgress> GetCurationStatusAsync(string curationExecutionId, CancellationToken cancellationToken = default);
-    Task<SubmitQueryDecisionResponse> SubmitCurationDecisionAsync(string curationExecutionId, SubmitQueryDecisionRequest request, CancellationToken cancellationToken = default);
+    Task<SubmitQueryDecisionResponse> SubmitCurationDecisionAsync(string sessionId, string curationExecutionId, SubmitQueryDecisionRequest request, CancellationToken cancellationToken = default);
     Task<bool> GetHealthAsync(CancellationToken cancellationToken = default);
 }
 
-public sealed class RdKnowledgeApiClient(HttpClient httpClient) : IRdKnowledgeApiClient
+public sealed class RdKnowledgeApiClient(
+    HttpClient httpClient,
+    QuerySessionCache querySessionCache,
+    PortfolioScenarioService scenarios) : IRdKnowledgeApiClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
-        Converters = { new JsonStringEnumConverter() }
     };
 
     public Task<VectorDbStoreSummary> GetVectorDbStoreSummaryAsync(CancellationToken cancellationToken = default) =>
-        GetAsync<VectorDbStoreSummary>(RdKnowledgeBackendRoutes.GetVectorDbStoreSummary, cancellationToken);
+        Task.FromResult(new VectorDbStoreSummary(0, 0, 0, 0, null, null));
 
     public Task<StudyDocumentsResponse> GetStudyDocumentsAsync(string studyId, CancellationToken cancellationToken = default) =>
-        GetAsync<StudyDocumentsResponse>(
-            RdKnowledgeBackendRoutes.GetStudyDocuments.Replace("{studyId}", Uri.EscapeDataString(studyId)),
+        Task.FromResult(new StudyDocumentsResponse(studyId, []));
+
+    public async Task<StartIngestionWorkflowResponse> StartIngestionWorkflowAsync(
+        string sourceId,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await PostAsync<IngestionWorkflowStatusResponse>(
+            RdKnowledgeBackendRoutes.StartIngestion,
+            new StartIngestionRequest { SourceId = sourceId },
             cancellationToken);
 
-    public Task<StartIngestionWorkflowResponse> StartIngestionWorkflowAsync(string studyId, CancellationToken cancellationToken = default) =>
-        PostAsync<StartIngestionWorkflowResponse>(
-            RdKnowledgeBackendRoutes.StartIngestionWorkflow.Replace("{studyId}", Uri.EscapeDataString(studyId)),
-            null,
-            cancellationToken);
+        return new StartIngestionWorkflowResponse(
+            response.ExecutionId,
+            response.SourceId,
+            BackendApiMapper.ParseWorkflowStatus(response.Status));
+    }
 
-    public Task<IngestionWorkflowProgress> GetIngestionStatusAsync(string executionId, CancellationToken cancellationToken = default) =>
-        GetAsync<IngestionWorkflowProgress>(
+    public async Task<IngestionWorkflowProgress> GetIngestionStatusAsync(
+        string executionId,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await GetAsync<IngestionWorkflowStatusResponse>(
             RdKnowledgeBackendRoutes.GetIngestionStatus.Replace("{executionId}", Uri.EscapeDataString(executionId)),
             cancellationToken);
 
-    public Task<SubmitIngestionDecisionResponse> SubmitIngestionDecisionAsync(
+        var study = scenarios.ResolveIngestionScenario(response.SourceId)?.Study;
+        return BackendApiMapper.ToIngestionProgress(response, study);
+    }
+
+    public async Task<SubmitIngestionDecisionResponse> SubmitIngestionDecisionAsync(
         string executionId,
+        string sourceId,
         SubmitIngestionDecisionRequest request,
-        CancellationToken cancellationToken = default) =>
-        PostAsync<SubmitIngestionDecisionResponse>(
-            RdKnowledgeBackendRoutes.SubmitIngestionDecision.Replace("{executionId}", Uri.EscapeDataString(executionId)),
-            request,
+        CancellationToken cancellationToken = default)
+    {
+        var path = RdKnowledgeBackendRoutes.SubmitIngestionDecision
+            .Replace("{sourceId}", Uri.EscapeDataString(sourceId))
+            .Replace("{executionId}", Uri.EscapeDataString(executionId));
+
+        var response = await PostAsync<IngestionWorkflowStatusResponse>(
+            path,
+            new WorkflowApprovalRequest
+            {
+                Approved = request.Approved,
+                ReviewerComment = request.Notes
+            },
             cancellationToken);
 
-    public Task<StartQueryWorkflowResponse> StartQueryWorkflowAsync(string sessionId, CancellationToken cancellationToken = default) =>
-        PostAsync<StartQueryWorkflowResponse>(
-            RdKnowledgeBackendRoutes.StartQueryWorkflow.Replace("{sessionId}", Uri.EscapeDataString(sessionId)),
+        return new SubmitIngestionDecisionResponse(
+            response.ExecutionId,
+            BackendApiMapper.ParseWorkflowStatus(response.Status));
+    }
+
+    public Task<QuerySessionState> GetQuerySessionAsync(string sessionId, CancellationToken cancellationToken = default)
+    {
+        var cached = querySessionCache.TryGet(sessionId)
+            ?? querySessionCache.GetOrCreate(sessionId);
+        return Task.FromResult(BackendApiMapper.ToQuerySessionState(cached));
+    }
+
+    public async Task<QuerySessionState> SendChatMessageAsync(
+        string sessionId,
+        SendChatMessageRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var cached = querySessionCache.GetOrCreate(sessionId, request.StudyScope);
+        if (!string.IsNullOrWhiteSpace(request.StudyScope))
+        {
+            cached.StudyScope = request.StudyScope;
+        }
+
+        cached.Messages.Add(new ChatMessage(
+            "user",
+            request.Question,
             null,
-            cancellationToken);
-
-    public Task<QuerySessionState> GetQuerySessionAsync(string executionId, CancellationToken cancellationToken = default) =>
-        GetAsync<QuerySessionState>(
-            RdKnowledgeBackendRoutes.GetQuerySession.Replace("{executionId}", Uri.EscapeDataString(executionId)),
-            cancellationToken);
-
-    public Task<QuerySessionState> SendChatMessageAsync(string executionId, SendChatMessageRequest request, CancellationToken cancellationToken = default) =>
-        PostAsync<QuerySessionState>(
-            RdKnowledgeBackendRoutes.SendChatMessage.Replace("{executionId}", Uri.EscapeDataString(executionId)),
-            request,
-            cancellationToken);
-
-    public Task<StartCurationResponse> StartCurationAsync(string executionId, CancellationToken cancellationToken = default) =>
-        PostAsync<StartCurationResponse>(
-            RdKnowledgeBackendRoutes.StartCuration.Replace("{executionId}", Uri.EscapeDataString(executionId)),
             null,
+            null,
+            DateTimeOffset.UtcNow));
+
+        var response = await PostAsync<ChatAnswerResponse>(
+            RdKnowledgeBackendRoutes.Ask,
+            new AskRequest { SessionId = sessionId, Question = request.Question },
             cancellationToken);
 
-    public Task<CurationWorkflowProgress> GetCurationStatusAsync(string curationExecutionId, CancellationToken cancellationToken = default) =>
-        GetAsync<CurationWorkflowProgress>(
-            RdKnowledgeBackendRoutes.GetCurationStatus.Replace("{executionId}", Uri.EscapeDataString(curationExecutionId)),
+        cached.Messages.Add(BackendApiMapper.ToAssistantMessage(response));
+        cached.CurateEnabled = response.CurateEnabled;
+
+        return BackendApiMapper.ToQuerySessionState(cached);
+    }
+
+    public async Task<StartCurationResponse> StartCurationAsync(
+        string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await PostAsync<CurateWorkflowStatusResponse>(
+            RdKnowledgeBackendRoutes.StartCurate,
+            new StartCurateRequest { SessionId = sessionId },
             cancellationToken);
 
-    public Task<SubmitQueryDecisionResponse> SubmitCurationDecisionAsync(
+        querySessionCache.SetCurationExecutionId(sessionId, response.ExecutionId);
+
+        return new StartCurationResponse(
+            response.ExecutionId,
+            response.SessionId,
+            BackendApiMapper.ParseWorkflowStatus(response.Status));
+    }
+
+    public async Task<CurationWorkflowProgress> GetCurationStatusAsync(
+        string curationExecutionId,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await GetAsync<CurateWorkflowStatusResponse>(
+            RdKnowledgeBackendRoutes.GetCurateStatus.Replace("{executionId}", Uri.EscapeDataString(curationExecutionId)),
+            cancellationToken);
+
+        return BackendApiMapper.ToCurationProgress(response);
+    }
+
+    public async Task<SubmitQueryDecisionResponse> SubmitCurationDecisionAsync(
+        string sessionId,
         string curationExecutionId,
         SubmitQueryDecisionRequest request,
-        CancellationToken cancellationToken = default) =>
-        PostAsync<SubmitQueryDecisionResponse>(
-            RdKnowledgeBackendRoutes.SubmitCurationDecision.Replace("{executionId}", Uri.EscapeDataString(curationExecutionId)),
-            request,
+        CancellationToken cancellationToken = default)
+    {
+        var path = RdKnowledgeBackendRoutes.SubmitCurateDecision
+            .Replace("{sessionId}", Uri.EscapeDataString(sessionId))
+            .Replace("{executionId}", Uri.EscapeDataString(curationExecutionId));
+
+        var response = await PostAsync<CurateWorkflowStatusResponse>(
+            path,
+            new WorkflowApprovalRequest
+            {
+                Approved = request.Approved,
+                ReviewerComment = request.Notes
+            },
             cancellationToken);
+
+        return new SubmitQueryDecisionResponse(
+            response.ExecutionId,
+            BackendApiMapper.ParseWorkflowStatus(response.Status));
+    }
 
     public async Task<bool> GetHealthAsync(CancellationToken cancellationToken = default)
     {
@@ -112,11 +194,15 @@ public sealed class RdKnowledgeApiClient(HttpClient httpClient) : IRdKnowledgeAp
         return result ?? throw new InvalidOperationException($"Empty response from {path}.");
     }
 
-    private async Task<T> PostAsync<T>(string path, object? body, CancellationToken cancellationToken)
+    private async Task<T> PostAsync<T>(string path, object body, CancellationToken cancellationToken)
     {
+<<<<<<< HEAD
         HttpResponseMessage response = body is null
             ? await httpClient.PostAsync(path, null, cancellationToken)
             : await httpClient.PostAsJsonAsync(path, body, JsonOptions, cancellationToken);
+=======
+        var response = await httpClient.PostAsJsonAsync(path, body, JsonOptions, cancellationToken);
+>>>>>>> 99ed0c83e1b3e345e1db57ad8398ee6d7ece8d78
         await ApiProblemDetails.EnsureSuccessOrThrowAsync(response, cancellationToken);
         var result = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
         return result ?? throw new InvalidOperationException($"Empty response from {path}.");

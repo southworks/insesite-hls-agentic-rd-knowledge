@@ -4,7 +4,7 @@
 @inject QueryWorkspaceState WorkspaceState
 @inject WorkspaceSectionState SectionState
 @inject KnowledgeSessionStore SessionStore
-@inject DatasetSeedCatalogService Catalog
+@inject PortfolioScenarioService Scenarios
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 @implements IAsyncDisposable
@@ -30,7 +30,7 @@ else
 {
     <WorkflowStatusBanner Session="WorkspaceState.Session"
                           CurationProgress="WorkspaceState.CurationProgress"
-                          IsPolling="WorkspaceState.IsChatPolling || WorkspaceState.IsCurationPolling" />
+                          IsPolling="WorkspaceState.IsCurationPolling" />
 
     <div class="workspace-grid">
         <div class="workspace-main">
@@ -56,7 +56,7 @@ else
                                           disabled="@(!WorkspaceState.CanSendMessage)"
                                           placeholder="Ask a research question…"></textarea>
                                 <div class="compose-actions">
-                                    <LoadingButton IsLoading="WorkspaceState.IsBusy || WorkspaceState.IsChatPolling"
+                                    <LoadingButton IsLoading="WorkspaceState.IsBusy"
                                                    Disabled="!WorkspaceState.CanSendMessage || string.IsNullOrWhiteSpace(WorkspaceState.Question)"
                                                    OnClick="SendMessageAsync">
                                         Send
@@ -144,7 +144,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        WorkspaceState.OnChange += StateHasChanged;
+        WorkspaceState.OnChange += OnWorkspaceChanged;
         SectionState.ResetForResource(GetResourceKey());
         ResolveSessionMeta();
         await ReloadAsync();
@@ -152,7 +152,7 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        if (WorkspaceState.SessionId != SessionId || WorkspaceState.ExecutionId != ExecutionId)
+        if (WorkspaceState.SessionId != SessionId || WorkspaceState.CurationExecutionId != ExecutionId)
         {
             _lastMessageCount = -1;
             SectionState.ResetForResource(GetResourceKey());
@@ -176,13 +176,11 @@ else
 
     private void ResolveSessionMeta()
     {
-        var session = !string.IsNullOrWhiteSpace(ExecutionId)
-            ? SessionStore.GetQuerySession(ExecutionId)
-            : SessionStore.GetQuerySessionBySessionId(SessionId);
+        var session = SessionStore.GetQuerySession(SessionId);
         _sessionTitle = session?.Title ?? SessionId;
         if (session is not null)
         {
-            _studySummary = Catalog.GetScenarioByStudyId(session.StudyId, WorkflowBlock.Query)?.Study
+            _studySummary = Scenarios.GetScenarioByStudyId(session.StudyId, WorkflowBlock.Query)?.Study
                 ?? new StudySummary(session.StudyId, session.Title, "—", "—", "—", ["Vector DB"]);
         }
     }
@@ -191,7 +189,14 @@ else
 
     private async Task SendMessageAsync() => await WorkspaceState.SendMessageAsync();
 
-    private async Task StartCurationAsync() => await WorkspaceState.StartCurationAsync();
+    private async Task StartCurationAsync()
+    {
+        await WorkspaceState.StartCurationAsync();
+        if (!string.IsNullOrWhiteSpace(WorkspaceState.CurationExecutionId))
+        {
+            Navigation.NavigateTo($"/query/{SessionId}/{WorkspaceState.CurationExecutionId}", replace: true);
+        }
+    }
 
     private async Task SubmitDecisionAsync((bool Approved, string? Notes) decision) =>
         await WorkspaceState.SubmitDecisionAsync(decision.Approved, decision.Notes);
@@ -244,6 +249,8 @@ else
 
     private string? GetHitlStatus() => WorkspaceState.CanSubmitDecision ? "Action required" : WorkspaceState.CurationProgress?.HumanDecision is not null ? "Decided" : null;
 
+    private async void OnWorkspaceChanged() => await InvokeAsync(StateHasChanged);
+
     private async Task GoHome()
     {
         _navigating = true;
@@ -254,7 +261,7 @@ else
 
     public async ValueTask DisposeAsync()
     {
-        WorkspaceState.OnChange -= StateHasChanged;
+        WorkspaceState.OnChange -= OnWorkspaceChanged;
         await WorkspaceState.DisposeAsync();
     }
 }
