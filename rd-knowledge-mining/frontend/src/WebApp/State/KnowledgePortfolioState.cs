@@ -27,8 +27,6 @@ public sealed class KnowledgePortfolioState
         _apiClient = apiClient;
         _sessionStore = sessionStore;
         _scenarios = scenarios;
-        IngestionScenarios = _scenarios.GetIngestionScenarios();
-        QueryScenarios = _scenarios.GetQueryScenarios();
     }
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)
@@ -39,12 +37,23 @@ public sealed class KnowledgePortfolioState
 
         try
         {
+            await _scenarios.EnsureLoadedAsync(cancellationToken);
+            IngestionScenarios = _scenarios.GetIngestionScenarios();
+            QueryScenarios = _scenarios.GetQueryScenarios();
             VectorDbSummary = await _apiClient.GetVectorDbStoreSummaryAsync(cancellationToken);
+        }
+        catch
+        {
+            VectorDbSummary = null;
+        }
+
+        try
+        {
             RefreshSessions();
         }
-        catch (Exception ex)
+        catch
         {
-            Error = ex.Message;
+            // Session store is in-memory; safe to ignore.
         }
         finally
         {

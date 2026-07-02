@@ -1,8 +1,10 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Cohere.AgenticRDKnowledge.Shared.Contracts;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Agents;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Ingestion;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Query;
+using Cohere.AgenticRDKnowledge.Shared.Contracts.Studies;
 
 namespace Cohere.AgenticRDKnowledge.WebApp.Services;
 
@@ -36,6 +38,50 @@ public static class BackendWorkflowMapper
             new WorkflowTimelineStep("Process 1 — Search & Chat", chatState),
             new WorkflowTimelineStep("Process 2 — Curate", curateState)
         ];
+    }
+
+    public static IngestionWorkflowProgress MapBackendProgress(BackendIngestionProgressResponse backend)
+    {
+        return new IngestionWorkflowProgress(
+            backend.ExecutionId,
+            backend.CaseId,
+            Enum.TryParse<WorkflowStatus>(backend.Status, true, out var status)
+                ? status
+                : WorkflowStatus.Pending,
+            Enum.TryParse<IngestionStage>(backend.CurrentStage, true, out var stage)
+                ? stage
+                : IngestionStage.Pending,
+            backend.StatusMessage ?? string.Empty,
+            backend.Study is null
+                ? null
+                : new StudySummary(
+                    backend.Study.StudyId,
+                    backend.Study.Title,
+                    backend.Study.Compound,
+                    backend.Study.Phase,
+                    backend.Study.PrimaryEndpoint,
+                    backend.Study.SourceSystems),
+            backend.IngestionTranslation is null
+                ? null
+                : new IngestionTranslationResult(
+                    backend.IngestionTranslation.Summary ?? string.Empty,
+                    backend.IngestionTranslation.DocumentsProcessed ?? 0,
+                    backend.IngestionTranslation.DuplicatesRemoved ?? 0,
+                    backend.IngestionTranslation.NormalizedFormats ?? [],
+                    backend.IngestionTranslation.ConnectedPortals ?? []),
+            backend.MetadataLinking is null
+                ? null
+                : new MetadataLinkingResult(
+                    backend.MetadataLinking.Summary ?? string.Empty,
+                    backend.MetadataLinking.Entities?.Select(e => new EntityChip(e.Name, e.Category, e.Version)).ToList() ?? [],
+                    backend.MetadataLinking.Links?.Select(l => new DocumentLink(l.FromDocument, l.ToTarget, l.Relationship)).ToList() ?? [],
+                    backend.MetadataLinking.VectorsIndexed),
+            backend.RetrievalTrace?.Select(r => new RetrievalTraceEvent(r.Stage, r.Description, r.ItemCount, r.Timestamp)).ToList() ?? [],
+            backend.HumanDecision is null
+                ? null
+                : new HumanDecisionRecord(backend.HumanDecision.Approved, backend.HumanDecision.Notes, backend.HumanDecision.DecidedAt),
+            backend.AllowedActions ?? [],
+            backend.FailureReason);
     }
 
     private static WorkflowStepState GetChatStepState(QuerySessionState? session)
@@ -96,6 +142,162 @@ public static class BackendWorkflowMapper
 
         return WorkflowStepState.Pending;
     }
+}
+
+public sealed class BackendIngestionProgressResponse
+{
+    [JsonPropertyName("executionId")]
+    public string ExecutionId { get; set; } = string.Empty;
+
+    [JsonPropertyName("caseId")]
+    public string CaseId { get; set; } = string.Empty;
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
+
+    [JsonPropertyName("currentStage")]
+    public string? CurrentStage { get; set; }
+
+    [JsonPropertyName("statusMessage")]
+    public string? StatusMessage { get; set; }
+
+    [JsonPropertyName("study")]
+    public BackendStudySummaryResponse? Study { get; set; }
+
+    [JsonPropertyName("ingestionTranslation")]
+    public BackendIngestionTranslationResponse? IngestionTranslation { get; set; }
+
+    [JsonPropertyName("metadataLinking")]
+    public BackendMetadataLinkingResponse? MetadataLinking { get; set; }
+
+    [JsonPropertyName("retrievalTrace")]
+    public List<BackendRetrievalTraceEventResponse>? RetrievalTrace { get; set; }
+
+    [JsonPropertyName("humanDecision")]
+    public BackendHumanDecisionResponse? HumanDecision { get; set; }
+
+    [JsonPropertyName("allowedActions")]
+    public List<string>? AllowedActions { get; set; }
+
+    [JsonPropertyName("failureReason")]
+    public string? FailureReason { get; set; }
+}
+
+public sealed class BackendStartIngestionResponse
+{
+    [JsonPropertyName("executionId")]
+    public string ExecutionId { get; set; } = string.Empty;
+
+    [JsonPropertyName("caseId")]
+    public string CaseId { get; set; } = string.Empty;
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
+}
+
+public sealed class BackendStudySummaryResponse
+{
+    [JsonPropertyName("studyId")]
+    public string StudyId { get; set; } = string.Empty;
+
+    [JsonPropertyName("title")]
+    public string Title { get; set; } = string.Empty;
+
+    [JsonPropertyName("compound")]
+    public string Compound { get; set; } = string.Empty;
+
+    [JsonPropertyName("phase")]
+    public string Phase { get; set; } = string.Empty;
+
+    [JsonPropertyName("primaryEndpoint")]
+    public string PrimaryEndpoint { get; set; } = string.Empty;
+
+    [JsonPropertyName("sourceSystems")]
+    public List<string> SourceSystems { get; set; } = [];
+}
+
+public sealed class BackendIngestionTranslationResponse
+{
+    [JsonPropertyName("summary")]
+    public string? Summary { get; set; }
+
+    [JsonPropertyName("documentsProcessed")]
+    public int? DocumentsProcessed { get; set; }
+
+    [JsonPropertyName("duplicatesRemoved")]
+    public int? DuplicatesRemoved { get; set; }
+
+    [JsonPropertyName("normalizedFormats")]
+    public List<string>? NormalizedFormats { get; set; }
+
+    [JsonPropertyName("connectedPortals")]
+    public List<string>? ConnectedPortals { get; set; }
+}
+
+public sealed class BackendMetadataLinkingResponse
+{
+    [JsonPropertyName("summary")]
+    public string? Summary { get; set; }
+
+    [JsonPropertyName("entities")]
+    public List<BackendEntityChipResponse>? Entities { get; set; }
+
+    [JsonPropertyName("links")]
+    public List<BackendDocumentLinkResponse>? Links { get; set; }
+
+    [JsonPropertyName("vectorsIndexed")]
+    public int VectorsIndexed { get; set; }
+}
+
+public sealed class BackendEntityChipResponse
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("category")]
+    public string Category { get; set; } = string.Empty;
+
+    [JsonPropertyName("version")]
+    public string Version { get; set; } = string.Empty;
+}
+
+public sealed class BackendDocumentLinkResponse
+{
+    [JsonPropertyName("fromDocument")]
+    public string FromDocument { get; set; } = string.Empty;
+
+    [JsonPropertyName("toTarget")]
+    public string ToTarget { get; set; } = string.Empty;
+
+    [JsonPropertyName("relationship")]
+    public string Relationship { get; set; } = string.Empty;
+}
+
+public sealed class BackendRetrievalTraceEventResponse
+{
+    [JsonPropertyName("stage")]
+    public string Stage { get; set; } = string.Empty;
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = string.Empty;
+
+    [JsonPropertyName("itemCount")]
+    public int ItemCount { get; set; }
+
+    [JsonPropertyName("timestamp")]
+    public DateTimeOffset Timestamp { get; set; }
+}
+
+public sealed class BackendHumanDecisionResponse
+{
+    [JsonPropertyName("approved")]
+    public bool Approved { get; set; }
+
+    [JsonPropertyName("notes")]
+    public string? Notes { get; set; }
+
+    [JsonPropertyName("decidedAt")]
+    public DateTimeOffset DecidedAt { get; set; }
 }
 
 public enum WorkflowStepState

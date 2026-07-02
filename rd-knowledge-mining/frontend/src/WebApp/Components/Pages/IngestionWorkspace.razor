@@ -99,12 +99,17 @@ else
     protected override async Task OnInitializedAsync()
     {
         WorkspaceState.OnChange += OnWorkspaceChanged;
+        await Scenarios.EnsureLoadedAsync();
+        RefreshScenarioMeta();
         SectionState.ResetForResource(StudyId);
         await ReloadAsync();
     }
 
     protected override async Task OnParametersSetAsync()
     {
+        await Scenarios.EnsureLoadedAsync();
+        RefreshScenarioMeta();
+
         if (WorkspaceState.StudyId != StudyId || WorkspaceState.ExecutionId != ExecutionId)
         {
             SectionState.ResetForResource(StudyId);
@@ -112,7 +117,7 @@ else
         }
     }
 
-    protected override void OnParametersSet()
+    private void RefreshScenarioMeta()
     {
         _fallbackStudy = Scenarios.GetScenarioByStudyId(StudyId, WorkflowBlock.Ingestion)?.Study
             ?? new StudySummary(StudyId, StudyId, "—", "—", "—", ["Microsoft Fabric"]);

@@ -50,6 +50,8 @@ public sealed class IngestionWorkspaceState : IAsyncDisposable
 
     public async Task LoadAsync(string studyId, string? executionId, CancellationToken cancellationToken = default)
     {
+        await _scenarios.EnsureLoadedAsync(cancellationToken);
+
         StudyId = studyId;
         ExecutionId = executionId;
         SourceId = ResolveSourceId(studyId);

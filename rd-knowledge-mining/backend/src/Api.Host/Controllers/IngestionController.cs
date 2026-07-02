@@ -35,7 +35,7 @@ public sealed class IngestionController : ControllerBase
         try
         {
             _logger.LogInformation(
-                "Starting ingestion workflow for source {SourceId} with execution {ExecutionId}.",
+                "Starting ingestion workflow for case {CaseId} with execution {ExecutionId}.",
                 request.SourceId,
                 executionId);
 
@@ -66,7 +66,7 @@ public sealed class IngestionController : ControllerBase
         {
             _logger.LogError(
                 ex,
-                "Failed to start ingestion workflow for source {SourceId} with execution {ExecutionId}.",
+                "Failed to start ingestion workflow for case {CaseId} with execution {ExecutionId}.",
                 request.SourceId,
                 executionId);
 
@@ -142,4 +142,5 @@ public sealed class IngestionController : ControllerBase
                 statusCode: StatusCodes.Status503ServiceUnavailable);
         }
     }
+
 }

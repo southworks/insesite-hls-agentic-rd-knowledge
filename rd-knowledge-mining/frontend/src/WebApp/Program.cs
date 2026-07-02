@@ -10,10 +10,9 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.Configure<WorkflowPollingOptions>(configuration.GetSection(WorkflowPollingOptions.SectionName));
-builder.Services.Configure<PortfolioScenariosOptions>(configuration.GetSection(PortfolioScenariosOptions.SectionName));
 
 builder.Services.AddSingleton<QuerySessionCache>();
-builder.Services.AddSingleton<PortfolioScenarioService>();
+builder.Services.AddScoped<PortfolioScenarioService>();
 
 builder.Services.AddHttpClient<IRdKnowledgeApiClient, RdKnowledgeApiClient>(client =>
 {

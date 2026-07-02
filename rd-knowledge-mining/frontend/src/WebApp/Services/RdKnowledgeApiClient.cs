@@ -6,11 +6,13 @@ using Cohere.AgenticRDKnowledge.Shared.Contracts.Ingestion;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Query;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Studies;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.VectorDb;
+using Cohere.AgenticRDKnowledge.WebApp.Models;
 
 namespace Cohere.AgenticRDKnowledge.WebApp.Services;
 
 public interface IRdKnowledgeApiClient
 {
+    Task<IReadOnlyList<SeedScenarioDefinition>> GetPortfolioScenariosAsync(CancellationToken cancellationToken = default);
     Task<VectorDbStoreSummary> GetVectorDbStoreSummaryAsync(CancellationToken cancellationToken = default);
     Task<StudyDocumentsResponse> GetStudyDocumentsAsync(string studyId, CancellationToken cancellationToken = default);
     Task<StartIngestionWorkflowResponse> StartIngestionWorkflowAsync(string sourceId, CancellationToken cancellationToken = default);
@@ -26,18 +28,24 @@ public interface IRdKnowledgeApiClient
 
 public sealed class RdKnowledgeApiClient(
     HttpClient httpClient,
-    QuerySessionCache querySessionCache,
-    PortfolioScenarioService scenarios) : IRdKnowledgeApiClient
+    QuerySessionCache querySessionCache) : IRdKnowledgeApiClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
+
+    public async Task<IReadOnlyList<SeedScenarioDefinition>> GetPortfolioScenariosAsync(CancellationToken cancellationToken = default) =>
+        await GetAsync<List<SeedScenarioDefinition>>(RdKnowledgeBackendRoutes.GetPortfolioScenarios, cancellationToken)
+            .ConfigureAwait(false);
+
     public Task<VectorDbStoreSummary> GetVectorDbStoreSummaryAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult(new VectorDbStoreSummary(0, 0, 0, 0, null, null));
+        GetAsync<VectorDbStoreSummary>(RdKnowledgeBackendRoutes.GetVectorDbStoreSummary, cancellationToken);
 
     public Task<StudyDocumentsResponse> GetStudyDocumentsAsync(string studyId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(new StudyDocumentsResponse(studyId, []));
+        GetAsync<StudyDocumentsResponse>(
+            RdKnowledgeBackendRoutes.GetStudyDocuments.Replace("{caseId}", Uri.EscapeDataString(studyId)),
+            cancellationToken);
 
     public async Task<StartIngestionWorkflowResponse> StartIngestionWorkflowAsync(
         string sourceId,
@@ -62,8 +70,7 @@ public sealed class RdKnowledgeApiClient(
             RdKnowledgeBackendRoutes.GetIngestionStatus.Replace("{executionId}", Uri.EscapeDataString(executionId)),
             cancellationToken);
 
-        var study = scenarios.ResolveIngestionScenario(response.SourceId)?.Study;
-        return BackendApiMapper.ToIngestionProgress(response, study);
+        return BackendApiMapper.ToIngestionProgress(response);
     }
 
     public async Task<SubmitIngestionDecisionResponse> SubmitIngestionDecisionAsync(

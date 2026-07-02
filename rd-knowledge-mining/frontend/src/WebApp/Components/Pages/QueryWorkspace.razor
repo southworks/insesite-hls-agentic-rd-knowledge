@@ -145,6 +145,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         WorkspaceState.OnChange += OnWorkspaceChanged;
+        await Scenarios.EnsureLoadedAsync();
         SectionState.ResetForResource(GetResourceKey());
         ResolveSessionMeta();
         await ReloadAsync();
@@ -152,6 +153,7 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
+        await Scenarios.EnsureLoadedAsync();
         if (WorkspaceState.SessionId != SessionId || WorkspaceState.CurationExecutionId != ExecutionId)
         {
             _lastMessageCount = -1;

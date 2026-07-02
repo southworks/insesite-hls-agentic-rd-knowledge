@@ -1,5 +1,8 @@
+using System.Text.Json.Serialization;
+
 namespace Cohere.AgenticRDKnowledge.Shared.Contracts;
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum WorkflowStatus
 {
     Pending,
@@ -15,6 +18,7 @@ public enum WorkflowBlock
     Query
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum IngestionStage
 {
     Pending,
@@ -25,6 +29,7 @@ public enum IngestionStage
     Failed
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum QueryStage
 {
     Pending,

@@ -20,20 +20,73 @@ public static class AgentOutputSchemaMapper
             return null;
         }
 
-        var summary = summaryProp.GetString();
-        if (string.IsNullOrWhiteSpace(summary))
+        string? summary;
+        int documentsProcessed = 0;
+        int anomaliesCount = 0;
+
+        if (summaryProp.ValueKind == JsonValueKind.String)
+        {
+            // Legacy schema
+            summary = summaryProp.GetString();
+
+            if (string.IsNullOrWhiteSpace(summary))
+            {
+                return null;
+            }
+
+            documentsProcessed = ReadStringArray(root, "keyFacts").Count;
+            anomaliesCount = ReadStringArray(root, "anomalies").Count;
+        }
+        else if (summaryProp.ValueKind == JsonValueKind.Object)
+        {
+            // New schema
+            var received = summaryProp.TryGetProperty("documentsReceived", out var receivedProp) &&
+                        receivedProp.TryGetInt32(out var receivedCount)
+                ? receivedCount
+                : 0;
+
+            var accepted = summaryProp.TryGetProperty("documentsAccepted", out var acceptedProp) &&
+                        acceptedProp.TryGetInt32(out var acceptedCount)
+                ? acceptedCount
+                : 0;
+
+            var excluded = summaryProp.TryGetProperty("documentsExcluded", out var excludedProp) &&
+                        excludedProp.TryGetInt32(out var excludedCount)
+                ? excludedCount
+                : 0;
+
+            summary =
+                $"Received {received} documents, accepted {accepted}, excluded {excluded}.";
+
+            documentsProcessed = root.TryGetProperty("documentSummaries", out var docsProp) &&
+                                docsProp.ValueKind == JsonValueKind.Array
+                ? docsProp.GetArrayLength()
+                : accepted;
+
+            anomaliesCount = root.TryGetProperty("exclusions", out var exclusionsProp) &&
+                            exclusionsProp.ValueKind == JsonValueKind.Array
+                ? exclusionsProp.GetArrayLength()
+                : excluded;
+        }
+        else
         {
             return null;
         }
 
-        var keyFacts = ReadStringArray(root, "keyFacts");
-        var anomalies = ReadStringArray(root, "anomalies");
-        var flags = ReadStringArray(root, "flags");
+        var flags =
+            root.TryGetProperty("reviewFlags", out var reviewFlagsProp) &&
+            reviewFlagsProp.ValueKind == JsonValueKind.Array
+                ? reviewFlagsProp.EnumerateArray()
+                    .Select(x => x.GetString())
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x!)
+                    .ToList()
+                : ReadStringArray(root, "flags");
 
         return new IngestionTranslationResult(
             summary,
-            keyFacts.Count,
-            anomalies.Count,
+            documentsProcessed,
+            anomaliesCount,
             ["JSON", "XML", "TXT"],
             flags);
     }
@@ -150,19 +203,36 @@ public static class AgentOutputSchemaMapper
     private static List<EntityChip> MapEntityChips(JsonElement root)
     {
         var entities = new List<EntityChip>();
-        if (root.TryGetProperty("entities", out var entitiesProp) && entitiesProp.ValueKind == JsonValueKind.Array)
+
+        if (root.TryGetProperty("entities", out var entitiesProp) &&
+            entitiesProp.ValueKind == JsonValueKind.Array)
         {
             foreach (var entity in entitiesProp.EnumerateArray())
             {
-                var name = entity.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
+                var name =
+                    entity.TryGetProperty("canonicalName", out var canonicalProp)
+                        ? canonicalProp.GetString()
+                        : null;
+
+                var id =
+                    entity.TryGetProperty("entityId", out var idProp)
+                        ? idProp.GetString()
+                        : null;
+
+                // fallback if canonicalName missing
+                name ??= id;
+
                 if (string.IsNullOrWhiteSpace(name))
                 {
                     continue;
                 }
 
-                var category = entity.TryGetProperty("category", out var catProp) ? catProp.GetString() ?? "—" : "—";
-                var version = entity.TryGetProperty("version", out var verProp) ? verProp.GetString() ?? "—" : "—";
-                entities.Add(new EntityChip(name, category, version));
+                var category =
+                    entity.TryGetProperty("type", out var typeProp)
+                        ? typeProp.GetString() ?? "—"
+                        : "—";
+
+                entities.Add(new EntityChip(name, category, "—"));
             }
         }
 

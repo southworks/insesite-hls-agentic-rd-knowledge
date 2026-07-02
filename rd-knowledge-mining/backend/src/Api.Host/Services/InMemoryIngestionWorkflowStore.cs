@@ -1,18 +1,10 @@
 using System.Collections.Concurrent;
 using System.Text;
+using CohereRndKnowledgeMining.Api.Host.Contracts;
 using CohereRndKnowledgeMining.Api.Host.Workflow;
 using Microsoft.Agents.AI.Workflows;
 
 namespace CohereRndKnowledgeMining.Api.Host.Services;
-
-public enum WorkflowStatus
-{
-    Pending,
-    Running,
-    AwaitingHumanApproval,
-    Completed,
-    Failed
-}
 
 /// <summary>
 /// In-memory state for a single block workflow run. Shared shape between Block 1 (Ingestion)
@@ -40,6 +32,8 @@ public sealed class WorkflowExecution
     public CheckpointInfo? PendingCheckpoint { get; set; }
 
     public ExternalRequest? PendingApprovalRequest { get; set; }
+
+    public HumanDecisionRecordResponse? HumanDecision { get; set; }
 
     public string? FailureReason { get; set; }
 
@@ -70,4 +64,7 @@ public sealed class InMemoryIngestionWorkflowStore
 
         throw new KeyNotFoundException($"Ingestion workflow execution '{executionId}' was not found.");
     }
+
+    public IReadOnlyList<WorkflowExecution> GetAll() =>
+        _executions.Values.ToList();
 }

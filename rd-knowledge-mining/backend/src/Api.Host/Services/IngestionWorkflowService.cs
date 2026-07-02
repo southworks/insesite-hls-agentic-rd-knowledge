@@ -136,6 +136,13 @@ public sealed class IngestionWorkflowService
                 "Ingestion workflow is not waiting for human approval.");
         }
 
+        execution.HumanDecision = new HumanDecisionRecordResponse
+        {
+            Approved = approved,
+            Notes = reviewerComment,
+            DecidedAt = DateTimeOffset.UtcNow
+        };
+
         execution.Status = WorkflowStatus.Running;
         execution.FailureReason = null;
         Touch(execution);
@@ -143,6 +150,208 @@ public sealed class IngestionWorkflowService
         ResumeInBackground(executionId, approved, reviewerComment);
 
         return ToResponse(execution);
+    }
+
+    public IngestionProgressResponse GetProgressResponse(string executionId)
+    {
+        WorkflowExecution execution = _store.GetRequired(executionId);
+        return BuildProgressResponse(execution);
+    }
+
+    public IngestionProgressResponse SubmitIngestionDecisionAsync(
+        string executionId,
+        bool approved,
+        string? notes,
+        CancellationToken cancellationToken)
+    {
+        WorkflowExecution execution = _store.GetRequired(executionId);
+
+        if (execution.Status != WorkflowStatus.AwaitingHumanApproval ||
+            execution.PendingCheckpoint is null ||
+            execution.PendingApprovalRequest is null ||
+            execution.WorkflowCheckpointManager is null)
+        {
+            throw new InvalidOperationException(
+                "Ingestion workflow is not waiting for human approval.");
+        }
+
+        execution.HumanDecision = new HumanDecisionRecordResponse
+        {
+            Approved = approved,
+            Notes = notes,
+            DecidedAt = DateTimeOffset.UtcNow
+        };
+
+        execution.Status = WorkflowStatus.Running;
+        execution.FailureReason = null;
+        Touch(execution);
+
+        ResumeInBackground(executionId, approved, notes);
+
+        return BuildProgressResponse(execution);
+    }
+
+    private IngestionProgressResponse BuildProgressResponse(WorkflowExecution execution)
+    {
+        IngestionStage stage = DeriveStage(execution);
+        string? statusMessage = DeriveStatusMessage(stage);
+        List<string> allowedActions = [];
+        if (execution.Status == WorkflowStatus.AwaitingHumanApproval)
+        {
+            allowedActions.Add("SubmitDecision");
+        }
+
+        IngestionTranslationResultResponse translation = ParseIngestionTranslationOutput(execution);
+        MetadataLinkingResultResponse linking = ParseMetadataLinkingOutput(execution);
+
+        return new IngestionProgressResponse
+        {
+            ExecutionId = execution.ExecutionId,
+            CaseId = execution.CorrelationId,
+            Status = execution.Status,
+            CurrentStage = stage,
+            StatusMessage = statusMessage,
+            Study = null,
+            IngestionTranslation = translation,
+            MetadataLinking = linking,
+            RetrievalTrace = [],
+            HumanDecision = execution.HumanDecision,
+            AllowedActions = allowedActions,
+            FailureReason = execution.FailureReason
+        };
+    }
+
+    private static IngestionStage DeriveStage(WorkflowExecution execution)
+    {
+        return execution.Status switch
+        {
+            WorkflowStatus.Failed => IngestionStage.Failed,
+            WorkflowStatus.Completed => IngestionStage.Completed,
+            WorkflowStatus.AwaitingHumanApproval => IngestionStage.HumanApproval,
+            _ => execution.AgentOutputs.ContainsKey(MetadataLinkingKey)
+                ? IngestionStage.MetadataLinking
+                : execution.AgentOutputs.ContainsKey(IngestionTranslationKey)
+                    ? IngestionStage.IngestionTranslation
+                    : IngestionStage.Pending
+        };
+    }
+
+    private static string? DeriveStatusMessage(IngestionStage stage) => stage switch
+    {
+        IngestionStage.IngestionTranslation => "Reading raw R&D knowledge from Microsoft Fabric and normalizing formats\u2026",
+        IngestionStage.MetadataLinking => "Extracting entities, linking documents, and indexing to Vector DB\u2026",
+        IngestionStage.HumanApproval => "Knowledge Curator: review linking output (content already indexed to Vector DB).",
+        IngestionStage.Completed => "Ingestion approved. Linking and indexing complete.",
+        IngestionStage.Failed => "Ingestion denied or failed.",
+        _ => "Preparing ingestion workflow\u2026"
+    };
+
+    private static IngestionTranslationResultResponse ParseIngestionTranslationOutput(WorkflowExecution execution)
+    {
+        if (!execution.AgentOutputs.TryGetValue(IngestionTranslationKey, out string? raw) || string.IsNullOrWhiteSpace(raw))
+        {
+            return new IngestionTranslationResultResponse { Summary = string.Empty };
+        }
+
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(raw);
+            var root = doc.RootElement;
+
+            string summary = string.Empty;
+            if (root.TryGetProperty("summary", out var summaryEl) && summaryEl.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                if (summaryEl.TryGetProperty("dominantThemes", out var themes) && themes.GetArrayLength() > 0)
+                {
+                    List<string> themeList = [];
+                    foreach (var theme in themes.EnumerateArray())
+                    {
+                        themeList.Add(theme.GetString() ?? string.Empty);
+                    }
+                    summary = string.Join("; ", themeList);
+                }
+            }
+
+            int docsProcessed = 0;
+            int excluded = 0;
+            if (root.TryGetProperty("summary", out var sumObj) && sumObj.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                if (sumObj.TryGetProperty("documentsReceived", out var dr)) docsProcessed = dr.GetInt32();
+                if (sumObj.TryGetProperty("documentsExcluded", out var de)) excluded = de.GetInt32();
+            }
+
+            List<string> formats = [];
+            if (root.TryGetProperty("documentSummaries", out var docs) && docs.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+                foreach (var docElement in docs.EnumerateArray())
+                {
+                    if (docElement.TryGetProperty("canonicalType", out var ct))
+                    {
+                        string? ctValue = ct.GetString();
+                        if (ctValue is not null && seen.Add(ctValue))
+                        {
+                            formats.Add(ctValue);
+                        }
+                    }
+                }
+            }
+
+            return new IngestionTranslationResultResponse
+            {
+                Summary = summary,
+                DocumentsProcessed = docsProcessed,
+                DuplicatesRemoved = excluded,
+                NormalizedFormats = formats.Count > 0 ? formats : null,
+                ConnectedPortals = null
+            };
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return new IngestionTranslationResultResponse { Summary = raw };
+        }
+    }
+
+    private static MetadataLinkingResultResponse ParseMetadataLinkingOutput(WorkflowExecution execution)
+    {
+        if (!execution.AgentOutputs.TryGetValue(MetadataLinkingKey, out string? raw) || string.IsNullOrWhiteSpace(raw))
+        {
+            return new MetadataLinkingResultResponse { Summary = string.Empty };
+        }
+
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(raw);
+            var root = doc.RootElement;
+
+            List<EntityChipResponse> entities = [];
+            if (root.TryGetProperty("entities", out var entitiesEl) && entitiesEl.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                foreach (var entity in entitiesEl.EnumerateArray())
+                {
+                    string name = entity.TryGetProperty("canonicalName", out var cn) ? cn.GetString() ?? string.Empty : string.Empty;
+                    string type = entity.TryGetProperty("type", out var tp) ? tp.GetString() ?? string.Empty : string.Empty;
+                    string id = entity.TryGetProperty("entityId", out var eid) ? eid.GetString() ?? string.Empty : string.Empty;
+                    entities.Add(new EntityChipResponse { Name = name, Category = type, Version = id });
+                }
+            }
+
+            string summary = entities.Count > 0
+                ? $"{entities.Count} entities indexed across {entities.Select(e => e.Category).Distinct(StringComparer.OrdinalIgnoreCase).Count()} types"
+                : string.Empty;
+
+            return new MetadataLinkingResultResponse
+            {
+                Summary = summary,
+                Entities = entities.Count > 0 ? entities : null,
+                Links = null,
+                VectorsIndexed = 0
+            };
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return new MetadataLinkingResultResponse { Summary = raw };
+        }
     }
 
     private void RunInBackground(string executionId, IList<ChatMessage> input)
@@ -527,17 +736,16 @@ public sealed class IngestionWorkflowService
         }
 
         AgentExecutionState state = GetOrCreateAgentState(execution, agentKey);
-        execution.StreamingBuffers.Remove(agentKey);
 
-        if (!isFinal &&
-            execution.AgentOutputs.TryGetValue(agentKey, out string? existingOutput) &&
-            normalizedOutput.Length <= existingOutput.Length)
+        state.Output = normalizedOutput;
+
+        if (!isFinal)
         {
             return;
         }
 
+        execution.StreamingBuffers.Remove(agentKey);
         execution.AgentOutputs[agentKey] = normalizedOutput;
-        state.Output = normalizedOutput;
         Touch(execution);
     }
 
@@ -571,6 +779,17 @@ public sealed class IngestionWorkflowService
         if (assistantIndex >= 0)
         {
             trimmed = trimmed[(assistantIndex + assistantPrefix.Length)..].TrimStart();
+        }
+
+        if (trimmed.StartsWith("```", StringComparison.Ordinal))
+        {
+            int firstNewline = trimmed.IndexOf('\n');
+            trimmed = firstNewline >= 0 ? trimmed[(firstNewline + 1)..] : trimmed;
+        }
+
+        if (trimmed.EndsWith("```", StringComparison.Ordinal) && trimmed.Length > 3)
+        {
+            trimmed = trimmed[..^3].TrimEnd();
         }
 
         return trimmed;

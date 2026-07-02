@@ -70,6 +70,7 @@ else
 builder.Services.AddNormalizedDocumentStore(builder.Configuration);
 builder.Services.AddSingleton<IngestionSourceDocumentCache>();
 builder.Services.AddSingleton<IngestionSourceDocumentLoader>();
+builder.Services.AddSingleton<PortfolioScenarioCatalogService>();
 
 // Foundry agents shared by both blocks.
 builder.Services.AddSingleton<FoundryAgentProvider>();

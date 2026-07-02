@@ -7,6 +7,8 @@ public static class RdKnowledgeBackendRoutes
 {
     public const string Health = "/health";
 
+    public const string GetPortfolioScenarios = "/api/rd-knowledge/scenarios";
+
     public const string StartIngestion = "/api/rd-knowledge/ingestion/start";
 
     public const string GetIngestionStatus =
@@ -14,6 +16,12 @@ public static class RdKnowledgeBackendRoutes
 
     public const string SubmitIngestionDecision =
         "/api/rd-knowledge/ingestion/sources/{sourceId}/executions/{executionId}/resume";
+
+    public const string GetStudyDocuments =
+        "/api/rd-knowledge/cases/{caseId}/documents";
+
+    public const string GetVectorDbStoreSummary =
+        "/api/rd-knowledge/vector-db/summary";
 
     public const string Ask = "/api/rd-knowledge/query/ask";
 

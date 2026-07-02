@@ -114,7 +114,17 @@ public sealed class IngestionWorkflowFactory
                 if (_sourceDocumentCache.TryGet(executionId, out IReadOnlyList<RawKnowledgeItem>? sourceItems)
                     && sourceItems is not null)
                 {
-                    payloadJson = IngestionHandoffEnricher.Enrich(payloadJson, sourceItems);
+                    var preparedItems = sourceItems
+                        .Select(i => new RawKnowledgeItem
+                        {
+                            ItemId = i.ItemId,
+                            Title = i.Title,
+                            SourceType = i.SourceType,
+                            SourcePath = i.SourcePath,
+                            Content = RawDocumentContentPreparer.PrepareForAgent(i.Title, i.Content)
+                        })
+                        .ToList();
+                    payloadJson = IngestionHandoffEnricher.Enrich(payloadJson, preparedItems);
                 }
 
                 string manifestJson = await _normalizedDocumentStore
@@ -237,7 +247,7 @@ public sealed class IngestionWorkflowFactory
 
                 await context.YieldOutputAsync(curatedKnowledge.Text, cancellationToken).ConfigureAwait(false);
             },
-            sentMessageTypes: []);
+            outputTypes: [typeof(string)]);
     }
 
     private static AgentStepResult ParseBridgeOutput(string sourceAgentName, string rawOutput) =>

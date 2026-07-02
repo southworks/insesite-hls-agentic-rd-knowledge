@@ -1,17 +1,42 @@
 using Cohere.AgenticRDKnowledge.Shared.Contracts;
-using Cohere.AgenticRDKnowledge.WebApp.Configuration;
 using Cohere.AgenticRDKnowledge.WebApp.Models;
-using Microsoft.Extensions.Options;
 
 namespace Cohere.AgenticRDKnowledge.WebApp.Services;
 
 public sealed class PortfolioScenarioService
 {
-    private readonly IReadOnlyList<SeedScenarioDefinition> _scenarios;
+    private readonly IRdKnowledgeApiClient _apiClient;
+    private readonly SemaphoreSlim _loadGate = new(1, 1);
+    private IReadOnlyList<SeedScenarioDefinition> _scenarios = [];
+    private bool _isLoaded;
 
-    public PortfolioScenarioService(IOptions<PortfolioScenariosOptions> options)
+    public PortfolioScenarioService(IRdKnowledgeApiClient apiClient)
     {
-        _scenarios = options.Value.Scenarios ?? [];
+        _apiClient = apiClient;
+    }
+
+    public async Task EnsureLoadedAsync(CancellationToken cancellationToken = default)
+    {
+        if (_isLoaded)
+        {
+            return;
+        }
+
+        await _loadGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (_isLoaded)
+            {
+                return;
+            }
+
+            _scenarios = await _apiClient.GetPortfolioScenariosAsync(cancellationToken).ConfigureAwait(false);
+            _isLoaded = true;
+        }
+        finally
+        {
+            _loadGate.Release();
+        }
     }
 
     public IReadOnlyList<SeedScenarioDefinition> GetScenarios() => _scenarios;
