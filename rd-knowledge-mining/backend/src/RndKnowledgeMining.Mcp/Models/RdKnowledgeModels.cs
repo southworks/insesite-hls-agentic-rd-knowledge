@@ -37,6 +37,17 @@ public sealed class KnowledgeLineageResponse
     public required string Lineage { get; init; }
 }
 
+public sealed class IndexRdKnowledgeResponse
+{
+    public required string SessionId { get; init; }
+
+    public required string EntityId { get; init; }
+
+    public required string PassageId { get; init; }
+
+    public bool Indexed { get; init; }
+}
+
 public sealed class PolicyEntry
 {
     public required string PolicyRef { get; init; }
