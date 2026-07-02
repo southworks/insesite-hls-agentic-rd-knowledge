@@ -8,6 +8,17 @@ Demo-ready inputs for the HLS Agentic R&D Knowledge Mining workflow. Pick a case
 2. **Load** `policies/hls_policies.txt` into your RAG / embed pipeline
 3. **Ingest** files from `<case>/ingest/` when the case requires upload (empty folder = no upload)
 
+## Prerequisites
+
+| If you want to test… | Do this first |
+|---------------------|---------------|
+| Headline demo (`case-04-demo`) | Run **QRY-001 → ING-001 → QRY-002** in order |
+| QRY-002, QRY-003, QRY-005 (grounded / Curate paths) | Run **ING-001** so the KB is populated |
+| QRY-001 (empty KB) | KB must be **empty** — do not run ING-001 first |
+| Any ingestion case (`case-01` … `case-06`) | No prior scenario required |
+
+Full dependency table: [`data-generation/docs/TEST_CASES.md`](../../../data-generation/docs/TEST_CASES.md#prerequisites-and-dependencies).
+
 ## Cases 1–6 (ingestion stress scenarios)
 
 | Case | Folder | Legacy ID | Ingest | Expected outcome |
@@ -31,7 +42,9 @@ Each ingestion case folder contains:
 | Case 8 | `cases/case-08-clarification-query/` | QRY-004 | `prompts/prompt.txt` | Clarification needed |
 | Case 9 | `cases/case-09-multi-turn-query/` | QRY-005 | `prompts/01-*.txt`, `02-*.txt` | Multi-turn grounded + Curate |
 
-Query cases require a populated KB (run ING-001 first unless noted). See [`../../../data-generation/docs/TEST_CASES.md`](../../../data-generation/docs/TEST_CASES.md#what-each-scenario-tests) for agent capability coverage.
+**Prerequisites:** QRY-003 and QRY-005 require **ING-001** first (populated KB). QRY-004 is best tested after ING-001. See [prerequisites table](../../../data-generation/docs/TEST_CASES.md#prerequisites-and-dependencies).
+
+Agent capability coverage: [`TEST_CASES.md`](../../../data-generation/docs/TEST_CASES.md#what-each-scenario-tests).
 
 ## Demo flow (stateful headline demo)
 

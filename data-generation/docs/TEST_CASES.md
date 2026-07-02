@@ -18,6 +18,56 @@ Scenario definitions live in [`../scripts/scenarios.py`](../scripts/scenarios.py
 | `QRY-004` | 2 | `clarification_needed` | `clarification_needed` | `cases/case-08-clarification-query/prompts/` |
 | `QRY-005` | 2 | `multi_turn_curate` | `answer_with_citations` | `cases/case-09-multi-turn-query/prompts/` |
 
+## Prerequisites and dependencies
+
+Scenarios do **not** all depend on each other. Two rules matter for testers:
+
+1. **KB state** — some query scenarios need an empty Vector DB; others need a populated one.
+2. **Narrative order** — only the headline demo (`case-04-demo`) has a fixed step sequence.
+
+### Prerequisites by scenario
+
+| Legacy ID | KB state required | Run after | Notes |
+|-----------|-------------------|-----------|-------|
+| `ING-001` | Any (writes to KB) | — | Standalone upload; also step 2 of headline demo |
+| `ING-002` | Any | — | Standalone; does **not** persist |
+| `ING-003` | Any | — | Standalone |
+| `ING-004` | Any | — | Standalone; curator deny |
+| `ING-005` | Any | — | Standalone; insufficient-data batch |
+| `ING-007` | Any | — | Standalone; **not** a follow-up to ING-002 (same pool type, separate session) |
+| `QRY-001` | **Empty** | — | Run **before** ING-001 for headline demo; reset KB if re-testing |
+| `QRY-002` | **Populated** | `ING-001` | Step 3 of headline demo; same query as QRY-001 |
+| `QRY-003` | **Populated** | `ING-001` | EU policy gap; needs osimertinib evidence in KB |
+| `QRY-004` | Populated (recommended) | `ING-001` (typical) | Clarification path; works best when KB has content but query scope is vague |
+| `QRY-005` | **Populated** | `ING-001` | Two turns in **same session**, then Curate |
+
+### Recommended test paths
+
+**Headline demo (fixed order)** — `case-04-demo`:
+
+```
+QRY-001  →  ING-001  →  QRY-002
+(empty KB)   (ingest)    (grounded query)
+```
+
+**Standalone ingestion** — pick any `case-01` … `case-06` folder; no prior scenario required.
+
+**Standalone query (populated KB)** — run **ING-001** once (any case folder with the 5 OA articles), then pick `case-07` … `case-09` or QRY-002.
+
+**Fresh environment** — if the Vector DB was cleared or this is a new deployment:
+
+1. Skip QRY-001 if you only want to test populated-KB queries.
+2. Run **ING-001** first.
+3. Then run QRY-002, QRY-003, QRY-004, or QRY-005.
+
+**Re-testing QRY-001** — KB must be empty. If ING-001 already ran, reset the KB / redeploy without persisted entities before step 1.
+
+### What is *not* a dependency
+
+- ING-007 does **not** require running ING-002 first (curator outcome differs; ingest pool is similar but sessions are independent).
+- Query cases do **not** depend on each other (QRY-003 does not require QRY-002 in the same session).
+- Ingestion cases do **not** chain (ING-003 does not require ING-002).
+
 ## What each scenario tests
 
 ### Phase 1 — Ingestion
@@ -43,7 +93,7 @@ Scenario definitions live in [`../scripts/scenarios.py`](../scripts/scenarios.py
 
 ### Headline demo sequence
 
-Run in order under `case-04-demo`: `QRY-001` → `ING-001` → `QRY-002`.
+Run in order under `case-04-demo`: `QRY-001` → `ING-001` → `QRY-002`. See [Prerequisites and dependencies](#prerequisites-and-dependencies).
 
 ## Ground truth
 

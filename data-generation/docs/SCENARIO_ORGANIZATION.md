@@ -31,6 +31,10 @@ case-04-demo/
 
 See [`TEST_CASES.md`](TEST_CASES.md#what-each-scenario-tests) for which agent decisions each scenario exercises.
 
+## Prerequisites
+
+See [`TEST_CASES.md`](TEST_CASES.md#prerequisites-and-dependencies) before running query scenarios or the headline demo.
+
 ## Ground truth
 
 Optional validation keys in `data-generation/ground-truth/<ID>.json` mirror the full e2e chain including memory stages (gates, persistence).

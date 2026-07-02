@@ -1,6 +1,8 @@
 # Case 9 — Multi-turn grounded session
 
-**User action:** Run two queries in the same session against a populated KB (after ING-001), then Curate.
+**Prerequisite:** Run **ING-001** first so the Vector DB is populated.
+
+**User action:** Run two queries in the **same session**, then Curate.
 **Prompts (in order):**
 1. `prompts/01-resistance-mechanisms.txt` — resistance mechanisms
 2. `prompts/02-flaura-context.txt` — FLAURA / first-line trial context
