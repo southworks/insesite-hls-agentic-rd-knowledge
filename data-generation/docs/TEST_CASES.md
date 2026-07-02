@@ -95,6 +95,103 @@ QRY-001  →  ING-001  →  QRY-002
 
 Run in order under `case-04-demo`: `QRY-001` → `ING-001` → `QRY-002`. See [Prerequisites and dependencies](#prerequisites-and-dependencies).
 
+## Agent capability matrix
+
+Canonical agent decisions come from `rd-knowledge-mining/agent-provisioning/.../instructions.md`. This matrix maps each decision to scenarios that exercise it and marks gaps.
+
+**Legend:** ✅ covered · ⚠️ partial / indirect · ❌ not covered · N/A not reachable in runtime
+
+### Phase 1 — ingestion-translation-agent
+
+| Capability | Status | Covered by | Notes |
+|------------|--------|------------|-------|
+| `Ingestion Complete` (happy path) | ✅ | ING-001, ING-003 | Clean articles; synthetic ELN/LIMS |
+| `approve_with_exclusions` (license guardrail) | ✅ | ING-002, ING-007 | PMC4771182 excluded |
+| `Human Review Needed` (agent decision string) | ❌ | — | ING-002 routes to curator via gate, but agent uses `approve_with_exclusions` |
+| `Insufficient Data` | ✅ | ING-005 | Empty + truncated batch |
+| `defer_to_human_approval` (sensitive metadata) | ⚠️ | ING-004 | Sensitive GEO candidate; not full PHI/high riskLevel path |
+| Fabric mode (`dataSource: fabric` + MCP fetch) | ❌ | — | Inline upload only in current scenarios |
+| `riskLevel: high` / PHI flags at ingest | ❌ | — | No dedicated PHI-in-upload scenario |
+
+### Phase 1 — metadata-linking-agent
+
+| Capability | Status | Covered by | Notes |
+|------------|--------|------------|-------|
+| `Linking Complete` / `approve` | ✅ | ING-001, ING-003, ING-007 | Entity + link extraction |
+| `approve_with_exclusions` (GEO triage) | ✅ | ING-002, ING-007 | Patient-derived GEO excluded |
+| `no_action` (nothing to link) | ✅ | ING-004 | Empty admitted set |
+| `Insufficient Data` | ✅ | ING-005 | Follows insufficient ingest |
+| `Human Review Needed` (agent decision string) | ❌ | — | Ambiguous duplicates / conflicting versions not isolated |
+| `get_knowledge_lineage` MCP | ❌ | — | Linking uses `search_rd_knowledge` only today |
+
+### Phase 1 — Knowledge Curator gate
+
+| Capability | Status | Covered by | Notes |
+|------------|--------|------------|-------|
+| Approve (full persist) | ✅ | ING-001 | |
+| Needs human review (nothing persisted) | ✅ | ING-002 | |
+| Approve with required labeling | ✅ | ING-003 | `synthetic_from_public_structure` |
+| Deny (nothing persisted) | ✅ | ING-004, ING-005 | |
+| Approve with exclusions (partial persist) | ✅ | ING-007 | Closes ING-002 arc |
+
+### Phase 2 — search-chat-agent
+
+| Capability | Status | Covered by | Notes |
+|------------|--------|------------|-------|
+| `Insufficient Evidence` / empty KB | ✅ | QRY-001 | |
+| `Answered` / grounded with citations | ✅ | QRY-002, QRY-003, QRY-005 | |
+| `Clarification Needed` | ✅ | QRY-004 | No Curate (no grounded session) |
+| Multi-turn session accumulation | ✅ | QRY-005 | Two prompts, same session |
+| `get_knowledge_lineage` MCP | ❌ | — | Lineage / traceability query not isolated |
+| `retrieval_scope_entities` filtering | ⚠️ | QRY-002, QRY-003, QRY-005 | Used in ground truth; runtime depends on agent |
+
+### Phase 2 — curation-compliance-agent
+
+| Capability | Status | Covered by | Notes |
+|------------|--------|------------|-------|
+| `Approve Response` | ✅ | QRY-002, QRY-005 | |
+| `Flag for Review` | ✅ | QRY-003 | `missing_eu_regional_policy_reference` |
+| `approve_with_flags` (compliance gate) | ✅ | QRY-003 | Compliance Reviewer after flag |
+| `Insufficient Information` | ❌ | — | Incomplete chat/policy context |
+| `flag_sensitive_content` / `HLS-PHI-100` | ❌ | — | PHI in chat responses |
+| `HLS-PARTNER-110` (confidential partner) | ❌ | — | |
+| `HLS-TRIAL-300` + `HLS-LIC-200` enforced | ✅ | QRY-002, QRY-005 | Happy-path approval |
+| `HLS-REGION-EU-400` enforced | ✅ | QRY-003 | |
+| Review full `chatResponses[]` (multi-turn) | ✅ | QRY-005 | |
+| Curate on empty / no-grounded session | N/A | QRY-001 | Runtime disables Curate; ground truth includes stages for rollup only |
+
+### Phase 2 — Compliance Reviewer gate
+
+| Capability | Status | Covered by | Notes |
+|------------|--------|------------|-------|
+| Approve | ✅ | QRY-002, QRY-005 | |
+| Approve with flags | ✅ | QRY-003 | |
+| Deny (block return) | ❌ | — | No scenario where Compliance Reviewer rejects |
+
+### Policy reference coverage
+
+| Policy | Status | Covered by |
+|--------|--------|------------|
+| `HLS-TRIAL-300` | ✅ | QRY-002, QRY-003, QRY-005 |
+| `HLS-LIC-200` | ✅ | ING-002 (license exclusion), QRY-002, QRY-003, QRY-005 |
+| `HLS-GEO-400` | ✅ | ING-002, ING-004 |
+| `HLS-DATA-100` / `HLS-DATA-110` | ⚠️ | ING-003, ING-004 | Synthetic labeling; sensitive deny |
+| `HLS-REGION-EU-400` | ✅ | QRY-003 |
+| `HLS-PHI-100` | ❌ | — |
+| `HLS-PARTNER-110` | ❌ | — |
+
+### Suggested next scenarios (gaps)
+
+| Gap | Suggested focus |
+|-----|-----------------|
+| Compliance Reviewer **deny** | QRY-006: Curate flags unresolved → compliance denies return |
+| Curation `Insufficient Information` | Incomplete session or missing policy context |
+| `HLS-PHI-100` / sensitive content in chat | QRY-008: response triggers `flag_sensitive_content` |
+| `get_knowledge_lineage` | QRY-007: explicit document↔dataset↔study traceability query |
+| Ingest `Human Review Needed` at agent level | ING-006: ambiguous duplicate protocol vs article |
+| Fabric mode ingest | ING-010: `dataSource: fabric` MCP fetch |
+| Partner confidential ingest | ING-008: `HLS-PARTNER-110` path |
+
 ## Ground truth
 
 Full e2e rollups (optional validation): `ground-truth/<ID>.json`

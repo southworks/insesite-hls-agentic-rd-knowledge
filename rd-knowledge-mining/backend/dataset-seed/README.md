@@ -19,6 +19,8 @@ Demo-ready inputs for the HLS Agentic R&D Knowledge Mining workflow. Pick a case
 
 Full dependency table: [`data-generation/docs/TEST_CASES.md`](../../../data-generation/docs/TEST_CASES.md#prerequisites-and-dependencies).
 
+Capability matrix (covered vs gaps): [`TEST_CASES.md`](../../../data-generation/docs/TEST_CASES.md#agent-capability-matrix).
+
 ## Cases 1–6 (ingestion stress scenarios)
 
 | Case | Folder | Legacy ID | Ingest | Expected outcome |

@@ -118,7 +118,7 @@ Rebuild any image or deployment package that embeds `rd-knowledge-mining/backend
 ## Key docs
 
 - [`docs/HANDOFF.md`](docs/HANDOFF.md) — agent handoff map
-- [`docs/TEST_CASES.md`](docs/TEST_CASES.md) — scenario index, **prerequisites**, and what each scenario tests
+- [`docs/TEST_CASES.md`](docs/TEST_CASES.md) — scenario index, prerequisites, [agent capability matrix](docs/TEST_CASES.md#agent-capability-matrix)
 - [`docs/SCENARIO_ORGANIZATION.md`](docs/SCENARIO_ORGANIZATION.md) — case ↔ legacy id map
 - [`docs/TESTING_GUIDE.md`](docs/TESTING_GUIDE.md) — e2e demo runbook
 - [`ground-truth/SCHEMA.md`](ground-truth/SCHEMA.md) — rollup schema

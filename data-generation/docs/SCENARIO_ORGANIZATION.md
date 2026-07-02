@@ -29,7 +29,7 @@ case-04-demo/
 
 ## Agent capability coverage
 
-See [`TEST_CASES.md`](TEST_CASES.md#what-each-scenario-tests) for which agent decisions each scenario exercises.
+See [`TEST_CASES.md`](TEST_CASES.md#agent-capability-matrix) for the full matrix (covered vs gaps).
 
 ## Prerequisites
 
