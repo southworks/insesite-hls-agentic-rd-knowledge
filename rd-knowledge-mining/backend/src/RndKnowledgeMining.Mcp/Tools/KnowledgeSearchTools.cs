@@ -84,6 +84,24 @@ public sealed class KnowledgeSearchTools
     }
 
     [McpServerTool]
+    [Description("Indexes multiple metadata-linking chunks into the R&D knowledge evidence index in a single batch call.")]
+    public Task<IndexRdKnowledgeBatchResponse> IndexRdKnowledgeBatch(
+        string sessionId,
+        [Description("List of chunks and metadata to index in one request.")]
+        IReadOnlyList<IndexRdKnowledgeBatchItem> items,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
+        ArgumentNullException.ThrowIfNull(items);
+        if (items.Count == 0)
+        {
+            throw new ArgumentException("At least one indexing item is required.", nameof(items));
+        }
+
+        return _knowledgeSearchService.IndexBatchAsync(sessionId, items, cancellationToken);
+    }
+
+    [McpServerTool]
     [Description("Lists normalized ingestion documents persisted for a Block 1 batch. Returns documentId metadata only; use read_normalized_document to fetch each document JSON.")]
     public Task<ListNormalizedDocumentsResponse> ListNormalizedDocuments(
         [Description("Ingestion source/batch id (e.g. case-01-human-review).")]

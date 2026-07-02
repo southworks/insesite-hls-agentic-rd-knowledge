@@ -264,6 +264,8 @@ public static class AgentStructuredOutputParser
                     continue;
                 }
 
+                ValidateRichPayloadConsistency(agentName, root);
+
                 string summary = DeriveRichSummary(agentName, root);
                 string decision = DeriveRichDecision(agentName, root);
                 string evidence = DeriveRichEvidence(root);
@@ -278,6 +280,41 @@ public static class AgentStructuredOutputParser
         }
 
         return false;
+    }
+
+    private static void ValidateRichPayloadConsistency(string agentName, JsonElement root)
+    {
+        if (!string.Equals(agentName, AgentWorkflowAgents.MetadataLinking, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        int vectorsIndexed = ReadOptionalInt(root, "vectorsIndexed") ?? 0;
+        int chunksToEmbed = 0;
+
+        if (TryGetPropertyIgnoreCase(root, "embeddingPlan", out JsonElement embeddingPlan)
+            && embeddingPlan.ValueKind == JsonValueKind.Object)
+        {
+            chunksToEmbed = ReadOptionalInt(embeddingPlan, "chunksToEmbed") ?? 0;
+        }
+
+        // metadata-linking must index when it declares embeddable chunks.
+        if (chunksToEmbed > 0 && vectorsIndexed <= 0)
+        {
+            throw new InvalidOperationException(
+                "metadata-linking-agent reported embeddable chunks but did not index any vectors. " +
+                "Expected at least one index_rd_knowledge or index_rd_knowledge_batch call when embeddingPlan.chunksToEmbed > 0.");
+        }
+
+        string? decision = ReadOptionalString(root, "decision");
+        if (chunksToEmbed > 0
+            && vectorsIndexed < chunksToEmbed
+            && string.Equals(decision, "Linking Complete", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "metadata-linking-agent returned decision 'Linking Complete' with partial indexing " +
+                "(vectorsIndexed < embeddingPlan.chunksToEmbed).");
+        }
     }
 
     private static bool IsRecognizedHandoffPayload(string agentName, JsonElement root)

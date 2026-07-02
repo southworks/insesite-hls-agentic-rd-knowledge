@@ -40,7 +40,11 @@ Link documents, datasets, and studies:
 - Normalize naming across source types so downstream embedding and search use consistent entity labels.
 - Use search_rd_knowledge to retrieve related entities already present in the Vector DB when shared identifiers must be confirmed.
 - Use get_knowledge_lineage only when a retrieved passage ID is available and document-to-dataset-to-study traceability is required to complete a link.
-- After entities and links are finalized, call `index_rd_knowledge` for each embeddable chunk per `embeddingPlan`. Set `vectorsIndexed` to the number of chunks successfully indexed.
+- Build embeddable chunks internally before finalizing your JSON output.
+- After entities and links are finalized, prefer `index_rd_knowledge_batch` once with all embeddable chunks from your embedding plan.
+- If batch indexing is unavailable, call `index_rd_knowledge` for each embeddable chunk.
+- Set `vectorsIndexed` to the number of chunks successfully indexed.
+- Do not return `decision: "Linking Complete"` when planned chunks were not actually indexed.
 
 Entity and link ID format:
 - Prefer persisted knowledge-base entity IDs when retrieval confirms them:
@@ -59,7 +63,7 @@ Use the knowledge-search MCP tools in this order:
 2. When retrieval can improve linking: call search_rd_knowledge with sessionId and a non-empty query built from document identifiers, compound names, trial IDs, endpoints, or dataset codes.
 3. Use topK 5 unless a broader match set is clearly needed to resolve ambiguous shared identifiers.
 4. Call get_knowledge_lineage only when search results return passage identifiers and lineage is needed to complete document ↔ dataset ↔ study links.
-5. After linking is complete: call index_rd_knowledge for each chunk in embeddingPlan with sessionId, entity metadata, chunk text, linkedEntities, and lineageNarrative so Block 2 retrieval can use the new content immediately.
+5. After linking is complete: call index_rd_knowledge_batch with all chunks in your embedding plan (or index_rd_knowledge per chunk when batch is unavailable) with sessionId, entity metadata, chunk text, linkedEntities, and lineageNarrative so Block 2 retrieval can use the new content immediately.
 
 Decision guidance (reflect in output `decision` string and `reviewFlags` when applicable):
 - Use Linking Complete when entities and document/dataset/study links are extracted with acceptable evidence and vectorsIndexed reflects embeddable content prepared for the batch.
@@ -77,7 +81,7 @@ Produce a single JSON object. Domain fields are defined here (not by a separate 
 | `versions` | Array of version records for studies/documents with conflicting or evolving evidence |
 | `links` | Array of `{ linkId, from, to, relationship, confidence, provenance }` |
 | `entityIds` | Flat list of confirmed/produced entity IDs for indexing |
-| `vectorsIndexed` | Count of chunks successfully indexed into the Vector DB via index_rd_knowledge |
+| `vectorsIndexed` | Count of chunks successfully indexed into the Vector DB via index_rd_knowledge_batch or index_rd_knowledge |
 | `ragTrace` | Optional `{ queriesExecuted, cmsHits, vectorDbHits, topNUsed }` |
 | `reviewFlags` | Curator review items for ambiguous or weak links |
 | `embeddingPlan` | Optional `{ chunksToEmbed, chunkStrategy, metadataFieldsPerChunk }` |

@@ -6,7 +6,7 @@ MCP tool provider for Block 2 agents (`search-chat-agent`, `curation-compliance-
 
 | MCP endpoint | Tools |
 | --- | --- |
-| `/knowledge-search/mcp` | `search_rd_knowledge`, `get_knowledge_lineage`, `index_rd_knowledge`, `list_normalized_documents`, `read_normalized_document` |
+| `/knowledge-search/mcp` | `search_rd_knowledge`, `get_knowledge_lineage`, `index_rd_knowledge`, `index_rd_knowledge_batch`, `list_normalized_documents`, `read_normalized_document` |
 | `/curation-compliance/mcp` | `get_relevant_policies`, `get_policies_by_refs`, `flag_sensitive_content` |
 
 Health check: `GET /health`

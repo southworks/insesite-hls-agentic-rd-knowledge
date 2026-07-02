@@ -25,6 +25,11 @@ public interface IKnowledgeSearchService
         string? lineageNarrative = null,
         string? passageId = null,
         CancellationToken cancellationToken = default);
+
+    Task<IndexRdKnowledgeBatchResponse> IndexBatchAsync(
+        string sessionId,
+        IReadOnlyList<IndexRdKnowledgeBatchItem> items,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IPolicySearchService
@@ -81,4 +86,10 @@ public sealed class AzureKnowledgeSearchService : IKnowledgeSearchService
             lineageNarrative,
             passageId,
             cancellationToken);
+
+    public Task<IndexRdKnowledgeBatchResponse> IndexBatchAsync(
+        string sessionId,
+        IReadOnlyList<IndexRdKnowledgeBatchItem> items,
+        CancellationToken cancellationToken = default) =>
+        _knowledgeIndexAdapter.IndexBatchAsync(sessionId, items, cancellationToken);
 }

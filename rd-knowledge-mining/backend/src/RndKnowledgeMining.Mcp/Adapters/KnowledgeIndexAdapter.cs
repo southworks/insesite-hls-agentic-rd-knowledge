@@ -118,50 +118,118 @@ public sealed class KnowledgeIndexAdapter
         string? passageId = null,
         CancellationToken cancellationToken = default)
     {
+        var batchResponse = await IndexBatchAsync(
+            sessionId,
+            [
+                new IndexRdKnowledgeBatchItem
+                {
+                    EntityId = entityId,
+                    EntityType = entityType,
+                    Title = title,
+                    ChunkText = chunkText,
+                    PassageId = passageId,
+                    LinkedEntities = linkedEntities,
+                    LineageNarrative = lineageNarrative
+                }
+            ],
+            cancellationToken);
+
+        return batchResponse.Results[0];
+    }
+
+    public async Task<IndexRdKnowledgeBatchResponse> IndexBatchAsync(
+        string sessionId,
+        IReadOnlyList<IndexRdKnowledgeBatchItem> items,
+        CancellationToken cancellationToken = default)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(entityType);
-        ArgumentException.ThrowIfNullOrWhiteSpace(title);
-        ArgumentException.ThrowIfNullOrWhiteSpace(chunkText);
-
-        var normalizedPassageId = NormalizePassageId(entityId, chunkText, passageId);
-        var normalizedLinkedEntities = (linkedEntities ?? [])
-            .Where(item => !string.IsNullOrWhiteSpace(item))
-            .Select(item => item.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        var embedding = (await _embeddingService.EmbedAsync([chunkText], cancellationToken)).Single();
-
-        var document = new KnowledgeSearchDocument
+        ArgumentNullException.ThrowIfNull(items);
+        if (items.Count == 0)
         {
-            Id = normalizedPassageId,
-            EntityId = entityId.Trim(),
-            EntityType = entityType.Trim(),
-            Title = title.Trim(),
-            PassageId = normalizedPassageId,
-            ChunkText = chunkText.Trim(),
-            LinkedEntities = normalizedLinkedEntities,
-            LineageNarrative = string.IsNullOrWhiteSpace(lineageNarrative) ? string.Empty : lineageNarrative.Trim(),
-            Embedding = embedding
-        };
-
-        var batch = IndexDocumentsBatch.MergeOrUpload([document]);
-        var response = await _searchClient.IndexDocumentsAsync(batch, cancellationToken: cancellationToken);
-
-        var result = response.Value.Results.SingleOrDefault();
-        if (result is null || !result.Succeeded)
-        {
-            throw new InvalidOperationException(
-                $"Failed to index passage '{normalizedPassageId}' for entity '{entityId}'.");
+            throw new ArgumentException("At least one indexing item is required.", nameof(items));
         }
 
-        return new IndexRdKnowledgeResponse
+        for (var index = 0; index < items.Count; index++)
+        {
+            var item = items[index];
+            ArgumentException.ThrowIfNullOrWhiteSpace(item.EntityId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(item.EntityType);
+            ArgumentException.ThrowIfNullOrWhiteSpace(item.Title);
+            ArgumentException.ThrowIfNullOrWhiteSpace(item.ChunkText);
+        }
+
+        var chunkTexts = items
+            .Select(item => item.ChunkText.Trim())
+            .ToArray();
+
+        var embeddings = await _embeddingService.EmbedAsync(chunkTexts, cancellationToken);
+        var documents = new List<KnowledgeSearchDocument>(items.Count);
+
+        for (var index = 0; index < items.Count; index++)
+        {
+            var item = items[index];
+            var normalizedPassageId = NormalizePassageId(item.EntityId, item.ChunkText, item.PassageId);
+            var normalizedLinkedEntities = (item.LinkedEntities ?? [])
+                .Where(linkedEntity => !string.IsNullOrWhiteSpace(linkedEntity))
+                .Select(linkedEntity => linkedEntity.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            documents.Add(new KnowledgeSearchDocument
+            {
+                Id = normalizedPassageId,
+                EntityId = item.EntityId.Trim(),
+                EntityType = item.EntityType.Trim(),
+                Title = item.Title.Trim(),
+                PassageId = normalizedPassageId,
+                ChunkText = item.ChunkText.Trim(),
+                LinkedEntities = normalizedLinkedEntities,
+                LineageNarrative = string.IsNullOrWhiteSpace(item.LineageNarrative)
+                    ? string.Empty
+                    : item.LineageNarrative.Trim(),
+                Embedding = embeddings[index]
+            });
+        }
+
+        var batch = IndexDocumentsBatch.MergeOrUpload(documents);
+        var response = await _searchClient.IndexDocumentsAsync(batch, cancellationToken: cancellationToken);
+        var resultsByKey = response.Value.Results
+            .ToDictionary(result => result.Key, StringComparer.OrdinalIgnoreCase);
+
+        var results = new List<IndexRdKnowledgeResponse>(documents.Count);
+        var indexedCount = 0;
+
+        foreach (var document in documents)
+        {
+            var indexed = resultsByKey.TryGetValue(document.Id, out IndexingResult? indexingResult)
+                && indexingResult.Succeeded;
+
+            if (indexed)
+            {
+                indexedCount++;
+            }
+
+            results.Add(new IndexRdKnowledgeResponse
+            {
+                SessionId = sessionId.Trim(),
+                EntityId = document.EntityId,
+                PassageId = document.PassageId,
+                Indexed = indexed
+            });
+        }
+
+        if (indexedCount < documents.Count)
+        {
+            throw new InvalidOperationException(
+                $"Failed to index all passages for session '{sessionId}'. Indexed {indexedCount} of {documents.Count}.");
+        }
+
+        return new IndexRdKnowledgeBatchResponse
         {
             SessionId = sessionId.Trim(),
-            EntityId = entityId.Trim(),
-            PassageId = normalizedPassageId,
-            Indexed = true
+            Requested = documents.Count,
+            Indexed = indexedCount,
+            Results = results
         };
     }
 
