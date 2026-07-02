@@ -59,15 +59,11 @@ public sealed class IngestionWorkflowFactory
         var ingestionTranslation = agents.IngestionTranslation.BindAsExecutor(agentHostOptions);
         var metadataLinking = agents.MetadataLinking.BindAsExecutor(agentHostOptions);
 
-        var bridge01 = new RichHandoffBridgeExecutor(
+        FunctionExecutor<IList<ChatMessage>> bridge01 = CreateIngestionTranslationBridgeExecutor(
             id: "IngestionBridge01",
             correlationId: sourceId,
-            executionId: executionId,
-            sourceAgentName: IngestionWorkflowConstants.IngestionTranslationAgentName,
-            normalizedDocumentStore: _normalizedDocumentStore,
-            sourceDocumentCache: _sourceDocumentCache,
-            persistNormalizedDocuments: true);
-        var bridge02 = new RichHandoffBridgeExecutor(
+            executionId: executionId);
+        FunctionExecutor<IList<ChatMessage>> bridge02 = CreateAgentHandoffBridgeExecutor(
             id: "IngestionBridge02",
             correlationId: sourceId,
             executionId: executionId,
@@ -92,6 +88,78 @@ public sealed class IngestionWorkflowFactory
             .WithName($"rd-ingestion-{executionId}")
             .WithDescription("Block 1 ingestion workflow: metadata-linking indexes to Vector DB, then Knowledge Curator reviews.")
             .Build();
+    }
+
+    private FunctionExecutor<IList<ChatMessage>> CreateIngestionTranslationBridgeExecutor(
+        string id,
+        string correlationId,
+        string executionId)
+    {
+        return new FunctionExecutor<IList<ChatMessage>>(
+            id: id,
+            handlerAsync: async (messages, context, cancellationToken) =>
+            {
+                string rawOutput = WorkflowTextExtractor.FromLastAssistantMessage(messages);
+                AgentStepResult result = ParseBridgeOutput(
+                    IngestionWorkflowConstants.IngestionTranslationAgentName,
+                    rawOutput);
+
+                if (string.IsNullOrWhiteSpace(result.RawPayloadJson))
+                {
+                    throw new InvalidOperationException(
+                        "Ingestion handoff is missing raw payload JSON.");
+                }
+
+                string payloadJson = result.RawPayloadJson;
+                if (_sourceDocumentCache.TryGet(executionId, out IReadOnlyList<RawKnowledgeItem>? sourceItems)
+                    && sourceItems is not null)
+                {
+                    payloadJson = IngestionHandoffEnricher.Enrich(payloadJson, sourceItems);
+                }
+
+                string manifestJson = await _normalizedDocumentStore
+                    .PersistIngestionHandoffAsync(
+                        correlationId,
+                        executionId,
+                        payloadJson,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+
+                ChatMessage payload = WorkflowPayloadBuilder.CreateMetadataLinkingHandoffMessage(
+                    correlationId,
+                    executionId,
+                    manifestJson);
+
+                await context.SendMessageAsync(payload, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await context.SendMessageAsync(new TurnToken(emitEvents: true), cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+            },
+            sentMessageTypes: [typeof(ChatMessage), typeof(TurnToken)]);
+    }
+
+    private static FunctionExecutor<IList<ChatMessage>> CreateAgentHandoffBridgeExecutor(
+        string id,
+        string correlationId,
+        string executionId,
+        string sourceAgentName)
+    {
+        return new FunctionExecutor<IList<ChatMessage>>(
+            id: id,
+            handlerAsync: async (messages, context, cancellationToken) =>
+            {
+                string rawOutput = WorkflowTextExtractor.FromLastAssistantMessage(messages);
+                AgentStepResult result = ParseBridgeOutput(sourceAgentName, rawOutput);
+                ChatMessage payload = WorkflowPayloadBuilder.CreateRichAgentHandoffMessage(
+                    correlationId,
+                    executionId,
+                    sourceAgentName,
+                    result);
+
+                await context.SendMessageAsync(payload, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await context.SendMessageAsync(new TurnToken(emitEvents: true), cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+            },
+            sentMessageTypes: [typeof(ChatMessage), typeof(TurnToken)]);
     }
 
     private static FunctionExecutor<ChatMessage> CreateCuratorApprovalRequestExecutor(
