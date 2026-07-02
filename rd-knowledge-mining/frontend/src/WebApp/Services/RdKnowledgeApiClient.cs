@@ -34,8 +34,14 @@ public sealed class RdKnowledgeApiClient(
         PropertyNameCaseInsensitive = true,
     };
 
-    public Task<VectorDbStoreSummary> GetVectorDbStoreSummaryAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult(new VectorDbStoreSummary(0, 0, 0, 0, null, null));
+    public async Task<VectorDbStoreSummary> GetVectorDbStoreSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await GetAsync<VectorDbStoreSummaryResponse>(
+            RdKnowledgeBackendRoutes.GetVectorDbSummary,
+            cancellationToken);
+
+        return BackendApiMapper.ToVectorDbSummary(response);
+    }
 
     public Task<StudyDocumentsResponse> GetStudyDocumentsAsync(string studyId, CancellationToken cancellationToken = default) =>
         Task.FromResult(new StudyDocumentsResponse(studyId, []));
@@ -196,13 +202,7 @@ public sealed class RdKnowledgeApiClient(
 
     private async Task<T> PostAsync<T>(string path, object body, CancellationToken cancellationToken)
     {
-<<<<<<< HEAD
-        HttpResponseMessage response = body is null
-            ? await httpClient.PostAsync(path, null, cancellationToken)
-            : await httpClient.PostAsJsonAsync(path, body, JsonOptions, cancellationToken);
-=======
         var response = await httpClient.PostAsJsonAsync(path, body, JsonOptions, cancellationToken);
->>>>>>> 99ed0c83e1b3e345e1db57ad8398ee6d7ece8d78
         await ApiProblemDetails.EnsureSuccessOrThrowAsync(response, cancellationToken);
         var result = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
         return result ?? throw new InvalidOperationException($"Empty response from {path}.");

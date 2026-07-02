@@ -7,6 +7,8 @@ public static class RdKnowledgeBackendRoutes
 {
     public const string Health = "/health";
 
+    public const string GetVectorDbSummary = "/api/rd-knowledge/vector-db/summary";
+
     public const string StartIngestion = "/api/rd-knowledge/ingestion/start";
 
     public const string GetIngestionStatus =

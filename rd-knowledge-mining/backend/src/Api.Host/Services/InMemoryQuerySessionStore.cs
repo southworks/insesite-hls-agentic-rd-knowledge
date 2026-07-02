@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using CohereRndKnowledgeMining.Api.Host.Contracts;
 using Microsoft.Extensions.AI;
 
 namespace CohereRndKnowledgeMining.Api.Host.Services;
@@ -37,28 +36,9 @@ public sealed class QueryChatSession
     public DateTimeOffset LastUpdatedUtc { get; set; } = DateTimeOffset.UtcNow;
 }
 
-/// <summary>
-/// Frontend-facing query workflow execution binding a session id to an execution id.
-/// </summary>
-public sealed class QueryExecution
-{
-    public required string ExecutionId { get; init; }
-
-    public required string SessionId { get; init; }
-
-    public string? StudyScope { get; set; }
-
-    public bool IsChatRunning { get; set; }
-
-    public bool CurationStarted { get; set; }
-
-    public HumanDecisionRecordDto? HumanDecision { get; set; }
-}
-
 public sealed class InMemoryQuerySessionStore
 {
     private readonly ConcurrentDictionary<string, QueryChatSession> _sessions = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, QueryExecution> _queryExecutions = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, WorkflowExecution> _curateExecutions = new(StringComparer.OrdinalIgnoreCase);
 
     public QueryChatSession GetOrCreateSession(string sessionId)
@@ -76,22 +56,6 @@ public sealed class InMemoryQuerySessionStore
         throw new KeyNotFoundException($"Query session '{sessionId}' was not found.");
     }
 
-    public void SaveQueryExecution(QueryExecution execution) =>
-        _queryExecutions[execution.ExecutionId] = execution;
-
-    public QueryExecution GetRequiredQueryExecution(string executionId)
-    {
-        if (_queryExecutions.TryGetValue(executionId, out QueryExecution? execution))
-        {
-            return execution;
-        }
-
-        throw new KeyNotFoundException($"Query execution '{executionId}' was not found.");
-    }
-
-    public bool TryGetQueryExecution(string executionId, out QueryExecution? execution) =>
-        _queryExecutions.TryGetValue(executionId, out execution);
-
     public void SaveCurateExecution(WorkflowExecution execution) => _curateExecutions[execution.ExecutionId] = execution;
 
     public WorkflowExecution GetRequiredCurateExecution(string executionId)
@@ -103,7 +67,4 @@ public sealed class InMemoryQuerySessionStore
 
         throw new KeyNotFoundException($"Curate execution '{executionId}' was not found.");
     }
-
-    public bool TryGetCurateExecution(string executionId, out WorkflowExecution? execution) =>
-        _curateExecutions.TryGetValue(executionId, out execution);
 }

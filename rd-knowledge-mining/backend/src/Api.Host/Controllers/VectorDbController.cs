@@ -8,8 +8,8 @@ namespace CohereRndKnowledgeMining.Api.Host.Controllers;
 public sealed class VectorDbController : ControllerBase
 {
     [HttpGet("vector-db/summary")]
-    public ActionResult<VectorDbStoreSummaryDto> GetSummary() =>
-        Ok(new VectorDbStoreSummaryDto
+    public ActionResult<VectorDbStoreSummaryResponse> GetSummary() =>
+        Ok(new VectorDbStoreSummaryResponse
         {
             TotalStudies = 0,
             TotalDocuments = 0,
