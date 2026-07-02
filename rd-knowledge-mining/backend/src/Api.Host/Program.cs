@@ -2,6 +2,7 @@ using CohereRndKnowledgeMining.Api.Host.Options;
 using CohereRndKnowledgeMining.Api.Host.Services;
 using CohereRndKnowledgeMining.Api.Host.Services.Integrations;
 using CohereRndKnowledgeMining.Api.Host.Workflow;
+using RndKnowledgeMining.Mcp;
 using RndKnowledgeMining.Mcp.Adapters;
 using ApiFabricLakehouseClient = CohereRndKnowledgeMining.Api.Host.Services.Integrations.FabricLakehouseClient;
 using McpFabricLakehouseOptions = RndKnowledgeMining.Mcp.Options.FabricLakehouseOptions;
@@ -74,9 +75,9 @@ builder.Services.AddSingleton<IngestionSourceDocumentLoader>();
 // Foundry agents shared by both blocks.
 builder.Services.AddSingleton<FoundryAgentProvider>();
 
-// Stub integrations for Vector DB (TODO: replace with real implementations).
-builder.Services.AddSingleton<IVectorKnowledgeWriter, StubVectorKnowledgeWriter>();
-builder.Services.AddSingleton<IVectorKnowledgeRetriever, StubVectorKnowledgeRetriever>();
+// Vector DB retrieval (shared KnowledgeIndexAdapter with MCP search_rd_knowledge).
+builder.Services.AddKnowledgeSearchServices(builder.Configuration);
+builder.Services.AddSingleton<IVectorKnowledgeRetriever, AzureVectorKnowledgeRetriever>();
 
 // Block 1 - Ingestion.
 builder.Services.AddSingleton<IngestionWorkflowFactory>();

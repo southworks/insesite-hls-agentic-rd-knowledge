@@ -10,29 +10,53 @@ namespace RndKnowledgeMining.Mcp;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddRndKnowledgeMiningMcpServices(
+    /// <summary>
+    /// Registers Azure AI Search + Foundry embed/rerank services shared by the MCP host and API host.
+    /// </summary>
+    public static IServiceCollection AddKnowledgeSearchServices(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.Configure<PolicySeedOptions>(configuration.GetSection(PolicySeedOptions.SectionName));
         services.Configure<AzureSearchOptions>(configuration.GetSection(AzureSearchOptions.SectionName));
         services.Configure<AzureFoundryModelsOptions>(configuration.GetSection(AzureFoundryModelsOptions.SectionName));
-        services.Configure<McpStartupOptions>(configuration.GetSection(McpStartupOptions.SectionName));
-        services.Configure<DataSourceOptions>(configuration.GetSection(DataSourceOptions.SectionName));
-        services.Configure<DatasetOptions>(configuration.GetSection(DatasetOptions.SectionName));
 
         var searchOptions = configuration.GetSection(AzureSearchOptions.SectionName).Get<AzureSearchOptions>()
             ?? new AzureSearchOptions();
         var foundryOptions = configuration.GetSection(AzureFoundryModelsOptions.SectionName).Get<AzureFoundryModelsOptions>()
             ?? new AzureFoundryModelsOptions();
+
+        ValidateRequiredConfiguration(searchOptions, foundryOptions);
+
+        services.AddSingleton(SearchClientFactory.CreateIndexClient(searchOptions));
+
+        services.AddHttpClient<FoundryEmbeddingService>(client => client.Timeout = TimeSpan.FromMinutes(10))
+            .AddFoundryResilience(foundryOptions);
+        services.AddHttpClient<FoundryRerankService>(client => client.Timeout = TimeSpan.FromMinutes(10))
+            .AddFoundryResilience(foundryOptions);
+
+        services.AddSingleton<KnowledgeIndexAdapter>();
+        services.AddSingleton<IKnowledgeSearchService, AzureKnowledgeSearchService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddRndKnowledgeMiningMcpServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<PolicySeedOptions>(configuration.GetSection(PolicySeedOptions.SectionName));
+        services.Configure<McpStartupOptions>(configuration.GetSection(McpStartupOptions.SectionName));
+        services.Configure<DataSourceOptions>(configuration.GetSection(DataSourceOptions.SectionName));
+        services.Configure<DatasetOptions>(configuration.GetSection(DatasetOptions.SectionName));
+
+        services.AddKnowledgeSearchServices(configuration);
+
         var dataSourceOptions = configuration.GetSection(DataSourceOptions.SectionName).Get<DataSourceOptions>()
             ?? new DataSourceOptions();
         var datasetOptions = configuration.GetSection(DatasetOptions.SectionName).Get<DatasetOptions>()
             ?? new DatasetOptions();
 
         var fabricLakehouseOptions = dataSourceOptions.FabricLakehouse ?? new FabricLakehouseOptions();
-
-        ValidateRequiredConfiguration(searchOptions, foundryOptions);
 
         if (dataSourceOptions.Mode == DataSourceMode.Fabric)
         {
@@ -49,21 +73,12 @@ public static class ServiceCollectionExtensions
             }
         }
 
-        services.AddSingleton(SearchClientFactory.CreateIndexClient(searchOptions));
-
-        services.AddHttpClient<FoundryEmbeddingService>(client => client.Timeout = TimeSpan.FromMinutes(10))
-            .AddFoundryResilience(foundryOptions);
-        services.AddHttpClient<FoundryRerankService>(client => client.Timeout = TimeSpan.FromMinutes(10))
-            .AddFoundryResilience(foundryOptions);
-
         services.AddSingleton<PolicyParser>();
         services.AddSingleton<SensitiveContentScanner>();
         services.AddSingleton<SearchIndexInitializer>();
-        services.AddSingleton<KnowledgeIndexAdapter>();
         services.AddSingleton<PolicyIndexAdapter>();
         services.AddSingleton<PolicyIndexSeeder>();
         services.AddSingleton<PolicySeedRunner>();
-        services.AddSingleton<IKnowledgeSearchService, AzureKnowledgeSearchService>();
         services.AddSingleton<IPolicySearchService, AzurePolicySearchService>();
         services.AddSingleton<KnowledgeSearchTools>();
         services.AddSingleton<CurationComplianceTools>();

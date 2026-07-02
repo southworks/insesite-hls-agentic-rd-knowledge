@@ -63,7 +63,8 @@ public sealed class QueryWorkflowService
         QueryChatSession session = _store.GetOrCreateSession(sessionId.Trim());
 
         IReadOnlyList<RetrievedPassage> passages =
-            await _retriever.RetrieveAsync(question, RetrievalTopN, cancellationToken).ConfigureAwait(false);
+            await _retriever.RetrieveAsync(sessionId, question, RetrievalTopN, cancellationToken)
+                .ConfigureAwait(false);
 
         string prompt = BuildGroundedPrompt(question, passages);
         session.History.Add(new ChatMessage(ChatRole.User, prompt));
