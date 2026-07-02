@@ -36,19 +36,32 @@ public sealed class AgentDefinitionBuilder
                         ["X-Agent-Role"] = bundle.Manifest.Name
                     }
                 }
-            },
-            ["text"] = new JsonObject
-            {
-                ["format"] = new JsonObject
+            }
+        };
+
+        if (AgentAssetLoader.UsesInstructionsOnlyOutput(bundle.Manifest))
+        {
+            definition["max_tokens"] = 8192;
+        }
+
+        if (!AgentAssetLoader.UsesInstructionsOnlyOutput(bundle.Manifest))
+        {
+            JsonObject textFormat = AgentAssetLoader.UsesJsonObjectOutput(bundle.Manifest)
+                ? new JsonObject { ["type"] = "json_object" }
+                : new JsonObject
                 {
                     ["type"] = "json_schema",
                     ["name"] = "AgentStructuredOutput",
                     ["description"] = "Structured agent output consumed by the R&D knowledge mining workflow API.",
                     ["schema"] = JsonNode.Parse(bundle.OutputSchemaJson),
                     ["strict"] = true
-                }
-            }
-        };
+                };
+
+            definition["text"] = new JsonObject
+            {
+                ["format"] = textFormat
+            };
+        }
 
         return definition.ToJsonString(SerializerOptions);
     }
@@ -83,7 +96,19 @@ public sealed class AgentDefinitionBuilder
         builder.AppendLine(bundle.Instructions);
         builder.AppendLine();
         builder.AppendLine("## Structured Output Contract");
-        if (UsesSearchChatStructuredOutput(bundle))
+        if (AgentAssetLoader.UsesInstructionsOnlyOutput(bundle.Manifest)
+            || AgentAssetLoader.UsesJsonObjectOutput(bundle.Manifest))
+        {
+            builder.AppendLine("Return a single JSON object matching the output structure defined in these instructions.");
+            builder.AppendLine("The workflow API passes the full JSON object to downstream agents and the Knowledge Curator gate after metadata-linking indexes to the Vector DB.");
+            builder.AppendLine();
+            builder.AppendLine("Formatting rules:");
+            builder.AppendLine("- Return raw JSON only on your final response after all MCP tool calls complete. Do not wrap the JSON in markdown code fences.");
+            builder.AppendLine("- Do not include extra text before or after the JSON.");
+            builder.AppendLine("- Do not emit tool-call JSON as your final answer; use MCP tools for reads and indexing, then return the completed handoff JSON object.");
+            builder.AppendLine("- Domain fields (documents, entities, links, etc.) are defined above, not by a separate JSON Schema.");
+        }
+        else if (UsesSearchChatStructuredOutput(bundle))
         {
             builder.AppendLine("Return JSON only with these required properties: summary, decision, evidence, citations, lineage, raw_source_trace.");
             builder.AppendLine("The API requires all of these properties.");

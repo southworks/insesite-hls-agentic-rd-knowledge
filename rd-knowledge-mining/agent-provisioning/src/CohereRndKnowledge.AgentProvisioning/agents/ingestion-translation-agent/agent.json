@@ -2,7 +2,7 @@
   "name": "ingestion-translation-agent",
   "description": "Reads raw R&D knowledge from Fabric, de-duplicates across source types, normalizes content, and extracts key facts for metadata linking.",
   "instructionsFile": "instructions.md",
-  "outputSchemaFile": "../../shared/ingestion-translation-structured-output.schema.json",
+  "outputFormat": "instructions_only",
   "allowedDecisions": [
     "Ingestion Complete",
     "Human Review Needed",

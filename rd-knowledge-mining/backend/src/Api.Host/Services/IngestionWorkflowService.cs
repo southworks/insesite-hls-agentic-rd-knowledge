@@ -11,24 +11,24 @@ namespace CohereRndKnowledgeMining.Api.Host.Services;
 
 /// <summary>
 /// Drives the Block 1 (Ingestion) workflow: reads raw knowledge from Fabric, runs the
-/// ingestion-translation -> metadata-linking -> Knowledge Curator gate graph, and on approval
-/// writes the curated knowledge to the Vector DB.
+/// ingestion-translation -> metadata-linking -> Knowledge Curator gate graph.
+/// Vector DB indexing is performed by the metadata-linking agent via MCP, not gated by curator approval.
 /// </summary>
 public sealed class IngestionWorkflowService
 {
     private static readonly TimeSpan RunTimeout = TimeSpan.FromMinutes(20);
     private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(30);
 
-    private const string IngestionTranslationKey = "IngestionTranslation";
-    private const string MetadataLinkingKey = "MetadataLinking";
+    private const string IngestionTranslationKey = IngestionWorkflowConstants.IngestionTranslationOutputKey;
+    private const string MetadataLinkingKey = IngestionWorkflowConstants.MetadataLinkingOutputKey;
 
     private readonly FoundryAgentProvider _agentProvider;
     private readonly IngestionWorkflowFactory _workflowFactory;
     private readonly InMemoryIngestionWorkflowStore _store;
-    private readonly IFabricRawSourceReader _rawSourceReader;
+    private readonly IngestionSourceDocumentLoader _documentLoader;
+    private readonly IngestionSourceDocumentCache _sourceDocumentCache;
     private readonly IFabricRawSourceWriter? _rawSourceWriter;
     private readonly DataSourceMode _dataSourceMode;
-    private readonly IVectorKnowledgeWriter _vectorKnowledgeWriter;
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly ILogger<IngestionWorkflowService> _logger;
 
@@ -36,8 +36,8 @@ public sealed class IngestionWorkflowService
         FoundryAgentProvider agentProvider,
         IngestionWorkflowFactory workflowFactory,
         InMemoryIngestionWorkflowStore store,
-        IFabricRawSourceReader rawSourceReader,
-        IVectorKnowledgeWriter vectorKnowledgeWriter,
+        IngestionSourceDocumentLoader documentLoader,
+        IngestionSourceDocumentCache sourceDocumentCache,
         IHostApplicationLifetime applicationLifetime,
         ILogger<IngestionWorkflowService> logger,
         DataSourceOptions? dataSourceOptions = null,
@@ -46,10 +46,10 @@ public sealed class IngestionWorkflowService
         _agentProvider = agentProvider;
         _workflowFactory = workflowFactory;
         _store = store;
-        _rawSourceReader = rawSourceReader;
+        _documentLoader = documentLoader;
+        _sourceDocumentCache = sourceDocumentCache;
         _rawSourceWriter = rawSourceWriter;
         _dataSourceMode = dataSourceOptions?.Mode ?? DataSourceMode.Local;
-        _vectorKnowledgeWriter = vectorKnowledgeWriter;
         _applicationLifetime = applicationLifetime;
         _logger = logger;
     }
@@ -70,12 +70,23 @@ public sealed class IngestionWorkflowService
         }
 
         IReadOnlyList<RawKnowledgeItem> items =
-            await _rawSourceReader.ReadAsync(sourceId, cancellationToken).ConfigureAwait(false);
+            await _documentLoader.LoadAsync(sourceId.Trim(), cancellationToken).ConfigureAwait(false);
 
         if (items.Count == 0)
         {
             throw new KeyNotFoundException(
                 $"Source '{sourceId}' has no raw R&D knowledge items.");
+        }
+
+        if (_dataSourceMode == DataSourceMode.Fabric && _rawSourceWriter is not null)
+        {
+            _logger.LogInformation(
+                "Fabric mode: uploading {Count} items to OneLake for source {SourceId}.",
+                items.Count,
+                sourceId);
+            await _rawSourceWriter
+                .WriteAsync(sourceId.Trim(), items, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         var execution = new WorkflowExecution
@@ -86,22 +97,12 @@ public sealed class IngestionWorkflowService
             WorkflowCheckpointManager = CheckpointManager.CreateInMemory()
         };
         _store.Save(execution);
+        _sourceDocumentCache.Save(executionId, items);
 
-        List<ChatMessage> input;
-        if (_dataSourceMode == DataSourceMode.Fabric && _rawSourceWriter is not null)
-        {
-            _logger.LogInformation(
-                "Fabric mode: uploading {Count} items to OneLake for source {SourceId}.",
-                items.Count, sourceId);
-            await _rawSourceWriter
-                .WriteAsync(sourceId.Trim(), items, cancellationToken)
-                .ConfigureAwait(false);
-            input = WorkflowPayloadBuilder.CreateFabricParamsMessage(sourceId.Trim(), executionId);
-        }
-        else
-        {
-            input = WorkflowPayloadBuilder.CreateInitialMessages(sourceId.Trim(), executionId, items);
-        }
+        List<ChatMessage> input = WorkflowPayloadBuilder.CreateInlineIngestionMessage(
+            sourceId.Trim(),
+            executionId,
+            items);
 
         RunInBackground(executionId, input);
 
@@ -202,11 +203,6 @@ public sealed class IngestionWorkflowService
                     .ConfigureAwait(false);
 
                 await ResumeRunAsync(execution, run, approved, reviewerComment, stopping).ConfigureAwait(false);
-
-                if (execution.Status == WorkflowStatus.Completed)
-                {
-                    await PersistCuratedKnowledgeAsync(execution, stopping).ConfigureAwait(false);
-                }
             }
             catch (OperationCanceledException) when (stopping.IsCancellationRequested)
             {
@@ -218,20 +214,6 @@ public sealed class IngestionWorkflowService
                 MarkFailed(execution, ex.Message);
             }
         }, CancellationToken.None);
-    }
-
-    private async Task PersistCuratedKnowledgeAsync(WorkflowExecution execution, CancellationToken cancellationToken)
-    {
-        string curatedKnowledgeJson = GetOutput(execution, MetadataLinkingKey) ?? string.Empty;
-
-        await _vectorKnowledgeWriter
-            .WriteAsync(execution.CorrelationId, execution.ExecutionId, curatedKnowledgeJson, cancellationToken)
-            .ConfigureAwait(false);
-
-        _logger.LogInformation(
-            "Curated knowledge persisted to the Vector DB for source {SourceId}, execution {ExecutionId}.",
-            execution.CorrelationId,
-            execution.ExecutionId);
     }
 
     private async Task RunUntilDoneAsync(
@@ -457,6 +439,7 @@ public sealed class IngestionWorkflowService
         execution.CurrentAgent = null;
         execution.PendingApprovalRequest = null;
         execution.PendingCheckpoint = null;
+        _sourceDocumentCache.Remove(execution.ExecutionId);
         Touch(execution);
     }
 
@@ -616,6 +599,7 @@ public sealed class IngestionWorkflowService
         execution.FailureReason = reason;
         execution.PendingApprovalRequest = null;
         execution.PendingCheckpoint = null;
+        _sourceDocumentCache.Remove(execution.ExecutionId);
         Touch(execution);
     }
 

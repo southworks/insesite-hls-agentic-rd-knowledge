@@ -7,7 +7,7 @@ Business and functional reference for the HLS Agentic R&D Knowledge Mining solut
 ## TL;DR
 
 - The architecture is **not** a single continuous end-to-end pipeline. It is split into **two independent blocks**.
-- **Block 1 — Ingestion:** reads **raw R&D knowledge from Microsoft Fabric**, then Ingestion & Translation -> Metadata & Linking -> human approval gate.
+- **Block 1 — Ingestion:** reads **raw R&D knowledge from Microsoft Fabric**, then Ingestion & Translation -> Metadata & Linking (indexes to Vector DB) -> human approval gate.
 - **Block 2 — Querying:** reads from **Vector DB** (Cohere Embed query -> Vector DB -> Cohere Rerank -> Top-N). It runs as **two processes**:
   - **Process 1 — Search & Chat:** the user asks questions and the agent responds (interactive loop, no gate).
   - **Process 2 — Curate:** a **"Curate" button** in the UI triggers the Curation & Compliance agent, which takes **all the Search & Chat responses** as input, produces flags and captured decisions, and presents the result to the user for **approve / deny**.
@@ -22,8 +22,7 @@ Microsoft Fabric (raw R&D knowledge)
         │  read
         ▼
 BLOCK 1 — Ingestion
-  Ingestion & Translation ─► Metadata & Linking ─► [Approval gate: Knowledge Curator]
-        │  on approve, write
+  Ingestion & Translation ─► Metadata & Linking ─► Vector DB write ─► [Approval gate: Knowledge Curator]
         ▼
    ┌──────────────────────────────┐
    │          Vector DB           │  ◄── bridge between blocks
@@ -53,7 +52,7 @@ The blocks are decoupled. Block 1 populates the Vector DB; Block 2 consumes it. 
 | **Purpose** | Read raw R&D knowledge from Fabric, normalize and structure it, and persist it for retrieval | Let users query the knowledge (Search & Chat) and, on demand, curate/compliance-review the answers |
 | **Input source** | **Microsoft Fabric** (raw R&D knowledge) | **Vector DB** (curated, embedded content from Block 1) |
 | **Agents** | Ingestion & Translation -> Metadata & Linking | Search & Chat (process 1) -> Curation & Compliance (process 2) |
-| **Human gate** | Knowledge Curator approves/denies the ingested + linked content | Compliance Reviewer approves/denies the curation result |
+| **Human gate** | Knowledge Curator approves/denies the ingested + linked content (indexing already completed) | Compliance Reviewer approves/denies the curation result |
 | **Output** | Curated, embedded knowledge **saved into Vector DB** | Grounded answers with citations/lineage; curation flags and captured decisions |
 | **Trigger** | New raw material available in Fabric, scheduled run, or manual load | A researcher asks questions; then a user-initiated "Curate" action |
 
@@ -70,7 +69,9 @@ flowchart TB
         ING["Ingestion & Translation"]
         META["Metadata & Linking"]
         HITL1["Knowledge Curator<br/>Approve / Deny"]
-        ING --> META --> HITL1
+        ING --> META
+        META -->|"index via MCP"| VDB
+        META --> HITL1
     end
 
     VDB[("Vector DB<br/>curated + embedded knowledge")]
@@ -100,7 +101,7 @@ flowchart TB
 
     FAB --> ORCH
     ORCH --> block1
-    HITL1 -->|"on approve, write"| VDB
+    HITL1 -->|"approve / deny run"| ORCH
     VDB --> SRCH
     block1 --> rag
     block2 --> rag
@@ -135,7 +136,7 @@ Every agent shares the same technical stack:
 | Agent                        | Block | Business responsibility                                                              |
 |------------------------------|-------|--------------------------------------------------------------------------------------|
 | **Ingestion & Translation**  | 1     | Read raw knowledge from Fabric; de-duplicate and normalize formats                   |
-| **Metadata & Linking**       | 1     | Extract entities and versions; link documents to datasets and studies (RAG)          |
+| **Metadata & Linking**       | 1     | Extract entities and versions; link documents to datasets and studies (RAG); index content into Vector DB via MCP |
 | **Search & Chat**            | 2     | Retrieve from the Vector DB with grounded citations and lineage; answer queries (RAG) |
 | **Curation & Compliance**    | 2     | Receive the Search & Chat responses; flag gaps and sensitive content; capture decisions |
 
@@ -144,7 +145,7 @@ Every agent shares the same technical stack:
 | Agent | Actions |
 |-------|---------|
 | **Ingestion & Translation** | Read raw R&D knowledge from Fabric · De-duplicate, normalize formats |
-| **Metadata & Linking** | Extract entities & versions · Link docs <-> datasets <-> studies |
+| **Metadata & Linking** | Extract entities & versions · Link docs <-> datasets <-> studies · Index embeddable content into Vector DB |
 | **Search & Chat** | Retrieve with grounded citations & lineage · Answer queries; draft summaries |
 | **Curation & Compliance** | Flag gaps, sensitive content · Capture decisions over the collected chat responses |
 
@@ -156,7 +157,8 @@ Every agent shares the same technical stack:
 
 ### Vector DB — the bridge between blocks
 
-- At the **end of Block 1**, after the Knowledge Curator approves, the agent output (normalized content + extracted entities/versions + document<->dataset<->study links, embedded via **Cohere Embed**) is **saved into Vector DB**.
+- After **Metadata & Linking** completes, the agent output (normalized content + extracted entities/versions + document<->dataset<->study links, embedded via **Cohere Embed**) is **saved into Vector DB** via the `index_rd_knowledge` MCP tool.
+- The **Knowledge Curator** gate follows indexing and approves or denies the ingestion run; denial does not roll back indexed content (removal is a future iteration).
 - **Block 2 reads from the Vector DB.** It is the system of record for retrieval and the integration point between the two blocks.
 - Because the Vector DB is durable and independent, Block 2 can run at any time against the accumulated knowledge — no need to re-run ingestion to query.
 
@@ -207,7 +209,7 @@ Block 2 is not a single linear flow. It is two distinct, user-driven processes t
 
 | Gate | Block | Reviews | What it approves |
 |------|-------|---------|------------------|
-| **Block 1 gate** | 1 | Ingestion & Translation + Metadata & Linking output | Quality of ingested, normalized, and linked content **before it is written to the Vector DB** |
+| **Block 1 gate** | 1 | Ingestion & Translation + Metadata & Linking output | Quality of ingested, normalized, and linked content **after it has been indexed to the Vector DB** |
 | **Block 2 gate** | 2 | Curation & Compliance output (built from all Search & Chat responses) | Curation flags and captured decisions before they are finalized |
 
 Search & Chat (Process 1) has no gate; the only Block 2 gate is on the curation result (Process 2). No sensitive content is finalized autonomously.
@@ -220,8 +222,8 @@ Search & Chat (Process 1) has no gate; the only Block 2 gate is on the curation 
 
 1. **Orchestrator** starts Block 1 for the results of study **ABC-2024**.
 2. **Ingestion & Translation** reads the raw study material **from Fabric**, de-duplicates documents, and normalizes formats (PDFs, tables, ELN records).
-3. **Metadata & Linking** extracts entities (compound, phase, endpoint), versions, and links between the report, datasets, and related protocols.
-4. The **Knowledge Curator** approves at the **Block 1 gate** -> the curated, embedded knowledge is **saved into the Vector DB**.
+3. **Metadata & Linking** extracts entities (compound, phase, endpoint), versions, and links between the report, datasets, and related protocols, then **indexes embeddable content into the Vector DB**.
+4. The **Knowledge Curator** reviews at the **Block 1 gate** and approves or denies the ingestion run.
 
 ### Block 2 — Querying (runs independently, any time)
 
@@ -251,15 +253,15 @@ Block 2 here runs against knowledge already in the Vector DB; it does not depend
 | **Integrations** | Microsoft Fabric (raw source), Vector DB, Azure MCP |
 | **AI** | LLM (Cohere Command A+) + RAG (Embed/Rerank) + memory + tools (MCP) |
 | **Operations** | Traceability, evaluation, and compliance by design; App Insights and tracing required |
-| **Human** | Two independent approval gates: Knowledge Curator (Block 1, before writing to Vector DB) and Compliance Reviewer (Block 2, on the curation result) |
+| **Human** | Two independent approval gates: Knowledge Curator (Block 1, after Vector DB indexing) and Compliance Reviewer (Block 2, on the curation result) |
 
 ### Implementation checklist
 
 1. **Foundry:** provision the project; deploy Cohere Command A+, Embed, and Rerank; configure Agent Service.
 2. **Agent Framework:** define the orchestrator and two **independent** workflows (Block 1 and Block 2) plus the four sub-agents.
 3. **Fabric (source):** connect Block 1's Ingestion & Translation agent to read raw R&D knowledge from Fabric.
-4. **Vector DB (bridge):** create the vector index (Azure AI Search or other); on Block 1 approval, embed and write curated content; Block 2 reads from it (Embed -> Vector DB -> Rerank -> Top-N).
+4. **Vector DB (bridge):** create the vector index (Azure AI Search or other); metadata-linking agent embeds and writes curated content via MCP; Block 2 reads from it (Embed -> Vector DB -> Rerank -> Top-N).
 5. **Block 2 processes:** implement Process 1 (interactive Search & Chat loop) and Process 2 (UI "Curate" button -> Curation & Compliance over accumulated chat responses).
 6. **MCP:** expose tools for Fabric reads, Vector DB read/write, and curation/compliance actions.
-7. **HITL:** implement two independent approve/deny gates — Knowledge Curator closing Block 1 (before writing to the Vector DB) and Compliance Reviewer closing Block 2 (on the curation result).
+7. **HITL:** implement two independent approve/deny gates — Knowledge Curator closing Block 1 (after Vector DB indexing) and Compliance Reviewer closing Block 2 (on the curation result).
 8. **Governance:** enable App Insights, tracing, evaluations, and Entra ID from the first deployment.

@@ -120,7 +120,7 @@ Implemented in `rd-knowledge-mining/backend/src/RndKnowledgeMining.Mcp/` (requir
 | `get_policies_by_refs` | Look up policies by reference code (`HLS-TRIAL-300`, `HLS-LIC-200`, …) |
 | `flag_sensitive_content` | Assess chat text for PHI/PII/confidential partner content (`sessionId`, `text`) |
 
-The API host still uses `StubVectorKnowledgeRetriever` until wired to the same index; agents can also retrieve via MCP during Foundry runs.
+The API host retrieves via the same `KnowledgeIndexAdapter` as MCP `search_rd_knowledge`. Agents can still call MCP tools for supplemental retrieval (for example lineage) during Foundry runs.
 
 ## Governance
 

@@ -6,7 +6,7 @@ namespace CohereRndKnowledgeMining.Api.Host.Controllers;
 
 /// <summary>
 /// Block 2 (Query). Process 1: interactive Search &amp; Chat (no gate). Process 2: on-demand Curate
-/// that runs the curation-compliance workflow over the accumulated chat responses and pauses at the
+/// that runs the curation-compliance workflow over accumulated chat responses and pauses at the
 /// Compliance Reviewer gate.
 /// </summary>
 [ApiController]

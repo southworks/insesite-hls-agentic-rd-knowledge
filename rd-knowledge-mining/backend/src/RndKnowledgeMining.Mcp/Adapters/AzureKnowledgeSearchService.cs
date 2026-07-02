@@ -14,6 +14,22 @@ public interface IKnowledgeSearchService
         string sessionId,
         string passageId,
         CancellationToken cancellationToken = default);
+
+    Task<IndexRdKnowledgeResponse> IndexAsync(
+        string sessionId,
+        string entityId,
+        string entityType,
+        string title,
+        string chunkText,
+        IReadOnlyList<string>? linkedEntities = null,
+        string? lineageNarrative = null,
+        string? passageId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<IndexRdKnowledgeBatchResponse> IndexBatchAsync(
+        string sessionId,
+        IReadOnlyList<IndexRdKnowledgeBatchItem> items,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IPolicySearchService
@@ -49,4 +65,31 @@ public sealed class AzureKnowledgeSearchService : IKnowledgeSearchService
         string passageId,
         CancellationToken cancellationToken = default) =>
         _knowledgeIndexAdapter.GetLineageAsync(sessionId, passageId, cancellationToken);
+
+    public Task<IndexRdKnowledgeResponse> IndexAsync(
+        string sessionId,
+        string entityId,
+        string entityType,
+        string title,
+        string chunkText,
+        IReadOnlyList<string>? linkedEntities = null,
+        string? lineageNarrative = null,
+        string? passageId = null,
+        CancellationToken cancellationToken = default) =>
+        _knowledgeIndexAdapter.IndexAsync(
+            sessionId,
+            entityId,
+            entityType,
+            title,
+            chunkText,
+            linkedEntities,
+            lineageNarrative,
+            passageId,
+            cancellationToken);
+
+    public Task<IndexRdKnowledgeBatchResponse> IndexBatchAsync(
+        string sessionId,
+        IReadOnlyList<IndexRdKnowledgeBatchItem> items,
+        CancellationToken cancellationToken = default) =>
+        _knowledgeIndexAdapter.IndexBatchAsync(sessionId, items, cancellationToken);
 }

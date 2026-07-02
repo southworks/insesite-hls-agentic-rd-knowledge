@@ -6,8 +6,10 @@ ENV ASPNETCORE_URLS=http://+:8080
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 COPY ["backend/src/Api.Host/CohereRndKnowledgeMining.Api.Host.csproj", "backend/src/Api.Host/"]
+COPY ["backend/src/RndKnowledgeMining.Mcp/RndKnowledgeMining.Mcp.csproj", "backend/src/RndKnowledgeMining.Mcp/"]
 RUN dotnet restore "backend/src/Api.Host/CohereRndKnowledgeMining.Api.Host.csproj"
 COPY backend/src/Api.Host/ backend/src/Api.Host/
+COPY backend/src/RndKnowledgeMining.Mcp/ backend/src/RndKnowledgeMining.Mcp/
 COPY backend/dataset-seed/ dataset-seed/
 WORKDIR /src/backend/src/Api.Host
 RUN dotnet publish "CohereRndKnowledgeMining.Api.Host.csproj" -c Release -o /app/publish /p:UseAppHost=false

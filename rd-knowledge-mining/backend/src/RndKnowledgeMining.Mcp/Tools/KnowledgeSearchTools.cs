@@ -8,10 +8,14 @@ namespace RndKnowledgeMining.Mcp.Tools;
 public sealed class KnowledgeSearchTools
 {
     private readonly IKnowledgeSearchService _knowledgeSearchService;
+    private readonly INormalizedDocumentStore _normalizedDocumentStore;
 
-    public KnowledgeSearchTools(IKnowledgeSearchService knowledgeSearchService)
+    public KnowledgeSearchTools(
+        IKnowledgeSearchService knowledgeSearchService,
+        INormalizedDocumentStore normalizedDocumentStore)
     {
         _knowledgeSearchService = knowledgeSearchService;
+        _normalizedDocumentStore = normalizedDocumentStore;
     }
 
     [McpServerTool]
@@ -39,5 +43,92 @@ public sealed class KnowledgeSearchTools
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
         ArgumentException.ThrowIfNullOrWhiteSpace(passageId);
         return _knowledgeSearchService.GetLineageAsync(sessionId, passageId, cancellationToken);
+    }
+
+    [McpServerTool]
+    [Description("Indexes a metadata-linking chunk into the R&D knowledge evidence index using Foundry embeddings.")]
+    public Task<IndexRdKnowledgeResponse> IndexRdKnowledge(
+        string sessionId,
+        [Description("Canonical entity id associated with this chunk (for example doc-pmc6889286, TRIAL-MARIPOSA, DATASET-GSE323366).")]
+        string entityId,
+        [Description("Entity type for retrieval filters and lineage (for example document, trial, dataset, protocol, regulatory).")]
+        string entityType,
+        [Description("Human-readable title for the source document or entity.")]
+        string title,
+        [Description("Embeddable chunk text to persist in the Vector DB index.")]
+        string chunkText,
+        [Description("Optional passage identifier. When omitted, a deterministic value is generated from entityId and chunk content.")]
+        string? passageId = null,
+        [Description("Optional linked entity ids used by get_knowledge_lineage to resolve document-to-dataset-to-study traceability.")]
+        IReadOnlyList<string>? linkedEntities = null,
+        [Description("Optional lineage narrative to store alongside linked entities for traceability.")]
+        string? lineageNarrative = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(entityType);
+        ArgumentException.ThrowIfNullOrWhiteSpace(title);
+        ArgumentException.ThrowIfNullOrWhiteSpace(chunkText);
+
+        return _knowledgeSearchService.IndexAsync(
+            sessionId,
+            entityId,
+            entityType,
+            title,
+            chunkText,
+            linkedEntities,
+            lineageNarrative,
+            passageId,
+            cancellationToken);
+    }
+
+    [McpServerTool]
+    [Description("Indexes multiple metadata-linking chunks into the R&D knowledge evidence index in a single batch call.")]
+    public Task<IndexRdKnowledgeBatchResponse> IndexRdKnowledgeBatch(
+        string sessionId,
+        [Description("List of chunks and metadata to index in one request.")]
+        IReadOnlyList<IndexRdKnowledgeBatchItem> items,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
+        ArgumentNullException.ThrowIfNull(items);
+        if (items.Count == 0)
+        {
+            throw new ArgumentException("At least one indexing item is required.", nameof(items));
+        }
+
+        return _knowledgeSearchService.IndexBatchAsync(sessionId, items, cancellationToken);
+    }
+
+    [McpServerTool]
+    [Description("Lists normalized ingestion documents persisted for a Block 1 batch. Returns documentId metadata only; use read_normalized_document to fetch each document JSON.")]
+    public Task<ListNormalizedDocumentsResponse> ListNormalizedDocuments(
+        [Description("Ingestion source/batch id (e.g. case-01-human-review).")]
+        string sourceId,
+        [Description("Workflow execution id for the ingestion run.")]
+        string executionId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
+        return _normalizedDocumentStore.ListAsync(sourceId, executionId, cancellationToken);
+    }
+
+    [McpServerTool]
+    [Description("Reads one normalized ingestion document JSON persisted after ingestion-translation completes.")]
+    public Task<ReadNormalizedDocumentResponse> ReadNormalizedDocument(
+        [Description("Ingestion source/batch id (e.g. case-01-human-review).")]
+        string sourceId,
+        [Description("Workflow execution id for the ingestion run.")]
+        string executionId,
+        [Description("Canonical documentId from list_normalized_documents (e.g. doc-pmc5447962).")]
+        string documentId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(documentId);
+        return _normalizedDocumentStore.ReadAsync(sourceId, executionId, documentId, cancellationToken);
     }
 }

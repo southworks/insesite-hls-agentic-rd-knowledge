@@ -13,7 +13,7 @@
     <a href="/" class="back-link" @onclick="GoHome" @onclick:preventDefault>← Portfolio</a>
     <PageMasthead Kicker="Ingestion"
                   Title="@(_studyTitle ?? StudyId)"
-                  Subtitle="Ingestion & Translation → Metadata & Linking → Knowledge Curator → Vector DB">
+                  Subtitle="Ingestion & Translation → Metadata & Linking (Vector DB) → Knowledge Curator">
         <LoadingButton IsLoading="WorkspaceState.IsBusy"
                        Disabled="!WorkspaceState.CanStartWorkflow"
                        OnClick="StartWorkflowAsync">
@@ -55,8 +55,8 @@ else
                                     Title="Knowledge Curator"
                                     StatusLabel="@GetHitlStatus()"
                                     StatusCssClass="@(WorkspaceState.CanSubmitDecision ? "status-warning" : "status-neutral")">
-                <HumanReviewPanel Title="Knowledge Curator — approve before Vector DB write"
-                                  Description="Review normalized and linked content before it is embedded and saved to the Vector DB."
+                <HumanReviewPanel Title="Knowledge Curator — review linking output"
+                                  Description="Metadata & Linking has already indexed embeddable content to the Vector DB. Approve or deny this ingestion run."
                                   Decision="WorkspaceState.Progress?.HumanDecision"
                                   CanSubmit="WorkspaceState.CanSubmitDecision"
                                   IsBusy="WorkspaceState.IsBusy"

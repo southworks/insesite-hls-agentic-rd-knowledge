@@ -8,7 +8,7 @@ This repository defines a compliance-safe dataset for an agentic research knowle
 
 HLS is **two sequential phases**, each closed by a distinct human actor (see [workflow-summary.md](workflow-summary.md)). Each is started by a controlled UI action, not a free-form chatbot:
 
-- **Phase 1 — Ingestion & structuring** — upload documents → ingestion & translation → metadata extraction & linking → **knowledge curator approves** → persistence into the CMS/knowledge base.
+- **Phase 1 — Ingestion & structuring** — upload documents → ingestion & translation → metadata extraction & linking (indexes to Vector DB) → **knowledge curator approves or denies the run**.
 - **Phase 2 — Search & compliance** — UI query → search & chat retrieval → curation & compliance review → **compliance owner approves** → grounded answer with citations.
 
 The headline demo is stateful: **search an empty KB → ingest → search again** and the grounded answer now appears.

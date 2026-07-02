@@ -37,6 +37,45 @@ public sealed class KnowledgeLineageResponse
     public required string Lineage { get; init; }
 }
 
+public sealed class IndexRdKnowledgeResponse
+{
+    public required string SessionId { get; init; }
+
+    public required string EntityId { get; init; }
+
+    public required string PassageId { get; init; }
+
+    public bool Indexed { get; init; }
+}
+
+public sealed class IndexRdKnowledgeBatchItem
+{
+    public required string EntityId { get; init; }
+
+    public required string EntityType { get; init; }
+
+    public required string Title { get; init; }
+
+    public required string ChunkText { get; init; }
+
+    public string? PassageId { get; init; }
+
+    public IReadOnlyList<string>? LinkedEntities { get; init; }
+
+    public string? LineageNarrative { get; init; }
+}
+
+public sealed class IndexRdKnowledgeBatchResponse
+{
+    public required string SessionId { get; init; }
+
+    public required int Requested { get; init; }
+
+    public required int Indexed { get; init; }
+
+    public required IReadOnlyList<IndexRdKnowledgeResponse> Results { get; init; }
+}
+
 public sealed class PolicyEntry
 {
     public required string PolicyRef { get; init; }

@@ -1,8 +1,8 @@
 {
   "name": "metadata-linking-agent",
-  "description": "Extracts entities and versions from ingested R&D knowledge, links documents to datasets and studies, and prepares embedded content for the Vector DB.",
+  "description": "Extracts entities and versions from ingested R&D knowledge, links documents to datasets and studies, and indexes embeddable content into the Vector DB.",
   "instructionsFile": "instructions.md",
-  "outputSchemaFile": "../../shared/metadata-linking-structured-output.schema.json",
+  "outputFormat": "instructions_only",
   "allowedDecisions": [
     "Linking Complete",
     "Human Review Needed",

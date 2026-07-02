@@ -79,3 +79,18 @@ public sealed class WorkflowApprovalRequest
 
     public string? ReviewerComment { get; init; }
 }
+
+public sealed class VectorDbStoreSummaryResponse
+{
+    public int TotalStudies { get; init; }
+
+    public int TotalDocuments { get; init; }
+
+    public int TotalEntities { get; init; }
+
+    public int TotalLinks { get; init; }
+
+    public DateTimeOffset? LastIngestionAt { get; init; }
+
+    public string? LastIngestedStudyId { get; init; }
+}

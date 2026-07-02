@@ -2,10 +2,19 @@ using CohereRndKnowledgeMining.Api.Host.Options;
 using CohereRndKnowledgeMining.Api.Host.Services;
 using CohereRndKnowledgeMining.Api.Host.Services.Integrations;
 using CohereRndKnowledgeMining.Api.Host.Workflow;
+using RndKnowledgeMining.Mcp;
+using RndKnowledgeMining.Mcp.Adapters;
+using System.Text.Json.Serialization;
+using ApiFabricLakehouseClient = CohereRndKnowledgeMining.Api.Host.Services.Integrations.FabricLakehouseClient;
+using McpFabricLakehouseOptions = RndKnowledgeMining.Mcp.Options.FabricLakehouseOptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 builder.Services.Configure<AzureFoundryOptions>(options =>
 {
@@ -35,11 +44,20 @@ if (dsOptions.Mode == DataSourceMode.Fabric)
 
     builder.Services.AddSingleton(fabOpts);
     builder.Services.AddSingleton(sp =>
-        FabricLakehouseClient.Create(fabOpts, sp.GetRequiredService<ILogger<FabricLakehouseClient>>()));
-    builder.Services.AddSingleton<IFabricRawSourceReader, LocalRawSourceReader>();
+        ApiFabricLakehouseClient.Create(fabOpts, sp.GetRequiredService<ILogger<ApiFabricLakehouseClient>>()));
+    builder.Services.AddSingleton<IFabricRawSourceReader, FabricRawSourceReader>();
     builder.Services.AddSingleton<IFabricRawSourceWriter, FabricRawSourceWriter>();
     builder.Services.AddSingleton(dsOptions);
     builder.Services.Configure<DatasetOptions>(builder.Configuration.GetSection(DatasetOptions.SectionName));
+
+    var mcpFabricOpts = builder.Configuration.GetSection("DataSource:FabricLakehouse").Get<McpFabricLakehouseOptions>()
+        ?? new McpFabricLakehouseOptions();
+    builder.Services.Configure<McpFabricLakehouseOptions>(
+        builder.Configuration.GetSection("DataSource:FabricLakehouse"));
+    builder.Services.AddSingleton(sp =>
+        RndKnowledgeMining.Mcp.Adapters.FabricLakehouseClient.Create(
+            mcpFabricOpts,
+            sp.GetRequiredService<ILogger<RndKnowledgeMining.Mcp.Adapters.FabricLakehouseClient>>()));
 }
 else
 {
@@ -52,16 +70,19 @@ else
     }
 
     builder.Services.Configure<DatasetOptions>(builder.Configuration.GetSection(DatasetOptions.SectionName));
-    builder.Services.AddSingleton<IFabricRawSourceReader, LocalRawSourceReader>();
     builder.Services.AddSingleton(dsOptions);
 }
+
+builder.Services.AddNormalizedDocumentStore(builder.Configuration);
+builder.Services.AddSingleton<IngestionSourceDocumentCache>();
+builder.Services.AddSingleton<IngestionSourceDocumentLoader>();
 
 // Foundry agents shared by both blocks.
 builder.Services.AddSingleton<FoundryAgentProvider>();
 
-// Stub integrations for Vector DB (TODO: replace with real implementations).
-builder.Services.AddSingleton<IVectorKnowledgeWriter, StubVectorKnowledgeWriter>();
-builder.Services.AddSingleton<IVectorKnowledgeRetriever, StubVectorKnowledgeRetriever>();
+// Vector DB retrieval (shared KnowledgeIndexAdapter with MCP search_rd_knowledge).
+builder.Services.AddKnowledgeSearchServices(builder.Configuration);
+builder.Services.AddSingleton<IVectorKnowledgeRetriever, AzureVectorKnowledgeRetriever>();
 
 // Block 1 - Ingestion.
 builder.Services.AddSingleton<IngestionWorkflowFactory>();

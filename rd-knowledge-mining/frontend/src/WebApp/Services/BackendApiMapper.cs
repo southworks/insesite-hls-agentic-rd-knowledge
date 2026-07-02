@@ -4,6 +4,7 @@ using Cohere.AgenticRDKnowledge.Shared.Contracts.Backend;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Ingestion;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Query;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Studies;
+using Cohere.AgenticRDKnowledge.Shared.Contracts.VectorDb;
 
 namespace Cohere.AgenticRDKnowledge.WebApp.Services;
 
@@ -87,6 +88,15 @@ public static class BackendApiMapper
             null,
             cached.CurateEnabled && cached.Messages.Count > 0 ? ["StartCuration"] : []);
     }
+
+    public static VectorDbStoreSummary ToVectorDbSummary(VectorDbStoreSummaryResponse response) =>
+        new(
+            response.TotalStudies,
+            response.TotalDocuments,
+            response.TotalEntities,
+            response.TotalLinks,
+            response.LastIngestionAt,
+            response.LastIngestedStudyId);
 
     public static ChatMessage ToAssistantMessage(ChatAnswerResponse response)
     {

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
+using CohereRndKnowledgeMining.Api.Host.Workflow;
 using Microsoft.Agents.AI.Workflows;
 
 namespace CohereRndKnowledgeMining.Api.Host.Services;

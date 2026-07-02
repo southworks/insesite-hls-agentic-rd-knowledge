@@ -1,6 +1,8 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using CohereRndKnowledgeMining.Api.Host.Workflow;
 using Microsoft.Extensions.AI;
+using RndKnowledgeMining.Mcp.Adapters;
 
 namespace CohereRndKnowledgeMining.Api.Host.Services;
 
@@ -14,45 +16,95 @@ public static class WorkflowPayloadBuilder
         WriteIndented = false
     };
 
-    /// <summary>Block 1 entry payload: the raw R&D knowledge items read from Fabric.</summary>
-    public static List<ChatMessage> CreateInitialMessages(
+    /// <summary>
+    /// Foundry json_object agents reject input unless the message text contains "json".
+    /// </summary>
+    private const string JsonObjectInputPrefix =
+        "Process the following JSON workflow input and respond with a single JSON object.\n\n";
+
+    /// <summary>Block 1 entry payload: preloaded documents for inline normalization (no MCP reads required).</summary>
+    public static List<ChatMessage> CreateInlineIngestionMessage(
         string sourceId,
         string executionId,
         IReadOnlyList<RawKnowledgeItem> items)
     {
-        var payload = new
-        {
-            sourceId,
-            executionId,
-            items = items.Select(item => new
+        ArgumentNullException.ThrowIfNull(items);
+
+        var documents = items
+            .Select(item => new
             {
-                itemId = item.ItemId,
-                title = item.Title,
+                fileName = item.Title,
                 sourceType = item.SourceType,
                 sourcePath = item.SourcePath,
-                content = item.Content
+                content = RawDocumentContentPreparer.PrepareForAgent(item.Title, item.Content)
             })
+            .ToList();
+
+        var payload = new
+        {
+            mode = "inline",
+            sourceId,
+            executionId,
+            documentsReceived = documents.Count,
+            documents
         };
 
-        return [CreateJsonMessage(payload)];
+        return [CreateJsonInputMessage(JsonSerializer.Serialize(payload, CompactJsonOptions))];
     }
 
-    /// <summary>
-    /// Block 1 entry payload when data has been uploaded to Fabric. The agent receives
-    /// only a reference pointer and must use MCP tools to retrieve the raw documents.
-    /// </summary>
-    public static List<ChatMessage> CreateFabricParamsMessage(
+    /// <summary>Block 1 slim handoff to metadata-linking after normalized documents are persisted.</summary>
+    public static ChatMessage CreateMetadataLinkingHandoffMessage(
+        string correlationId,
+        string executionId,
+        string manifestJson)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(correlationId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(manifestJson);
+
+        using JsonDocument manifestDocument = JsonDocument.Parse(manifestJson);
+        if (manifestDocument.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidOperationException("Normalized manifest must be a JSON object.");
+        }
+
+        JsonObject merged = new()
+        {
+            ["correlationId"] = correlationId,
+            ["sourceId"] = correlationId,
+            ["executionId"] = executionId,
+            ["priorAgent"] = AgentWorkflowAgents.IngestionTranslation,
+            ["handoffMode"] = "normalized-storage"
+        };
+
+        foreach (JsonProperty property in manifestDocument.RootElement.EnumerateObject())
+        {
+            if (property.NameEquals("correlationId")
+                || property.NameEquals("sourceId")
+                || property.NameEquals("executionId")
+                || property.NameEquals("priorAgent"))
+            {
+                continue;
+            }
+
+            merged[property.Name] = JsonNode.Parse(property.Value.GetRawText());
+        }
+
+        return CreateJsonInputMessage(merged.ToJsonString(CompactJsonOptions));
+    }
+
+    /// <summary>Block 1 legacy entry payload: a location pointer for MCP raw reads.</summary>
+    public static List<ChatMessage> CreateLocationPointerMessage(
         string sourceId,
         string executionId)
     {
         var payload = new
         {
             sourceId,
-            executionId,
-            dataSource = "fabric"
+            executionId
         };
 
-        return [CreateJsonMessage(payload)];
+        return [CreateJsonInputMessage(JsonSerializer.Serialize(payload, CompactJsonOptions))];
     }
 
     /// <summary>Block 2 Curate entry payload: all accumulated Search &amp; Chat responses.</summary>
@@ -81,7 +133,40 @@ public static class WorkflowPayloadBuilder
         ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
         ArgumentNullException.ThrowIfNull(previousResult);
 
+        if (!string.IsNullOrWhiteSpace(previousResult.RawPayloadJson))
+        {
+            return CreateRichAgentHandoffMessage(correlationId, executionId, previousResult.AgentName, previousResult);
+        }
+
         return CreateJsonMessage(BuildTransitionPayload(correlationId, executionId, previousResult));
+    }
+
+    /// <summary>Block 1 handoff: merge workflow context with the full prior-agent JSON payload.</summary>
+    public static ChatMessage CreateRichAgentHandoffMessage(
+        string correlationId,
+        string executionId,
+        string priorAgentName,
+        AgentStepResult priorResult)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(correlationId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(executionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(priorAgentName);
+        ArgumentNullException.ThrowIfNull(priorResult);
+
+        if (string.IsNullOrWhiteSpace(priorResult.RawPayloadJson))
+        {
+            throw new ArgumentException(
+                "Rich agent handoff requires RawPayloadJson on the prior step result.",
+                nameof(priorResult));
+        }
+
+        string json = MergeWorkflowContext(
+            correlationId,
+            executionId,
+            priorAgentName,
+            priorResult.RawPayloadJson);
+
+        return CreateJsonInputMessage(json);
     }
 
     private static object BuildTransitionPayload(
@@ -104,9 +189,48 @@ public static class WorkflowPayloadBuilder
             capturedDecisions = previousResult.CapturedDecisions
         };
 
+    private static string MergeWorkflowContext(
+        string correlationId,
+        string executionId,
+        string priorAgentName,
+        string rawPayloadJson)
+    {
+        using JsonDocument document = JsonDocument.Parse(rawPayloadJson);
+        if (document.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidOperationException("Rich agent payload must be a JSON object.");
+        }
+
+        JsonObject merged = new()
+        {
+            ["correlationId"] = correlationId,
+            ["sourceId"] = correlationId,
+            ["executionId"] = executionId,
+            ["priorAgent"] = priorAgentName
+        };
+
+        foreach (JsonProperty property in document.RootElement.EnumerateObject())
+        {
+            if (property.NameEquals("correlationId")
+                || property.NameEquals("sourceId")
+                || property.NameEquals("executionId")
+                || property.NameEquals("priorAgent"))
+            {
+                continue;
+            }
+
+            merged[property.Name] = JsonNode.Parse(property.Value.GetRawText());
+        }
+
+        return merged.ToJsonString(CompactJsonOptions);
+    }
+
     private static ChatMessage CreateJsonMessage(object payload)
     {
         string json = JsonSerializer.Serialize(payload, CompactJsonOptions);
         return new ChatMessage(ChatRole.User, json);
     }
+
+    private static ChatMessage CreateJsonInputMessage(string jsonPayload) =>
+        new(ChatRole.User, JsonObjectInputPrefix + jsonPayload);
 }

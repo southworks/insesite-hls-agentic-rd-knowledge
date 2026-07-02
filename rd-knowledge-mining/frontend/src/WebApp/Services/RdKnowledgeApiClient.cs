@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using Cohere.AgenticRDKnowledge.Shared.Contracts;
+using System.Text.Json.Serialization;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Backend;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Ingestion;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Query;
@@ -31,10 +31,17 @@ public sealed class RdKnowledgeApiClient(
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
     };
-    public Task<VectorDbStoreSummary> GetVectorDbStoreSummaryAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult(new VectorDbStoreSummary(0, 0, 0, 0, null, null));
+
+    public async Task<VectorDbStoreSummary> GetVectorDbStoreSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await GetAsync<VectorDbStoreSummaryResponse>(
+            RdKnowledgeBackendRoutes.GetVectorDbSummary,
+            cancellationToken);
+
+        return BackendApiMapper.ToVectorDbSummary(response);
+    }
 
     public Task<StudyDocumentsResponse> GetStudyDocumentsAsync(string studyId, CancellationToken cancellationToken = default) =>
         Task.FromResult(new StudyDocumentsResponse(studyId, []));

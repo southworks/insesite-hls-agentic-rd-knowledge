@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RndKnowledgeMining.Mcp\RndKnowledgeMining.Mcp.csproj" AdditionalProperties="RndKnowledgeMiningMcpCopyAppSettingsToPublish=Never" />
     <PackageReference Include="Azure.AI.Projects.Agents" Version="2.1.0-beta.3" />
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.29.0" />

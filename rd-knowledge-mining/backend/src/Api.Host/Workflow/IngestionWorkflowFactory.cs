@@ -2,6 +2,7 @@ using CohereRndKnowledgeMining.Api.Host.Services;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
+using RndKnowledgeMining.Mcp.Adapters;
 using AgentWorkflow = Microsoft.Agents.AI.Workflows.Workflow;
 
 namespace CohereRndKnowledgeMining.Api.Host.Workflow;
@@ -21,14 +22,29 @@ public static class IngestionWorkflowConstants
     public const string IngestionTranslationAgentName = "ingestion-translation-agent";
 
     public const string MetadataLinkingAgentName = "metadata-linking-agent";
+
+    public const string IngestionTranslationOutputKey = "IngestionTranslation";
+
+    public const string MetadataLinkingOutputKey = "MetadataLinking";
 }
 
 /// <summary>
 /// Block 1 (Ingestion) workflow: ingestion-translation -> metadata-linking -> Knowledge Curator gate.
-/// On approval the curated payload is yielded as the workflow output; the service then writes it to the Vector DB.
+/// Metadata & Linking indexes into the Vector DB via MCP before the gate; curator approve/deny closes the run.
 /// </summary>
 public sealed class IngestionWorkflowFactory
 {
+    private readonly INormalizedDocumentStore _normalizedDocumentStore;
+    private readonly IngestionSourceDocumentCache _sourceDocumentCache;
+
+    public IngestionWorkflowFactory(
+        INormalizedDocumentStore normalizedDocumentStore,
+        IngestionSourceDocumentCache sourceDocumentCache)
+    {
+        _normalizedDocumentStore = normalizedDocumentStore;
+        _sourceDocumentCache = sourceDocumentCache;
+    }
+
     public AgentWorkflow CreateWorkflow(RndKnowledgeAgents agents, string sourceId, string executionId)
     {
         RequestPort approvalPort = RequestPort.Create<HumanApprovalPrompt, HumanApprovalDecision>(
@@ -43,12 +59,11 @@ public sealed class IngestionWorkflowFactory
         var ingestionTranslation = agents.IngestionTranslation.BindAsExecutor(agentHostOptions);
         var metadataLinking = agents.MetadataLinking.BindAsExecutor(agentHostOptions);
 
-        FunctionExecutor<IList<ChatMessage>> bridge01 = CreatePayloadBridgeExecutor(
+        FunctionExecutor<IList<ChatMessage>> bridge01 = CreateIngestionTranslationBridgeExecutor(
             id: "IngestionBridge01",
             correlationId: sourceId,
-            executionId: executionId,
-            sourceAgentName: IngestionWorkflowConstants.IngestionTranslationAgentName);
-        FunctionExecutor<IList<ChatMessage>> bridge02 = CreatePayloadBridgeExecutor(
+            executionId: executionId);
+        FunctionExecutor<IList<ChatMessage>> bridge02 = CreateAgentHandoffBridgeExecutor(
             id: "IngestionBridge02",
             correlationId: sourceId,
             executionId: executionId,
@@ -71,8 +86,80 @@ public sealed class IngestionWorkflowFactory
             .AddEdge(approvalPort, applyCuratorDecision)
             .WithOutputFrom(applyCuratorDecision)
             .WithName($"rd-ingestion-{executionId}")
-            .WithDescription("Block 1 ingestion workflow with a Knowledge Curator approval gate before persistence.")
+            .WithDescription("Block 1 ingestion workflow: metadata-linking indexes to Vector DB, then Knowledge Curator reviews.")
             .Build();
+    }
+
+    private FunctionExecutor<IList<ChatMessage>> CreateIngestionTranslationBridgeExecutor(
+        string id,
+        string correlationId,
+        string executionId)
+    {
+        return new FunctionExecutor<IList<ChatMessage>>(
+            id: id,
+            handlerAsync: async (messages, context, cancellationToken) =>
+            {
+                string rawOutput = WorkflowTextExtractor.FromLastAssistantMessage(messages);
+                AgentStepResult result = ParseBridgeOutput(
+                    IngestionWorkflowConstants.IngestionTranslationAgentName,
+                    rawOutput);
+
+                if (string.IsNullOrWhiteSpace(result.RawPayloadJson))
+                {
+                    throw new InvalidOperationException(
+                        "Ingestion handoff is missing raw payload JSON.");
+                }
+
+                string payloadJson = result.RawPayloadJson;
+                if (_sourceDocumentCache.TryGet(executionId, out IReadOnlyList<RawKnowledgeItem>? sourceItems)
+                    && sourceItems is not null)
+                {
+                    payloadJson = IngestionHandoffEnricher.Enrich(payloadJson, sourceItems);
+                }
+
+                string manifestJson = await _normalizedDocumentStore
+                    .PersistIngestionHandoffAsync(
+                        correlationId,
+                        executionId,
+                        payloadJson,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+
+                ChatMessage payload = WorkflowPayloadBuilder.CreateMetadataLinkingHandoffMessage(
+                    correlationId,
+                    executionId,
+                    manifestJson);
+
+                await context.SendMessageAsync(payload, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await context.SendMessageAsync(new TurnToken(emitEvents: true), cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+            },
+            sentMessageTypes: [typeof(ChatMessage), typeof(TurnToken)]);
+    }
+
+    private static FunctionExecutor<IList<ChatMessage>> CreateAgentHandoffBridgeExecutor(
+        string id,
+        string correlationId,
+        string executionId,
+        string sourceAgentName)
+    {
+        return new FunctionExecutor<IList<ChatMessage>>(
+            id: id,
+            handlerAsync: async (messages, context, cancellationToken) =>
+            {
+                string rawOutput = WorkflowTextExtractor.FromLastAssistantMessage(messages);
+                AgentStepResult result = ParseBridgeOutput(sourceAgentName, rawOutput);
+                ChatMessage payload = WorkflowPayloadBuilder.CreateRichAgentHandoffMessage(
+                    correlationId,
+                    executionId,
+                    sourceAgentName,
+                    result);
+
+                await context.SendMessageAsync(payload, cancellationToken: cancellationToken).ConfigureAwait(false);
+                await context.SendMessageAsync(new TurnToken(emitEvents: true), cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+            },
+            sentMessageTypes: [typeof(ChatMessage), typeof(TurnToken)]);
     }
 
     private static FunctionExecutor<ChatMessage> CreateCuratorApprovalRequestExecutor(
@@ -86,9 +173,10 @@ public sealed class IngestionWorkflowFactory
             {
                 string rawOutput = WorkflowTextExtractor.FromMessage(message);
                 AgentStepResult result = ParseBridgeOutput(IngestionWorkflowConstants.MetadataLinkingAgentName, rawOutput);
-                ChatMessage payload = WorkflowPayloadBuilder.CreateAgentTransitionMessage(
+                ChatMessage payload = WorkflowPayloadBuilder.CreateRichAgentHandoffMessage(
                     correlationId,
                     executionId,
+                    IngestionWorkflowConstants.MetadataLinkingAgentName,
                     result);
 
                 await context.QueueStateUpdateAsync(
@@ -108,7 +196,7 @@ public sealed class IngestionWorkflowFactory
                     CorrelationId = correlationId,
                     ExecutionId = executionId,
                     ReviewerRole = IngestionWorkflowConstants.ReviewerRole,
-                    Summary = "Ingestion and metadata linking completed. Approve to write the curated knowledge to the Vector DB.",
+                    Summary = "Metadata linking and Vector DB indexing completed. Review linking quality and approve or deny the ingestion run.",
                     ReviewedOutput = rawOutput
                 };
 
@@ -143,38 +231,13 @@ public sealed class IngestionWorkflowFactory
                     throw new InvalidOperationException("Pending metadata-linking result was not available when resuming the ingestion workflow.");
                 }
 
-                ChatMessage curatedKnowledge = WorkflowPayloadBuilder.CreateAgentTransitionMessage(
-                    correlationId,
-                    executionId,
-                    pendingResult);
+                ChatMessage curatedKnowledge = new(
+                    ChatRole.Assistant,
+                    pendingResult.RawPayloadJson ?? string.Empty);
 
                 await context.YieldOutputAsync(curatedKnowledge.Text, cancellationToken).ConfigureAwait(false);
             },
             sentMessageTypes: []);
-    }
-
-    private static FunctionExecutor<IList<ChatMessage>> CreatePayloadBridgeExecutor(
-        string id,
-        string correlationId,
-        string executionId,
-        string sourceAgentName)
-    {
-        return new FunctionExecutor<IList<ChatMessage>>(
-            id: id,
-            handlerAsync: async (messages, context, cancellationToken) =>
-            {
-                string rawOutput = WorkflowTextExtractor.FromLastAssistantMessage(messages);
-                AgentStepResult result = ParseBridgeOutput(sourceAgentName, rawOutput);
-                ChatMessage payload = WorkflowPayloadBuilder.CreateAgentTransitionMessage(
-                    correlationId,
-                    executionId,
-                    result);
-
-                await context.SendMessageAsync(payload, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-                await context.SendMessageAsync(new TurnToken(emitEvents: true), cancellationToken: cancellationToken).ConfigureAwait(false);
-            },
-            sentMessageTypes: [typeof(ChatMessage), typeof(TurnToken)]);
     }
 
     private static AgentStepResult ParseBridgeOutput(string sourceAgentName, string rawOutput) =>

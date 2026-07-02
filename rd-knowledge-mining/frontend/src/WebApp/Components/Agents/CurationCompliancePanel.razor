@@ -3,8 +3,8 @@
     <div class="agent-panel">
         <p>@Result.Summary</p>
         <h4 class="subsection-title">Compliance flags</h4>
-        <ComplianceFlagList Flags="Result.Flags" />
-        @if (Result.PromptedOwners.Count > 0)
+        <ComplianceFlagList Flags="@(Result.Flags ?? [])" />
+        @if (Result.PromptedOwners is { Count: > 0 })
         {
             <p class="meta-line"><strong>Prompted owners:</strong> @string.Join("; ", Result.PromptedOwners)</p>
         }

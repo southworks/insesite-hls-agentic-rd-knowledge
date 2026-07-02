@@ -4,7 +4,7 @@ namespace CohereRndKnowledgeMining.Api.Host.Contracts;
 
 public sealed class StartIngestionRequest
 {
-    /// <summary>Identifier of the raw R&D knowledge batch to read from Microsoft Fabric.</summary>
+    /// <summary>Identifier of the raw R&D knowledge batch to ingest.</summary>
     public required string SourceId { get; init; }
 
     /// <summary>Optional caller-provided execution id; generated when omitted.</summary>
@@ -94,4 +94,19 @@ public sealed class ProblemDetailsResponse
     public required string Title { get; init; }
 
     public required string Detail { get; init; }
+}
+
+public sealed class VectorDbStoreSummaryResponse
+{
+    public int TotalStudies { get; init; }
+
+    public int TotalDocuments { get; init; }
+
+    public int TotalEntities { get; init; }
+
+    public int TotalLinks { get; init; }
+
+    public DateTimeOffset? LastIngestionAt { get; init; }
+
+    public string? LastIngestedStudyId { get; init; }
 }

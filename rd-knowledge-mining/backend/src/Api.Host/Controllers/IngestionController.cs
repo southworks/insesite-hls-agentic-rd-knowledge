@@ -6,7 +6,7 @@ namespace CohereRndKnowledgeMining.Api.Host.Controllers;
 
 /// <summary>
 /// Block 1 (Ingestion): start the Fabric -> agents -> Knowledge Curator gate workflow,
-/// check status, and resume after the curator approves or denies.
+/// check status, and resume after the curator approves or denies the ingestion run.
 /// </summary>
 [ApiController]
 [Route("api/rd-knowledge/ingestion")]

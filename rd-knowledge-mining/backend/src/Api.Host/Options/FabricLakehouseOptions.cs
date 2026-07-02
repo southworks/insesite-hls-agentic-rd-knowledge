@@ -10,5 +10,7 @@ public sealed class FabricLakehouseOptions
 
     public string RawRoot { get; set; } = "Files/raw";
 
+    public string NormalizedRoot { get; set; } = "Files/normalized";
+
     public int TimeoutSeconds { get; set; } = 30;
 }
