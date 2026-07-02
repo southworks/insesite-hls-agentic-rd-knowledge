@@ -16,7 +16,7 @@
                 class="scenario-item @(IsSelected(scenario.ScenarioId) ? "selected" : "")"
                 @onclick="() => SelectAsync(scenario.ScenarioId)">
                 <span class="scenario-title">@scenario.Title</span>
-                <span class="scenario-meta">@scenario.StudyId · @scenario.OutcomeHint</span>
+                <span class="scenario-meta">@FormatMeta(scenario)</span>
             </li>
         }
     </ul>
@@ -33,6 +33,14 @@
 
     private IEnumerable<SeedScenarioDefinition> FilteredScenarios =>
         ScenarioPickerFilter.Apply(Scenarios, _search, _outcomeFilter);
+
+    private static string FormatMeta(SeedScenarioDefinition scenario)
+    {
+        var legacy = string.IsNullOrWhiteSpace(scenario.LegacyScenarioId)
+            ? scenario.ScenarioId
+            : scenario.LegacyScenarioId;
+        return $"{legacy} · {scenario.OutcomeHint}";
+    }
 
     private void SetFilter(string filter)
     {

@@ -10,23 +10,15 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.Configure<WorkflowPollingOptions>(configuration.GetSection(WorkflowPollingOptions.SectionName));
-builder.Services.Configure<DatasetSeedOptions>(configuration.GetSection(DatasetSeedOptions.SectionName));
+builder.Services.Configure<PortfolioScenariosOptions>(configuration.GetSection(PortfolioScenariosOptions.SectionName));
 
-builder.Services.AddSingleton<DatasetSeedCatalogService>();
-builder.Services.AddSingleton<MockWorkflowSimulator>();
+builder.Services.AddSingleton<QuerySessionCache>();
+builder.Services.AddSingleton<PortfolioScenarioService>();
 
-var useMockBackend = configuration.GetValue("UseMockBackend", true);
-if (useMockBackend)
+builder.Services.AddHttpClient<IRdKnowledgeApiClient, RdKnowledgeApiClient>(client =>
 {
-    builder.Services.AddSingleton<IRdKnowledgeApiClient, MockRdKnowledgeApiClient>();
-}
-else
-{
-    builder.Services.AddHttpClient<IRdKnowledgeApiClient, RdKnowledgeApiClient>(client =>
-    {
-        client.BaseAddress = new Uri(configuration["ApiBaseUrl"] ?? "http://localhost:5038/");
-    });
-}
+    client.BaseAddress = new Uri(configuration["ApiBaseUrl"] ?? "http://localhost:8080/");
+});
 
 builder.Services.AddScoped<KnowledgeSessionStore>();
 builder.Services.AddScoped<KnowledgePortfolioState>();

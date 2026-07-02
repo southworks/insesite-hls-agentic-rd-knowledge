@@ -8,6 +8,7 @@ public sealed class KnowledgePortfolioState
 {
     private readonly IRdKnowledgeApiClient _apiClient;
     private readonly KnowledgeSessionStore _sessionStore;
+    private readonly PortfolioScenarioService _scenarios;
 
     public bool IsLoading { get; private set; }
     public string? Error { get; private set; }
@@ -21,12 +22,13 @@ public sealed class KnowledgePortfolioState
     public KnowledgePortfolioState(
         IRdKnowledgeApiClient apiClient,
         KnowledgeSessionStore sessionStore,
-        DatasetSeedCatalogService catalog)
+        PortfolioScenarioService scenarios)
     {
         _apiClient = apiClient;
         _sessionStore = sessionStore;
-        IngestionScenarios = catalog.GetIngestionScenarios();
-        QueryScenarios = catalog.GetQueryScenarios();
+        _scenarios = scenarios;
+        IngestionScenarios = _scenarios.GetIngestionScenarios();
+        QueryScenarios = _scenarios.GetQueryScenarios();
     }
 
     public async Task LoadAsync(CancellationToken cancellationToken = default)

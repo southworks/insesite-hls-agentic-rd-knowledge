@@ -2,7 +2,6 @@
 @rendermode InteractiveServer
 @inject KnowledgePortfolioState PortfolioState
 @inject KnowledgeSessionStore SessionStore
-@inject IRdKnowledgeApiClient ApiClient
 @inject NavigationManager Navigation
 @implements IDisposable
 
@@ -26,7 +25,12 @@ else
         <VectorDbSummaryCard Summary="PortfolioState.VectorDbSummary" />
     </PageSection>
 
-    <PageSection Title="Ingestion scenarios" Subtitle="Ingestion & Translation → Metadata & Linking (Vector DB) → Knowledge Curator">
+    <div class="card demo-sequence-banner">
+        <h3 class="card-title">Headline demo sequence</h3>
+        <p>Run in order for the full before/after narrative: <strong>QRY-001</strong> (empty KB) → <strong>ING-001</strong> (ingest) → <strong>QRY-002</strong> (grounded answer).</p>
+    </div>
+
+    <PageSection Title="Ingestion scenarios" Subtitle="Ingestion & Translation → Metadata & Linking → Knowledge Curator → Vector DB">
         <div class="picker-grid">
             <ScenarioPickerPanel Scenarios="PortfolioState.IngestionScenarios"
                                  @bind-SelectedScenarioId="_selectedIngestionId" />
@@ -102,7 +106,11 @@ else
     {
         if (_selectedIngestion is null) return;
         _navigating = true;
-        SessionStore.OpenIngestionSession(_selectedIngestion.StudyId, _selectedIngestion.Title, _selectedIngestion.ScenarioId);
+        SessionStore.OpenIngestionSession(
+            _selectedIngestion.StudyId,
+            _selectedIngestion.Title,
+            _selectedIngestion.ScenarioId,
+            _selectedIngestion.SourceId);
         PortfolioState.RefreshSessions();
         Navigation.NavigateTo($"/ingestion/{_selectedIngestion.StudyId}");
         await Task.Delay(300);
@@ -116,16 +124,14 @@ else
         try
         {
             var sessionId = $"query-{_selectedQuery.ScenarioId}";
-            var response = await ApiClient.StartQueryWorkflowAsync(sessionId);
             SessionStore.OpenQuerySession(
                 sessionId,
-                response.ExecutionId,
                 _selectedQuery.Title,
                 _selectedQuery.StudyId,
                 _selectedQuery.SampleQuestion ?? string.Empty,
                 _selectedQuery.ScenarioId);
             PortfolioState.RefreshSessions();
-            Navigation.NavigateTo($"/query/{sessionId}/{response.ExecutionId}");
+            Navigation.NavigateTo($"/query/{sessionId}");
         }
         finally
         {

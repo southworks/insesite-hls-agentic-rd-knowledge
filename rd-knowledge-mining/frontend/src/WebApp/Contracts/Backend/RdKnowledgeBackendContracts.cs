@@ -1,43 +1,27 @@
 namespace Cohere.AgenticRDKnowledge.Shared.Contracts.Backend;
 
 /// <summary>
-/// Documented REST paths for future backend integration.
-/// Implement in RdKnowledgeApiClient when UseMockBackend is false.
+/// REST paths for Api.Host integration.
 /// </summary>
 public static class RdKnowledgeBackendRoutes
 {
     public const string Health = "/health";
 
-    public const string StartIngestionWorkflow =
-        "/api/rd-knowledge/studies/{studyId}/ingestion/workflow/start";
+    public const string StartIngestion = "/api/rd-knowledge/ingestion/start";
 
     public const string GetIngestionStatus =
-        "/api/rd-knowledge/executions/{executionId}/ingestion/status";
+        "/api/rd-knowledge/ingestion/executions/{executionId}/status";
 
     public const string SubmitIngestionDecision =
-        "/api/rd-knowledge/executions/{executionId}/ingestion/resume";
+        "/api/rd-knowledge/ingestion/sources/{sourceId}/executions/{executionId}/resume";
 
-    public const string StartQueryWorkflow =
-        "/api/rd-knowledge/query/sessions/{sessionId}/workflow/start";
+    public const string Ask = "/api/rd-knowledge/query/ask";
 
-    public const string GetQuerySession =
-        "/api/rd-knowledge/executions/{executionId}/query/session";
+    public const string StartCurate = "/api/rd-knowledge/query/curate/start";
 
-    public const string SendChatMessage =
-        "/api/rd-knowledge/executions/{executionId}/query/chat";
+    public const string GetCurateStatus =
+        "/api/rd-knowledge/query/curate/executions/{executionId}/status";
 
-    public const string StartCuration =
-        "/api/rd-knowledge/executions/{executionId}/query/curate";
-
-    public const string GetCurationStatus =
-        "/api/rd-knowledge/executions/{executionId}/query/status";
-
-    public const string SubmitCurationDecision =
-        "/api/rd-knowledge/executions/{executionId}/query/resume";
-
-    public const string GetStudyDocuments =
-        "/api/rd-knowledge/studies/{studyId}/documents";
-
-    public const string GetVectorDbStoreSummary =
-        "/api/rd-knowledge/vector-db/summary";
+    public const string SubmitCurateDecision =
+        "/api/rd-knowledge/query/curate/sessions/{sessionId}/executions/{executionId}/resume";
 }

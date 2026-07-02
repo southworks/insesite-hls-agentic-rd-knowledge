@@ -457,6 +457,43 @@ a:hover { text-decoration: underline; }
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent);
 }
 
+.demo-sequence-banner {
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+}
+
+.demo-sequence-banner .card-title { margin-top: 0; margin-bottom: 0.5rem; font-size: 1rem; }
+
+.backend-payload-card {
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    background: color-mix(in srgb, var(--color-muted) 8%, var(--color-surface));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+}
+
+.backend-payload-card .card-subtitle {
+    margin: 0 0 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.payload-preview {
+    margin: 0.5rem 0;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .scenario-title { display: block; font-weight: 600; font-size: 0.9rem; }
 .scenario-meta { display: block; font-size: 0.8rem; color: var(--color-muted); }
 
