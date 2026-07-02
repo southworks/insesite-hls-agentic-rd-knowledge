@@ -4,12 +4,17 @@ using CohereRndKnowledgeMining.Api.Host.Services.Integrations;
 using CohereRndKnowledgeMining.Api.Host.Workflow;
 using RndKnowledgeMining.Mcp;
 using RndKnowledgeMining.Mcp.Adapters;
+using System.Text.Json.Serialization;
 using ApiFabricLakehouseClient = CohereRndKnowledgeMining.Api.Host.Services.Integrations.FabricLakehouseClient;
 using McpFabricLakehouseOptions = RndKnowledgeMining.Mcp.Options.FabricLakehouseOptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 builder.Services.Configure<AzureFoundryOptions>(options =>
 {

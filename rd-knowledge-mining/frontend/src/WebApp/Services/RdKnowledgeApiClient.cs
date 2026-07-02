@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Ingestion;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Query;
 using Cohere.AgenticRDKnowledge.Shared.Contracts.Studies;
@@ -26,6 +27,12 @@ public interface IRdKnowledgeApiClient
 
 public sealed class RdKnowledgeApiClient(HttpClient httpClient) : IRdKnowledgeApiClient
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     public Task<VectorDbStoreSummary> GetVectorDbStoreSummaryAsync(CancellationToken cancellationToken = default) =>
         GetAsync<VectorDbStoreSummary>(RdKnowledgeBackendRoutes.GetVectorDbStoreSummary, cancellationToken);
 
@@ -101,7 +108,7 @@ public sealed class RdKnowledgeApiClient(HttpClient httpClient) : IRdKnowledgeAp
     {
         var response = await httpClient.GetAsync(path, cancellationToken);
         await ApiProblemDetails.EnsureSuccessOrThrowAsync(response, cancellationToken);
-        var result = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
         return result ?? throw new InvalidOperationException($"Empty response from {path}.");
     }
 
@@ -109,9 +116,9 @@ public sealed class RdKnowledgeApiClient(HttpClient httpClient) : IRdKnowledgeAp
     {
         HttpResponseMessage response = body is null
             ? await httpClient.PostAsync(path, null, cancellationToken)
-            : await httpClient.PostAsJsonAsync(path, body, cancellationToken);
+            : await httpClient.PostAsJsonAsync(path, body, JsonOptions, cancellationToken);
         await ApiProblemDetails.EnsureSuccessOrThrowAsync(response, cancellationToken);
-        var result = await response.Content.ReadFromJsonAsync<T>(cancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
         return result ?? throw new InvalidOperationException($"Empty response from {path}.");
     }
 }
